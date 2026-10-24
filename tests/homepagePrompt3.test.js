@@ -89,7 +89,7 @@ test('homepage prompt 3 design keeps previous visual assets and mobile overflow 
   assert.match(homepage, /\/images\/wartung\.webp/);
   assert.match(homepage, /\/images\/home-fit-beratung\.webp/);
   assert.match(homepage, /home-reference-band img\s*{[\s\S]*?aspect-ratio:\s*16 \/ 9/);
-  assert.match(homepage, /\/images\/review-bg\.webp/);
+  assert.match(homepage, /id="projekte"/);
   assert.match(homepage, /\.home-page[\s\S]*?overflow-x: hidden/);
   assert.match(homepage, /overflow-wrap: break-word/);
   assert.match(homepage, /hyphens:\s*none/);
@@ -97,9 +97,9 @@ test('homepage prompt 3 design keeps previous visual assets and mobile overflow 
   assert.match(homepage, /scroll-snap-type: x mandatory/);
 });
 
-test('homepage visibility cards use the requested Berlin, services and no-guarantee images', () => {
+test('homepage visibility cards use the Berlin, services and Local SEO images', () => {
   const visibilitySection = homepageTemplate.match(/<section class="section" id="sichtbarkeit"[\s\S]*?<\/section>/)?.[0] || '';
-  const noGuaranteeImage = new URL('../public/images/home-keine-garantie.webp', import.meta.url);
+  const localSeoImage = new URL('../public/images/leistungen/local-seo-hero.webp', import.meta.url);
 
   assert.ok(visibilitySection, 'visibility section should exist');
   assert.doesNotMatch(visibilitySection, /src="\/images\/seo\.webp"/);
@@ -111,11 +111,11 @@ test('homepage visibility cards use the requested Berlin, services and no-guaran
   assert.match(visibilitySection, /<h3><%= isEn \? 'Service pages' : 'Leistungsseiten' %><\/h3>/);
   assert.match(visibilitySection, /src="\/images\/leistungen\/leistungen-uebersicht-hero\.webp"/);
   assert.match(visibilitySection, /Übersicht der Webdesign-Leistungen/);
-  assert.match(visibilitySection, /<h3><%= isEn \? 'No guarantee' : 'Keine Garantie' %><\/h3>/);
-  assert.match(visibilitySection, /src="\/images\/home-keine-garantie\.webp"/);
-  assert.match(visibilitySection, /keine Garantie für Suchsichtbarkeit/);
-  assert.equal(existsSync(noGuaranteeImage), true);
-  assert.ok(statSync(noGuaranteeImage).size < 120_000, 'Keine-Garantie-Bild sollte komprimiert bleiben');
+  assert.match(visibilitySection, /<h3><%= isEn \? 'Google Business Profile' : 'Google-Unternehmensprofil' %><\/h3>/);
+  assert.match(visibilitySection, /homeMarketingImages\.serviceLocalSeo/);
+  assert.doesNotMatch(visibilitySection, /Keine Garantie|kein Ranking-Versprechen/);
+  assert.equal(existsSync(localSeoImage), true);
+  assert.ok(statSync(localSeoImage).size < 200_000, 'Local-SEO-Bild sollte komprimiert bleiben');
 });
 
 test('homepage visibility cards link to their detail pages with image hover labels', () => {
@@ -124,11 +124,11 @@ test('homepage visibility cards link to their detail pages with image hover labe
   assert.ok(visibilitySection, 'visibility section should exist');
   assert.match(visibilitySection, /href="<%= isEn \? '\/en\/webdesign-berlin' : '\/webdesign-berlin' %>"/);
   assert.match(visibilitySection, /href="\/leistungen"/);
-  assert.match(visibilitySection, /href="\/leistungen\/rechtliches-sicherheit"/);
+  assert.match(visibilitySection, /href="\/leistungen\/local-seo"/);
   assert.equal((visibilitySection.match(/home-service-card--link/g) || []).length, 3);
   assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zu Webdesign Berlin/);
   assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zur Leistungsübersicht/);
-  assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?weitere Erläuterung/);
+  assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zu Local SEO/);
   assert.doesNotMatch(visibilitySection, /<article class="home-card home-service-card animate-on-scroll">/);
   assert.match(homeCss, /\.home-page \.home-service-card--link\s*\{[\s\S]*?color:\s*inherit;[\s\S]*?text-decoration:\s*none;/);
   assert.match(homeCss, /\.home-page \.home-service-card--link:is\(:hover, :focus-visible\) \.home-card-media img\s*\{[\s\S]*?transform:\s*scale\(1\.035\);/);
@@ -142,9 +142,9 @@ test('homepage visual cleanup keeps footer isolated and removes internal placeho
   assert.ok(footerInclude > mainClose, 'footer should render outside the scoped homepage main');
 
   assert.match(homepage, /\.home-page \.home-hero-showcase__main/);
-  assert.match(homepage, /\/images\/home-hero-klarblick-desktop\.webp/);
-  assert.match(homepage, /\/images\/home-hero-klarblick-termin-crop\.webp/);
-  assert.match(homepage, /\/images\/home-hero-klarblick-mobile-screen\.webp/);
+  assert.match(homepage, /\/images\/home-hero-sauber-desktop\.webp/);
+  assert.match(homepage, /\/images\/home-hero-sauber-kontakt\.webp/);
+  assert.match(homepage, /\/images\/home-hero-backstube-mobile\.webp/);
   assert.match(homepage, /\.home-card-grid--centered/);
   assert.match(homepage, /\.home-pricing-card[\s\S]*?min-height/);
   assert.match(homepage, /inner-wrapper text-left animate-on-scroll/);
@@ -202,11 +202,13 @@ test('homepage hero bridge uses safe scoped highlights with dynamic pricing', ()
   assert.equal(highlightMatches.length, 15);
   assert.match(homeHighlightsData, /Pakete ab \{\{lowestPackagePriceLabel\}\}/);
   assert.match(homeHighlightsData, /Keine Standard-Templates/);
-  assert.match(homeHighlightsData, /Serverseitig gerendertes HTML/);
+  assert.match(homeHighlightsData, /Keine Plugin-Updates/);
+  assert.match(homeHighlightsData, /Seit 5 Jahren Webdesign/);
+  assert.doesNotMatch(homeHighlightsData, /Serverseitig gerendertes HTML|Node\.js & EJS|Gezieltes JavaScript/);
   assert.match(homeHighlightsData, /Transparente Zusatzleistungen/);
   assert.match(
     homeHighlightsData,
-    /key:\s*'performance-goal'[\s\S]*?label:\s*'Schnelle Ladezeiten als Ziel'[\s\S]*?iconClass:\s*'fa-stopwatch'/
+    /key:\s*'performance-goal'[\s\S]*?label:\s*'Schnelle Ladezeiten'[\s\S]*?iconClass:\s*'fa-stopwatch'/
   );
   assert.doesNotMatch(homeHighlightsData, /iconClass:\s*'fa-tachometer-alt'/);
   assert.doesNotMatch(homeHighlightsData, /iconClass:\s*'fa-gauge-high'/);
@@ -217,44 +219,44 @@ test('homepage hero bridge uses safe scoped highlights with dynamic pricing', ()
   assert.doesNotMatch(homeHighlightsData, /DSGVO-konform|rechtssicher|Ranking garantiert|garantiert mehr Kunden|alles inklusive|keine versteckten Kosten/i);
 });
 
-test('homepage trust section points to the project example and real customer reviews', () => {
+test('homepage trust section points to real customer reviews', () => {
   const joined = `${homepage}\n${controller}`;
 
   assert.match(
     controller,
-    /trustSubline:\s*'Hier siehst du ein echtes Projektbeispiel von mir sowie echte Bewertungen von Kunden, die bereits mit Komplett Webdesign zusammengearbeitet haben\.'/
+    /trustSubline:\s*'Echte Bewertungen aus meinem Google-Profil von Kunden, die schon mit mir zusammengearbeitet haben\.'/
   );
   assert.match(
     controller,
-    /trustSubline:\s*'Here you can see a real project example from Komplett Webdesign and verified client reviews from people who have already worked with me\.'/
+    /trustSubline:\s*'Real reviews from my Google profile by clients who have already worked with me\.'/
   );
   assert.doesNotMatch(joined, /Wenn echte Bewertungen vorhanden sind|Bis dahin zählen Arbeitsweise/);
   assert.doesNotMatch(joined, /When verified reviews are available|Until then, the focus/);
 });
 
-test('homepage trust media links to references and zooms gently on hover', () => {
+test('homepage shows real projects early and keeps the trust section for reviews', () => {
   const trustSection = homepageTemplate.match(/<section class="section" id="trust"[\s\S]*?<\/section>/)?.[0] || '';
+  const projectSection = homepageTemplate.match(/<section class="section" id="projekte"[\s\S]*?<\/section>/)?.[0] || '';
 
-  assert.match(
-    trustSection,
-    /<figure class="home-wide-media animate-on-scroll">[\s\S]*?<a href="\/referenzen" class="home-wide-media-link" aria-label="<%= isEn \? 'View references' : 'Referenzen anzeigen' %>">[\s\S]*?homeMarketingImages\.homeTrust[\s\S]*?<span class="home-wide-media-cta" aria-hidden="true"><%= isEn \? 'View references' : 'Referenzen anzeigen' %><\/span>/
-  );
-  assert.match(homeCss, /\.home-page \.home-wide-media-link\s*{[\s\S]*?display:\s*block[\s\S]*?height:\s*100%[\s\S]*?position:\s*relative/);
-  assert.match(homeCss, /\.home-page \.home-wide-media-link img\s*{[\s\S]*?transition:\s*transform 0\.28s ease/);
-  assert.match(homeCss, /\.home-page \.home-wide-media-link:is\(:hover, :focus-visible\) img\s*{[\s\S]*?transform:\s*scale\(1\.035\)/);
-  assert.match(homeCss, /\.home-page \.home-wide-media-cta\s*{[\s\S]*?position:\s*absolute[\s\S]*?bottom:\s*clamp\(0\.8rem, 2vw, 1\.25rem\)[\s\S]*?opacity:\s*0/);
-  assert.match(homeCss, /\.home-page \.home-wide-media-link:is\(:hover, :focus-visible\) \.home-wide-media-cta\s*{[\s\S]*?opacity:\s*1[\s\S]*?transform:\s*translate\(-50%, 0\)/);
+  assert.ok(projectSection, 'project section should exist');
+  assert.ok(homepageTemplate.indexOf('id="projekte"') > homepageTemplate.indexOf('id="leistungen"'));
+  assert.ok(homepageTemplate.indexOf('id="projekte"') < homepageTemplate.indexOf('id="preise"'));
+  assert.match(projectSection, /homeProjectList\.forEach/);
+  assert.match(projectSection, /href="\/referenzen"/);
+  assert.doesNotMatch(trustSection, /home-wide-media/);
+  assert.match(homeCss, /\.home-project-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(homeCss, /\.home-page \.home-wide-media-link\s*{[\s\S]*?display:\s*block/);
 });
 
 test('homepage hero uses the final recommended copy and a quieter CTA hierarchy', () => {
   const joined = `${homepage}\n${controller}`;
 
   assert.match(controller, /seoTitle:\s*'Komplett Webdesign Berlin \| Websites für kleine Unternehmen'/);
-  assert.match(controller, /Komplett Webdesign entwickelt individuelle Websites für kleine Unternehmen in Berlin: klare Leistungen, faire Pakete, persönliche Umsetzung und saubere Technik\./);
+  assert.match(controller, /seoDescription:\s*'Individuelle Websites für kleine Unternehmen in Berlin, seit 5 Jahren persönlich umgesetzt: klare Pakete ab \{\{lowestPackagePriceLabel\}\}, schnelle Technik, ein Ansprechpartner\.'/);
   assert.match(controller, /heroBadge:\s*'Komplett Webdesign aus Berlin'/);
   assert.match(controller, /heroTitle:\s*'Persönliche Websites für kleine Unternehmen in Berlin'/);
   assert.match(controller, /heroTitle2:\s*''/);
-  assert.match(controller, /heroSubline:\s*'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin\. Ich plane, gestalte und betreue Websites für kleine Unternehmen/);
+  assert.match(controller, /heroSubline:\s*'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin\. Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen/);
   assert.match(controller, /heroBullet1:\s*'Maßgeschneidert statt Baukasten oder Template-Look'/);
   assert.match(controller, /heroBullet2:\s*'Klare Pakete ab \{\{lowestPackagePriceLabel\}\} mit transparentem Leistungsumfang'/);
   assert.match(controller, /heroBullet3:\s*'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen'/);

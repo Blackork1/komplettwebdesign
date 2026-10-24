@@ -57,9 +57,9 @@ test('homepage hero has sequenced after-load reveal targets', () => {
     hero,
     /class="home-hero-showcase home-hero-reveal home-hero-reveal--visual animate-on-scroll"/
   );
-  assert.match(hero, /\/images\/home-hero-klarblick-desktop\.webp/);
-  assert.match(hero, /\/images\/home-hero-klarblick-termin-crop\.webp/);
-  assert.match(hero, /\/images\/home-hero-klarblick-mobile-screen\.webp/);
+  assert.match(hero, /\/images\/home-hero-sauber-desktop\.webp/);
+  assert.match(hero, /\/images\/home-hero-sauber-kontakt\.webp/);
+  assert.match(hero, /\/images\/home-hero-backstube-mobile\.webp/);
   assert.doesNotMatch(hero, /heroBadgePackages/);
   assert.doesNotMatch(hero, /heroPriceInfo/);
 

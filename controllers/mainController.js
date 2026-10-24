@@ -11,6 +11,7 @@ import {
 import { buildHomeHeroBridgeHighlights } from '../data/homeHighlights.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
 import { aboutPage } from '../data/aboutPage.js';
+import { localizedHomeProjects } from '../data/homeProjects.js';
 
 const GOOGLE_PROFILE_URL = SITE_FACTS.googleProfileUrl;
 const GOOGLE_REVIEW_URL = SITE_FACTS.googleReviewUrl;
@@ -24,35 +25,39 @@ const HOMEPAGE_FAQ = {
     },
     {
       q: 'Warum starten die Pakete bei {{lowestPackagePriceLabel}}?',
-      a: '{{lowestPackagePriceLabel}} deckt den kleinsten sinnvollen Umfang ab: eine kompakte individuelle Website oder einen Onepager mit eigenem Layout, responsiver Umsetzung, technischen SEO-Grundlagen, eingebundenen Inhalten, Kontaktformular und einer Feedbackrunde. Jede Website wird individuell mit Node.js, EJS, CSS und JavaScript entwickelt, ohne Baukasten oder Standard-Theme.'
+      a: '{{lowestPackagePriceLabel}} deckt den kleinsten sinnvollen Umfang ab: eine kompakte individuelle Website oder einen Onepager mit eigenem Layout, Darstellung für Handy und Desktop, SEO-Grundlagen, eingebundenen Inhalten, Kontaktformular und einer Feedbackrunde. Jede Website wird individuell programmiert, ohne Baukasten oder Standard-Theme.'
     },
     {
       q: 'Welches Paket passt für mich?',
       a: 'Start passt für kompakte Websites, Business für mehrere Leistungen und Wachstum für Relaunches oder stärkere Seitenstruktur. Sonderfunktionen wie Buchungssystem, CMS, Mehrsprachigkeit oder Shop-Funktionen werden individuell geprüft.'
     },
     {
-      q: 'Gibt es laufende Kosten nach dem Launch?',
-      a: 'Domain, E-Mail, Hosting, Wartung und Drittanbieter-Tools können separat anfallen. Diese laufenden Kosten werden nicht automatisch in den einmaligen Projektpreis eingerechnet.'
+      q: 'Was kostet die Website nach dem Launch im Monat?',
+      a: 'Hosting gibt es ab 5 € im Monat, Domain und E-Mail ab 6 € im Monat. Wartung ist optional und hat feste Monatspreise, die du auf der Seite Website-Wartung findest. Domain, E-Mail, Hosting, Wartung und Drittanbieter-Tools stehen immer getrennt vom einmaligen Projektpreis.'
+    },
+    {
+      q: 'Kann ich Texte später selbst ändern?',
+      a: 'Ja, auf Wunsch. Ich richte dir dann eine einfache Verwaltung ein, mit der du Texte und ausgewählte Inhalte selbst änderst. Wenn du dich darum nicht kümmern möchtest, übernehme ich Änderungen für dich, zum Beispiel über die Wartung.'
     },
     {
       q: 'Sind Texte und SEO enthalten?',
-      a: 'Gelieferte Inhalte werden je nach Paket eingebunden und strukturiert. Technische SEO-Grundlagen sind im vereinbarten Umfang enthalten; umfangreiche Texterstellung, Local SEO und zusätzliche SEO-Seiten sind separate Leistungen.'
+      a: 'Deine Texte und Bilder binde ich ein und bringe sie in eine klare Reihenfolge. SEO-Grundlagen wie Seitentitel, Beschreibungen, Überschriften und schnelle Ladezeiten sind in jedem Paket enthalten. Neue Texte schreiben, Local SEO und zusätzliche Landingpages kannst du dazubuchen.'
     },
     {
       q: 'Gibt es eine Ranking-Garantie?',
-      a: 'Nein. Ich setze technische SEO-Grundlagen um und achte auf saubere Struktur, Metadaten und Ladezeit. Bestimmte Platzierungen bei Google sind nicht zusagbar.'
+      a: 'Nein. Ich sorge dafür, dass Google deine Seiten gut lesen kann: saubere Struktur, passende Seitentitel und schnelle Ladezeiten. Bestimmte Platzierungen bei Google sind nicht zusagbar, denn sie hängen auch von Wettbewerb, Bewertungen und deinem Google-Unternehmensprofil ab.'
     },
     {
       q: 'Sind Impressum und Datenschutzerklärung enthalten?',
-      a: 'Impressum, Datenschutzerklärung und Cookie-Hinweise können technisch eingebunden werden. Die Erstellung oder rechtliche Prüfung dieser Texte ist keine Rechtsberatung und sollte bei Bedarf über spezialisierte Anbieter oder eine Rechtsberatung erfolgen.'
+      a: 'Impressum, Datenschutzerklärung und Cookie-Hinweis binde ich technisch ein. Die Erstellung oder rechtliche Prüfung dieser Texte ist keine Rechtsberatung und sollte bei Bedarf über spezialisierte Anbieter oder eine Rechtsberatung erfolgen.'
     },
     {
       q: 'Sind Buchungssysteme, CMS oder Shops möglich?',
-      a: 'Ja, aber nicht als pauschales Standardpaket. Buchungssysteme, CMS, Mehrsprachigkeit und kleine Shop-Funktionen sind als Zusatzleistung oder individuelles Projekt möglich.'
+      a: 'Ja. Buchungssysteme, eine Verwaltung zum Selbstpflegen, mehrere Sprachen und kleine Shop-Funktionen gibt es als Zusatzleistung oder im Paket Individuell.'
     },
     {
       q: 'Wie viele Feedbackrunden sind enthalten?',
-      a: 'Feedbackrunden richten sich nach dem gewählten Paket und dem vereinbarten Umfang. Zusätzliche Änderungswünsche nach Freigabe werden vor der Umsetzung besprochen und separat kalkuliert.'
+      a: 'Das steht bei jedem Paket: Start enthält 1 Feedbackrunde, Business 2 und Wachstum 2 bis 3. Bei individuellen Projekten steht die Zahl im Angebot. Weitere Änderungswünsche nach der Freigabe besprechen wir vorher, damit du keine Überraschungen erlebst.'
     },
     {
       q: 'Wie lange dauert ein Projekt?',
@@ -74,7 +79,7 @@ const HOMEPAGE_FAQ = {
     },
     {
       q: 'Do you also handle hosting and maintenance?',
-      a: 'Yes. Hosting, domain, email, maintenance, backups or monitoring can be agreed separately. Running costs are kept separate from the one-time project price.'
+      a: 'Yes. Hosting starts at 5 EUR per month, domain and email at 6 EUR per month. Maintenance is optional with fixed monthly prices listed on the website maintenance page. Running costs are always kept separate from the one-time project price.'
     },
     {
       q: 'Will my website be visible on Google?',
@@ -82,7 +87,7 @@ const HOMEPAGE_FAQ = {
     },
     {
       q: 'Can I edit my website myself later?',
-      a: 'Simple CMS or content-management functionality can be planned as a custom add-on. Alternatively, ongoing content updates can be agreed separately.'
+      a: 'Yes, if you want to. I set up a simple editor so you can change texts and selected content yourself. If you prefer not to, I handle changes for you, for example as part of maintenance.'
     },
     {
       q: 'Which industries do you build websites for?',
@@ -106,14 +111,14 @@ const HOMEPAGE_FAQ = {
 const HOMEPAGE_I18N = {
   de: {
     seoTitle: 'Komplett Webdesign Berlin | Websites für kleine Unternehmen',
-    seoDescription: 'Komplett Webdesign entwickelt individuelle Websites für kleine Unternehmen in Berlin: klare Leistungen, faire Pakete, persönliche Umsetzung und saubere Technik.',
+    seoDescription: 'Individuelle Websites für kleine Unternehmen in Berlin, seit 5 Jahren persönlich umgesetzt: klare Pakete ab {{lowestPackagePriceLabel}}, schnelle Technik, ein Ansprechpartner.',
     seoKeywords: 'website erstellen lassen berlin, webdesign berlin, webdesigner berlin, website für kleine unternehmen berlin, webdesign preise berlin, website pakete berlin, webdesign brandenburg, local seo berlin',
     ogTitle: 'Komplett Webdesign Berlin | Websites für kleine Unternehmen',
     ogDescription: 'Individuelle Websites für kleine Unternehmen in Berlin mit klaren Leistungen, transparenten Paketen und persönlicher Umsetzung.',
     heroBadge: 'Komplett Webdesign aus Berlin',
     heroTitle: 'Persönliche Websites für kleine Unternehmen in Berlin',
     heroTitle2: '',
-    heroSubline: 'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin. Ich plane, gestalte und betreue Websites für kleine Unternehmen – mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
+    heroSubline: 'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin. Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen – mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
     heroBullet1: 'Maßgeschneidert statt Baukasten oder Template-Look',
     heroBullet2: 'Klare Pakete ab {{lowestPackagePriceLabel}} mit transparentem Leistungsumfang',
     heroBullet3: 'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen',
@@ -127,7 +132,7 @@ const HOMEPAGE_I18N = {
     introTitleRest: 'aus einer Hand bei',
     featuresTitle: 'Warum Komplett Webdesign anders arbeitet',
     timelineTitle: 'So läuft dein Website-Projekt ab',
-    timelineNote: 'Klare Einschätzung, abgegrenztes Angebot, individuelle Umsetzung und Feedbackrunden im vereinbarten Umfang.',
+    timelineNote: 'Vom ersten Gespräch bis zum Launch weißt du immer, was als Nächstes passiert und was es kostet.',
     servicesTitle: 'Webdesign-Leistungen im Überblick',
     blogSectionTitle: 'Aktuelles zum Thema Webseiten und bisherige Kundenstimmen',
     blogCardTitle: 'Aktueller Blog-Artikel',
@@ -141,7 +146,7 @@ const HOMEPAGE_I18N = {
     pricingTagline: 'Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer. Zusatzwünsche und laufende Kosten werden separat ausgewiesen.',
     industryTitle: 'Für wen Komplett Webdesign passt',
     trustTitle: 'Persönlich, transparent und lokal ausgerichtet',
-    trustSubline: 'Hier siehst du ein echtes Projektbeispiel von mir sowie echte Bewertungen von Kunden, die bereits mit Komplett Webdesign zusammengearbeitet haben.',
+    trustSubline: 'Echte Bewertungen aus meinem Google-Profil von Kunden, die schon mit mir zusammengearbeitet haben.',
     trustCtaAll: 'Alle Bewertungen bei Google ansehen',
     trustCtaWrite: 'Eigene Bewertung abgeben',
     trustAverageLabel: 'Durchschnittliche Bewertung auf Google',
@@ -160,8 +165,8 @@ const HOMEPAGE_I18N = {
     heroBadge: 'Komplett Webdesign from Berlin',
     heroTitle: 'Get a custom website built in Berlin',
     heroTitle2: '',
-    heroSubline: 'I’m Sören, your web designer and developer in Berlin. I plan, design and maintain custom websites for small businesses, solo professionals and local service providers.',
-    heroBullet1: 'Built with Node.js, EJS, CSS and JavaScript',
+    heroSubline: 'I’m Sören, your web designer and developer in Berlin. For 5 years I have been planning, designing and maintaining custom websites for small businesses, solo professionals and local service providers.',
+    heroBullet1: 'Fast, custom-coded websites without plugin hassle',
     heroBullet2: 'No builder website and no standard theme',
     heroBullet3: 'Packages from {{lowestPackagePriceLabel.en}} with clear scope boundaries',
     heroCtaPrimary: 'Request website project',
@@ -174,7 +179,7 @@ const HOMEPAGE_I18N = {
     introTitleRest: 'with personal support at',
     featuresTitle: 'Why Komplett Webdesign works differently',
     timelineTitle: 'How your website project works',
-    timelineNote: 'Clear recommendation, scoped offer, custom implementation and feedback rounds in the agreed scope.',
+    timelineNote: 'From the first call to launch you always know what happens next and what it costs.',
     servicesTitle: 'Web design services at a glance',
     blogSectionTitle: 'Latest website topics and client feedback',
     blogCardTitle: 'Latest blog post',
@@ -188,7 +193,7 @@ const HOMEPAGE_I18N = {
     pricingTagline: 'All prices are listed under § 19 UStG without VAT shown. Add-ons and running costs are shown separately.',
     industryTitle: 'Websites for local service providers, restaurants, trades and small retailers in Berlin',
     trustTitle: 'Personal, transparent and locally focused',
-    trustSubline: 'Here you can see a real project example from Komplett Webdesign and verified client reviews from people who have already worked with me.',
+    trustSubline: 'Real reviews from my Google profile by clients who have already worked with me.',
     trustCtaAll: 'See all reviews on Google',
     trustCtaWrite: 'Write a review',
     trustAverageLabel: 'Average rating on Google',
@@ -377,9 +382,9 @@ export async function getIndex(req, res) {
   <meta property="og:title" content="${copy.ogTitle}">
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:description" content="${copy.ogDescription}">
-  <meta property="og:image" content="${base}/images/home-hero-klarblick-desktop.webp">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
+  <meta property="og:image" content="${base}/images/home-hero-sauber-desktop.webp">
+  <meta property="og:image:width" content="1152">
+  <meta property="og:image:height" content="720">
   <meta property="og:image:alt" content="${lng === 'en' ? 'Komplett Webdesign – professional websites from Berlin' : 'Komplett Webdesign – professionelle Websites aus Berlin'}">
   <meta property="og:url" content="${base}${pagePath}">
   <meta property="og:type" content="website">
@@ -395,6 +400,7 @@ export async function getIndex(req, res) {
       googleProfileUrl: GOOGLE_PROFILE_URL,
       googleReviewUrl: GOOGLE_REVIEW_URL,
       faq: homepageFaq,
+      homeProjects: localizedHomeProjects(lng),
       heroBridgeHighlights,
       marketingImages: MARKETING_IMAGES,
       lowestPackagePriceLabel: localizedLowestPackagePriceLabel,

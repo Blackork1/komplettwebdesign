@@ -22,9 +22,9 @@ const ruleBlock = (source, selector) => {
 };
 
 test('nur das wahrscheinliche LCP-Bild lädt eager und high priority', () => {
-  const mainImage = tagContaining(view, 'img', 'home-hero-klarblick-desktop.webp');
-  const detailImage = tagContaining(view, 'img', 'home-hero-klarblick-termin-crop.webp');
-  const phoneImage = tagContaining(view, 'img', 'home-hero-klarblick-mobile-screen.webp');
+  const mainImage = tagContaining(view, 'img', 'home-hero-sauber-desktop.webp');
+  const detailImage = tagContaining(view, 'img', 'home-hero-sauber-kontakt.webp');
+  const phoneImage = tagContaining(view, 'img', 'home-hero-backstube-mobile.webp');
 
   assert.match(mainImage, /fetchpriority="high"/);
   assert.match(mainImage, /loading="eager"/);

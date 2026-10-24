@@ -85,7 +85,7 @@ const structuredDataBlocks = [
     '@id': schemaWebsiteId,
     name: 'Komplett Webdesign',
     url: schemaHomeUrl,
-    description: `Website erstellen lassen in Berlin: individuelles Webdesign mit Node.js/EJS, technischer SEO-Grundlage und ${homePackagesPriceText}.`,
+    description: `Website erstellen lassen in Berlin: individuell programmiertes Webdesign mit SEO-Grundlage und ${homePackagesPriceText}.`,
     publisher: { '@id': schemaOrgId },
     inLanguage: isEn ? 'en-US' : 'de-DE'
   },
@@ -112,15 +112,15 @@ const structuredDataBlocks = [
     url: schemaHomeUrl,
     inLanguage: isEn ? 'en-US' : 'de-DE',
     datePublished: '2024-01-01',
-    dateModified: '2026-10-23',
+    dateModified: '2026-10-24',
     isPartOf: { '@id': schemaWebsiteId },
     about: { '@id': schemaOrgId },
     author: { '@id': schemaPersonId },
     primaryImageOfPage: {
       '@type': 'ImageObject',
-      url: `${schemaBase}/images/home-hero-klarblick-desktop.webp`,
-      width: 1200,
-      height: 630
+      url: `${schemaBase}/images/home-hero-sauber-desktop.webp`,
+      width: 1152,
+      height: 720
     },
     relatedLink: [
       `${schemaBase}/webdesign-berlin`,
@@ -193,15 +193,15 @@ const homePackageImages = {
               <p class="home-hero-trust-note home-hero-reveal home-hero-reveal--trust animate-on-scroll"><%= copy.heroTrustNote %></p>
               <% } %>
             </div>
-            <div class="home-hero-showcase home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="<%= isEn ? 'Website examples in desktop, booking and mobile views' : 'Website-Beispiele als Desktop-, Termin- und Mobile-Ansicht' %>">
+            <div class="home-hero-showcase home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="<%= isEn ? 'Real client websites: TM Sauber & Mehr and Zur alten Backstube' : 'Echte Kundenprojekte: TM Sauber & Mehr und Zur alten Backstube' %>">
               <figure class="home-hero-showcase__main">
-                <img src="<%= homeMarketingImages.homeHero?.src || '/images/home-hero-klarblick-desktop.webp' %>" alt="<%= isEn ? 'Desktop website mockup for a clearly structured business website' : (homeMarketingImages.homeHero?.alt || 'Desktop-Entwurf einer klar strukturierten Unternehmenswebsite') %>" width="1586" height="992" fetchpriority="high" loading="eager" decoding="async">
+                <img src="<%= homeMarketingImages.homeHero?.src || '/images/home-hero-sauber-desktop.webp' %>" alt="<%= isEn ? 'Homepage of the TM Sauber & Mehr website, a commercial cleaning company in Berlin' : (homeMarketingImages.homeHero?.alt || 'Startseite der Website von TM Sauber & Mehr, einer Gebäudereinigung in Berlin') %>" width="1152" height="720" fetchpriority="high" loading="eager" decoding="async">
               </figure>
               <figure class="home-hero-showcase__detail">
-                <img src="/images/home-hero-klarblick-termin-crop.webp" alt="<%= isEn ? 'Appointment booking and contact section of the Klarblick Dental website' : 'Termin- und Kontaktbereich der Klarblick-Dental-Website' %>" width="1180" height="557" fetchpriority="low" loading="lazy" decoding="async">
+                <img src="/images/home-hero-sauber-kontakt.webp" alt="<%= isEn ? 'Contact page of TM Sauber & Mehr with call and WhatsApp buttons' : 'Kontaktseite von TM Sauber & Mehr mit Anruf- und WhatsApp-Button' %>" width="1040" height="491" fetchpriority="low" loading="lazy" decoding="async">
               </figure>
               <figure class="home-hero-showcase__phone">
-                <img src="/images/home-hero-klarblick-mobile-screen.webp" alt="<%= isEn ? 'Mobile website screen view for Klarblick Dental' : 'Mobile Website-Screen-Ansicht für Klarblick Dental' %>" width="574" height="1344" fetchpriority="low" loading="lazy" decoding="async">
+                <img src="/images/home-hero-backstube-mobile.webp" alt="<%= isEn ? 'Mobile view of the Zur alten Backstube café website' : 'Handy-Ansicht der Website vom Café Zur alten Backstube' %>" width="574" height="1344" fetchpriority="low" loading="lazy" decoding="async">
               </figure>
             </div>
           </div>
@@ -222,7 +222,7 @@ const homePackageImages = {
               <% if (isEn) { %>
                 One direct contact from first call to launch.
               <% } else { %>
-                Wenn du <a href="/webdesign-berlin">Website erstellen lassen in Berlin</a> möchtest, hast du vom Erstgespräch bis zum Launch einen direkten Ansprechpartner.
+                Du möchtest deine <a href="/webdesign-berlin">Website erstellen lassen in Berlin</a>? Dann sprichst du vom ersten Gespräch bis zum Launch direkt mit mir.
               <% } %>
             </span>
           </div>
@@ -233,13 +233,13 @@ const homePackageImages = {
           </div>
           <div class="home-usp-item">
             <img class="home-usp-icon" src="/images/icons/delivery1.svg" alt="" width="34" height="34" loading="lazy">
-            <strong><%= isEn ? 'Technical foundation' : 'Technische Grundlage' %></strong>
-            <span><%= isEn ? 'Node.js, EJS, CSS and JavaScript with server-rendered HTML.' : 'Node.js, EJS, CSS und JavaScript mit serverseitig gerendertem HTML.' %></span>
+            <strong><%= isEn ? 'Fast and low-maintenance' : 'Schnell und wartungsarm' %></strong>
+            <span><%= isEn ? 'Custom code instead of page builders and plugins: loads quickly and needs no constant plugin updates.' : 'Eigener Code statt Baukasten und Plugins: lädt schnell und braucht keine ständigen Plugin-Updates.' %></span>
           </div>
           <div class="home-usp-item">
             <img class="home-usp-icon" src="/images/icons/support1.svg" alt="" width="34" height="34" loading="lazy">
             <strong><%= isEn ? `Packages from ${lowestPackagePriceLabel || 'EUR'}` : `Pakete ab ${lowestPackagePriceLabel || ''}` %></strong>
-            <span><%= isEn ? 'Clear scope, separate add-ons and transparent running costs.' : 'Klarer Umfang, separate Zusatzleistungen und transparente laufende Kosten.' %></span>
+            <span><%= isEn ? 'Clear scope, fixed feedback rounds and hosting from 5 EUR a month.' : 'Klarer Umfang, feste Feedbackrunden und Hosting ab 5 € im Monat.' %></span>
           </div>
         </div>
       </div>
@@ -256,7 +256,7 @@ const homePackageImages = {
               <% if (isEn) { %>
                 Komplett Webdesign is a fit when you want a personal web designer, clear decisions and a website that is planned around inquiries, local visibility and maintainable technology.
               <% } else { %>
-                Besucher springen ab, wenn Leistungen, Zielgruppe oder der nächste Schritt nicht schnell erkennbar sind. Ich ordne Inhalte, Bildsprache und Kontaktwege so, dass dein Angebot verständlich wird und eine belastbare Grundlage für organische Reichweite erhält.
+                Besucher springen ab, wenn Leistungen, Zielgruppe oder der nächste Schritt nicht schnell erkennbar sind. Ich ordne Inhalte, Bilder und Kontaktwege so, dass dein Angebot sofort verständlich ist und Google deine Seite gut einordnen kann.
               <% } %>
             </p>
             <figure class="home-reference-band animate-on-scroll">
@@ -281,11 +281,11 @@ const homePackageImages = {
                 </ul>
               </div>
               <div class="home-card">
-                <h3><%= isEn ? 'Not ideal' : 'Nicht ideal, wenn' %></h3>
-                <ul class="home-list home-list--caution">
-                  <li><%= isEn ? 'you need a finished enterprise platform without discovery or specification.' : 'du eine fertige Enterprise-Plattform ohne Konzept- und Leistungsabgrenzung erwartest.' %></li>
-                  <li><%= isEn ? 'you need legal advice, guaranteed rankings or guaranteed customer growth.' : 'du Rechtsberatung, garantierte Rankings oder garantierte Kundengewinnung erwartest.' %></li>
-                  <li><%= isEn ? 'you want booking, CMS or shop functionality included in every standard package.' : 'du Buchung, CMS oder Shop-Funktionen pauschal in jedem Standardpaket erwartest.' %></li>
+                <h3><%= isEn ? 'What you get' : 'Das hast du davon' %></h3>
+                <ul class="home-list">
+                  <li><%= isEn ? 'visitors understand within seconds what you offer and how to reach you.' : 'Besucher verstehen in Sekunden, was du anbietest und wie sie dich erreichen.' %></li>
+                  <li><%= isEn ? 'a website that looks as professional as your work.' : 'einen Auftritt, der so professionell wirkt wie deine Arbeit.' %></li>
+                  <li><%= isEn ? 'one personal contact instead of a ticket system.' : 'einen festen Ansprechpartner statt Agentur-Ticketsystem.' %></li>
                 </ul>
               </div>
             </div>
@@ -333,8 +333,8 @@ const homePackageImages = {
                   <img src="/images/seo.webp" alt="<%= isEn ? 'SEO structure and search visibility' : 'SEO-Struktur und Suchsichtbarkeit' %>" width="540" height="338" loading="lazy" decoding="async">
                 </figure>
                 <div class="home-card-body">
-                  <h3><%= isEn ? 'Technical SEO basics' : 'Technische SEO-Grundlagen' %></h3>
-                  <p><%= isEn ? 'Clean HTML, metadata, internal links and performance basics in the agreed scope.' : 'Sauberes HTML, Metadaten, interne Verlinkung und Performance-Grundlagen im vereinbarten Umfang.' %></p>
+                  <h3><%= isEn ? 'Ready for Google' : 'Gut aufgestellt für Google' %></h3>
+                  <p><%= isEn ? 'Clear page structure, page titles, descriptions and fast loading so Google understands your pages.' : 'Klare Seitenstruktur, Seitentitel, Beschreibungen und schnelle Ladezeiten, damit Google deine Seiten gut versteht.' %></p>
                   <a href="<%= isEn ? '/en/website-tester/seo' : '/website-tester/seo' %>" class="linkColor"><%= isEn ? 'Run SEO tester' : 'SEO-Tester starten' %></a>
                 </div>
               </article>
@@ -354,6 +354,49 @@ const homePackageImages = {
       </div>
     </section>
 
+    <!-- 4b) Echte Projekte -->
+    <% const homeProjectList = (typeof homeProjects !== 'undefined' && Array.isArray(homeProjects)) ? homeProjects : []; %>
+    <% if (homeProjectList.length) { %>
+    <section class="section" id="projekte" aria-labelledby="home-projects-title">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-images" aria-hidden="true"></i><%= isEn ? 'Projects' : 'Projekte' %></span>
+            <h2 id="home-projects-title"><%= isEn ? 'Real projects: what changed for my clients' : 'Echte Projekte: was sich für meine Kunden geändert hat' %></h2>
+            <p class="home-section-lead"><%= isEn ? 'Three websites from Berlin, from a local café to a multilingual festival platform.' : 'Drei Websites aus Berlin, vom Café um die Ecke bis zur mehrsprachigen Festivalplattform.' %></p>
+            <div class="home-project-grid">
+              <% homeProjectList.forEach((project) => { %>
+              <article class="home-project-card animate-on-scroll">
+                <a class="home-project-card__media" href="<%= project.href %>" tabindex="-1" aria-hidden="true">
+                  <img src="<%= project.image %>" alt="" width="<%= project.imageWidth %>" height="<%= project.imageHeight %>" loading="lazy" decoding="async">
+                </a>
+                <div class="home-project-card__body">
+                  <p class="home-project-card__industry"><%= project.industry %></p>
+                  <h3><a href="<%= project.href %>"><%= project.name %></a></h3>
+                  <dl class="home-project-card__change">
+                    <dt><%= isEn ? 'Before' : 'Vorher' %></dt>
+                    <dd><%= project.before %></dd>
+                    <dt><%= isEn ? 'After' : 'Nachher' %></dt>
+                    <dd><%= project.after %></dd>
+                  </dl>
+                  <% if (project.quote) { %>
+                  <blockquote class="home-project-card__quote">
+                    <p>„<%= project.quote %>“</p>
+                    <footer><%= project.quoteAuthor %></footer>
+                  </blockquote>
+                  <% } %>
+                  <a class="home-project-card__link linkColor" href="<%= project.href %>"><%= isEn ? 'View project' : 'Projekt ansehen' %> <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                </div>
+              </article>
+              <% }); %>
+            </div>
+            <p class="home-note"><a href="/referenzen" class="linkColor"><%= isEn ? 'All references with before-and-after screens' : 'Alle Referenzen mit Vorher-Nachher-Ansichten' %></a></p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <% } %>
+
     <%- include('partials/home-midcta', { variant: 'start', isEn }) %>
 
     <!-- 5) Paket-Teaser -->
@@ -365,8 +408,8 @@ const homePackageImages = {
             <h2><%= copy.pricingTitle %></h2>
             <p class="home-section-lead">
               <%= isEn
-                ? 'The packages are fair, clearly scoped entry points, not bargain offers. Add-ons, running costs and custom functions are discussed separately before implementation.'
-                : 'Die Pakete sind fair kalkulierte Einstiegspunkte mit definiertem Umfang, aber keine Billigangebote. Zusatzwünsche, laufende Kosten und Sonderfunktionen werden vor der Umsetzung separat besprochen.'
+                ? 'Every package has a fixed scope with a clear number of pages and feedback rounds. We discuss extra wishes before the start, so there are no surprises.'
+                : 'Jedes Paket hat einen festen Umfang mit klarer Seitenzahl und festen Feedbackrunden. Zusatzwünsche besprechen wir vor dem Start, damit du keine Überraschungen erlebst.'
               %>
             </p>
             <% const homePackages = Array.isArray(packages) ? packages.filter((pkg) => pkg.display).slice(0, 4) : []; %>
@@ -461,13 +504,16 @@ const homePackageImages = {
         },
         {
           number: '03',
-          href: '/branchen/webdesign-blumenladen',
-          name: isEn ? 'Florists' : 'Blumenladen',
-          detail: isEn ? 'Products, seasons and local presence' : 'Sortiment, Saison und lokaler Standort',
-          image: homeMarketingImages.industryFlorist,
+          href: '/handwerker',
+          name: isEn ? 'Trades & Crafts' : 'Handwerk',
+          detail: isEn ? 'Services, service area and quick enquiries' : 'Leistungen, Einsatzgebiet und schnelle Anfrage',
+          image: {
+            src: '/images/handwerker-min.webp',
+            source: { kind: 'own', provider: 'Komplett Webdesign' }
+          },
           imageAlt: isEn
-            ? 'Florist arranging a colourful selection of flowers'
-            : homeMarketingImages.industryFlorist.alt
+            ? 'Craftsman in work clothes and protective gloves on a building site'
+            : 'Handwerker in Arbeitskleidung mit Schutzhandschuhen auf der Baustelle'
         },
         {
           number: '04',
@@ -544,33 +590,34 @@ const homePackageImages = {
       <div class="container">
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left animate-on-scroll">
-            <span class="home-section-kicker"><i class="fas fa-sliders-h" aria-hidden="true"></i><%= isEn ? 'Scope' : 'Umfang und Grenzen' %></span>
-            <h2><%= isEn ? 'What is included and what is planned separately' : 'Was enthalten ist und was separat geplant wird' %></h2>
+            <span class="home-section-kicker"><i class="fas fa-sliders-h" aria-hidden="true"></i><%= isEn ? 'Scope' : 'Leistungsumfang' %></span>
+            <h2><%= isEn ? 'What is included and what you can add' : 'Was enthalten ist und was du dazubuchen kannst' %></h2>
             <div class="home-split">
               <div class="home-card">
-                <h3><%= isEn ? 'Usually included in agreed scope' : 'Im vereinbarten Umfang enthalten' %></h3>
+                <h3><%= isEn ? 'Included in every package' : 'In jedem Paket enthalten' %></h3>
                 <ul class="home-list">
-                  <li><%= isEn ? 'individual layout and responsive implementation.' : 'individuelles Layout und responsive Umsetzung.' %></li>
-                  <li><%= isEn ? 'technical SEO basics such as metadata, headings, internal links and clean HTML.' : 'technische SEO-Grundlagen wie Metadaten, Überschriften, interne Links und sauberes HTML.' %></li>
-                  <li><%= isEn ? 'integration and structuring of supplied content.' : 'Einbindung und Strukturierung gelieferter Inhalte.' %></li>
-                  <li><%= isEn ? 'one contact form or a clearly defined inquiry path.' : 'ein Kontaktformular oder ein klar definierter Anfrageweg.' %></li>
+                  <li><%= isEn ? 'custom design that works on mobile, tablet and desktop.' : 'individuelles Design, das auf Handy, Tablet und Desktop funktioniert.' %></li>
+                  <li><%= isEn ? 'SEO basics: page titles, descriptions, headings and fast loading.' : 'SEO-Grundlagen: Seitentitel, Beschreibungen, Überschriften und schnelle Ladezeiten.' %></li>
+                  <li><%= isEn ? 'your texts and images, clearly structured.' : 'deine Texte und Bilder, klar strukturiert eingebunden.' %></li>
+                  <li><%= isEn ? 'a contact form or a clear enquiry path.' : 'ein Kontaktformular oder ein klarer Anfrageweg.' %></li>
+                  <li><%= isEn ? 'fixed feedback rounds: Start 1, Business 2, Growth 2 to 3.' : 'feste Feedbackrunden: Start 1, Business 2, Wachstum 2 bis 3.' %></li>
                 </ul>
               </div>
               <div class="home-card">
-                <h3><%= isEn ? 'Optional or separate' : 'Optional oder separat' %></h3>
-                <ul class="home-list home-list--caution">
-                  <li><%= isEn ? 'Domain, email, hosting, maintenance and third-party tools may create running costs.' : 'Domain, E-Mail, Hosting, Wartung und Drittanbieter-Tools können laufende Kosten verursachen.' %></li>
-                  <li><%= isEn ? 'CMS, booking systems, multilingual setup or small shop functions are add-ons or custom projects.' : 'CMS, Buchungssysteme, Mehrsprachigkeit oder kleine Shop-Funktionen sind Zusatzleistungen oder individuelle Projekte.' %></li>
-                  <li><%= isEn ? 'extensive copywriting, additional SEO landing pages and Local SEO are scoped separately.' : 'umfangreiche Texterstellung, zusätzliche SEO-Landingpages und Local SEO werden separat abgegrenzt.' %></li>
-                  <li><%= isEn ? 'legal text creation or legal review is not legal advice.' : 'Erstellung oder rechtliche Prüfung von Rechtstexten ist keine Rechtsberatung.' %></li>
+                <h3><%= isEn ? 'Optional add-ons' : 'Auf Wunsch dazu' %></h3>
+                <ul class="home-list">
+                  <li><%= isEn ? 'hosting from 5 EUR a month, domain and email from 6 EUR a month.' : 'Hosting ab 5 € im Monat, Domain und E-Mail ab 6 € im Monat.' %></li>
+                  <li><%= isEn ? 'maintenance at fixed monthly prices.' : 'Wartung zu festen Monatspreisen.' %></li>
+                  <li><%= isEn ? 'editing texts yourself, booking system, more languages or shop features.' : 'Texte selbst ändern, Buchungssystem, mehrere Sprachen oder Shop-Funktionen.' %></li>
+                  <li><%= isEn ? 'new copywriting, extra landing pages and Local SEO.' : 'neue Texte, zusätzliche Landingpages und Local SEO.' %></li>
                 </ul>
               </div>
             </div>
             <p class="home-note">
-              <%= isEn
-                ? 'Domain, email, hosting, maintenance and third-party providers are not automatically included in the one-time project price. They are either documented as follow-up tasks or estimated separately.'
-                : 'Domain, E-Mail, Hosting, Wartung und Drittanbieter sind nicht automatisch im einmaligen Projektpreis enthalten. Sie werden als Folgeaufgabe dokumentiert oder separat kalkuliert.'
-              %>
+              <%= isEn ? 'Running costs are always shown separately from the one-time project price.' : 'Laufende Kosten stehen immer getrennt vom einmaligen Projektpreis.' %>
+              <a href="/leistungen/website-wartung" class="linkColor"><%= isEn ? 'Maintenance prices' : 'Preise für Wartung' %></a> ·
+              <a href="/leistungen/laufende-kosten-website" class="linkColor"><%= isEn ? 'All running costs' : 'Alle laufenden Kosten' %></a> ·
+              <a href="/leistungen/zusatzleistungen-webdesign" class="linkColor"><%= isEn ? 'Add-ons' : 'Zusatzleistungen' %></a>
             </p>
           </div>
         </div>
@@ -610,6 +657,37 @@ const homePackageImages = {
 
     <%- include('partials/home-midcta', { variant: 'ablauf', isEn }) %>
 
+    <!-- 8b) Über mich -->
+    <section class="section" id="ueber-mich" aria-labelledby="home-about-title">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <div class="home-about">
+              <img class="home-about__photo" src="/images/meinAvatar.webp" alt="<%= isEn ? 'Portrait of Sören, web designer in Berlin' : 'Porträt von Sören, Webdesigner in Berlin' %>" width="480" height="480" loading="lazy" decoding="async">
+              <div class="home-about__copy">
+                <span class="home-section-kicker"><i class="fas fa-user" aria-hidden="true"></i><%= isEn ? 'About me' : 'Über mich' %></span>
+                <h2 id="home-about-title"><%= isEn ? 'I’m Sören, your web designer from Berlin' : 'Ich bin Sören, dein Webdesigner aus Berlin' %></h2>
+                <p class="home-section-lead">
+                  <%= isEn
+                    ? 'For 5 years I have been building websites for small businesses. With me you talk to the same person from the first call to launch and beyond, the person who designs and codes your website.'
+                    : 'Seit 5 Jahren baue ich Websites für kleine Unternehmen. Bei mir sprichst du vom ersten Gespräch bis nach dem Launch mit derselben Person: mit mir, der deine Website gestaltet und programmiert.' %>
+                </p>
+                <ul class="home-about__facts">
+                  <li><i class="fas fa-award" aria-hidden="true"></i><%= isEn ? '5 years of web design and development' : 'seit 5 Jahren Webdesign und Webentwicklung' %></li>
+                  <li><i class="fas fa-location-dot" aria-hidden="true"></i><%= isEn ? 'based in Berlin-Lichtenberg, meetings on site possible' : 'Sitz in Berlin-Lichtenberg, Termine auch vor Ort' %></li>
+                  <li><i class="fas fa-user-check" aria-hidden="true"></i><%= isEn ? 'one contact from first call to launch' : 'ein Ansprechpartner vom Erstgespräch bis zum Launch' %></li>
+                  <% if (typeof reviewAggregate !== 'undefined' && reviewAggregate && reviewAggregate.count) { %>
+                  <li><i class="fas fa-star" aria-hidden="true"></i><%= isEn ? `${reviewAggregate.avg.toFixed(1)} stars on Google` : `${reviewAggregate.avg.toFixed(1).replace('.', ',')} Sterne bei Google` %></li>
+                  <% } %>
+                </ul>
+                <a href="/about" class="btn btn-secondary"><%= isEn ? 'More about me' : 'Mehr über mich' %></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 9) Trust und Referenz -->
     <section class="section" id="trust">
       <div class="container">
@@ -618,12 +696,6 @@ const homePackageImages = {
             <span class="home-section-kicker"><i class="fas fa-star" aria-hidden="true"></i><%= isEn ? 'Trust' : 'Vertrauen' %></span>
             <h2><%= copy.trustTitle %></h2>
             <p class="home-section-lead"><%= copy.trustSubline %></p>
-            <figure class="home-wide-media animate-on-scroll">
-              <a href="/referenzen" class="home-wide-media-link" aria-label="<%= isEn ? 'View references' : 'Referenzen anzeigen' %>">
-                <img src="<%= homeMarketingImages.homeTrust?.src || '/images/review-bg.webp' %>" alt="<%= isEn ? 'Project preview and reference presentation' : (homeMarketingImages.homeTrust?.alt || 'Projektvorschau und Referenzdarstellung') %>" width="920" height="403" loading="lazy" decoding="async">
-                <span class="home-wide-media-cta" aria-hidden="true"><%= isEn ? 'View references' : 'Referenzen anzeigen' %></span>
-              </a>
-            </figure>
             <% const hasTrustReviews = Array.isArray(trustReviews) && trustReviews.length > 0; %>
             <% if (reviewAggregate && reviewAggregate.count) { %>
             <div class="trust-summary">
@@ -694,8 +766,8 @@ const homePackageImages = {
             <h2><%= isEn ? 'SEO foundation for local inquiries' : 'SEO-Grundlage für lokale Anfragen' %></h2>
             <p class="home-section-lead">
               <%= isEn
-                ? 'The website can be prepared for local search with clear service pages, metadata, internal links and location context. This is a foundation, not a ranking promise.'
-                : 'Die Website kann für lokale Suchen vorbereitet werden: mit klaren Leistungsseiten, Metadaten, interner Verlinkung und lokalem Kontext. Das ist eine Grundlage, kein Ranking-Versprechen.'
+                ? 'Your website is prepared for local search: with clear service pages, page titles, internal links and local context, so people nearby can find you.'
+                : 'Deine Website wird für lokale Suchen vorbereitet: mit klaren Leistungsseiten, Seitentiteln, interner Verlinkung und lokalem Bezug, damit dich Menschen in deiner Nähe finden.'
               %>
             </p>
             <div class="home-card-grid home-card-grid--centered">
@@ -716,17 +788,17 @@ const homePackageImages = {
                 </figure>
                 <div class="home-card-body">
                   <h3><%= isEn ? 'Service pages' : 'Leistungsseiten' %></h3>
-                  <p><%= isEn ? 'Additional landing pages can be planned separately when search intent and scope are clear.' : 'Zusätzliche Landingpages werden separat geplant, wenn Suchintention und Umfang klar sind.' %></p>
+                  <p><%= isEn ? 'Dedicated pages for your most important services, so customers find you with exactly those searches.' : 'Eigene Seiten für deine wichtigsten Leistungen, damit Kunden dich mit genau diesen Suchbegriffen finden.' %></p>
                 </div>
               </a>
-              <a href="/leistungen/rechtliches-sicherheit" class="home-card home-service-card home-service-card--link animate-on-scroll" aria-label="<%= isEn ? 'Open legal and security service page' : 'Unterseite Rechtliches und Sicherheit öffnen' %>">
+              <a href="/leistungen/local-seo" class="home-card home-service-card home-service-card--link animate-on-scroll" aria-label="<%= isEn ? 'Open Local SEO page' : 'Unterseite Local SEO öffnen' %>">
                 <figure class="home-card-media">
-                  <img src="/images/home-keine-garantie.webp" alt="<%= isEn ? 'Dashboard visual for search visibility without ranking guarantees' : 'Dashboard-Visual: keine Garantie für Suchsichtbarkeit' %>" width="540" height="338" loading="lazy" decoding="async">
-                  <span class="home-card-media-cta" aria-hidden="true"><%= isEn ? 'more context' : 'weitere Erläuterung' %></span>
+                  <img src="<%= homeMarketingImages.serviceLocalSeo?.src || '/images/leistungen/local-seo-hero.webp' %>" alt="<%= isEn ? 'Local search optimisation with location signals and website' : (homeMarketingImages.serviceLocalSeo?.alt || 'Lokale Suchmaschinenoptimierung mit Standortsignalen') %>" width="540" height="338" loading="lazy" decoding="async">
+                  <span class="home-card-media-cta" aria-hidden="true"><%= isEn ? 'to Local SEO' : 'zu Local SEO' %></span>
                 </figure>
                 <div class="home-card-body">
-                  <h3><%= isEn ? 'No guarantee' : 'Keine Garantie' %></h3>
-                  <p><%= isEn ? 'Search visibility depends on market, competition, content, reviews and ongoing signals.' : 'Sichtbarkeit hängt von Markt, Wettbewerb, Inhalten, Bewertungen und laufenden Signalen ab.' %></p>
+                  <h3><%= isEn ? 'Google Business Profile' : 'Google-Unternehmensprofil' %></h3>
+                  <p><%= isEn ? 'Profile, reviews and directory entries that support your website, so you show up in your area.' : 'Profil, Bewertungen und Branchenbuch-Einträge, die deine Website stärken, damit du in deinem Bezirk sichtbar wirst.' %></p>
                 </div>
               </a>
             </div>
@@ -748,12 +820,6 @@ const homePackageImages = {
                 : 'Nutze den Website-Tester, um SEO-Grundlagen, GEO-Signale, Metadaten und kaputte Links zu prüfen, bevor du dein Projekt anfragst. Das Ergebnis hilft, den passenden Umfang zu wählen.'
               %>
             </p>
-            <p class="home-note">
-              <%= isEn
-                ? 'The check is an initial orientation, not a complete paid audit. A deeper evaluation can be scoped separately when needed.'
-                : 'Der Check ist eine erste Orientierung und kein vollständiges bezahltes Audit. Eine vertiefte Auswertung kann bei Bedarf separat abgegrenzt werden.'
-              %>
-            </p>
             <div class="home-check-grid">
               <article class="home-card animate-on-scroll">
                 <img class="home-card-icon" src="/images/icons/check.svg" alt="" width="34" height="34" loading="lazy">
@@ -767,8 +833,8 @@ const homePackageImages = {
               </article>
               <article class="home-card animate-on-scroll">
                 <img class="home-card-icon" src="/images/icons/support1.svg" alt="" width="34" height="34" loading="lazy">
-                <h3><%= isEn ? 'No replacement for an audit' : 'Kein Ersatz für ein Audit' %></h3>
-                <p><%= isEn ? 'For important decisions, the quick check can be followed by a scoped project review.' : 'Für wichtige Entscheidungen kann auf den Schnellcheck eine abgegrenzte Projektprüfung folgen.' %></p>
+                <h3><%= isEn ? 'Discuss it together' : 'Gemeinsam besprechen' %></h3>
+                <p><%= isEn ? 'If you like, we go through the result together and decide what is really worth doing.' : 'Auf Wunsch gehen wir das Ergebnis zusammen durch und klären, was sich für dich wirklich lohnt.' %></p>
               </article>
             </div>
             <div class="hero-ctas">
@@ -820,19 +886,21 @@ const homePackageImages = {
       <div class="container">
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left animate-on-scroll">
-            <span class="home-section-kicker"><i class="fas fa-code" aria-hidden="true"></i><%= isEn ? 'Technology' : 'Technische Grundlage' %></span>
-            <h2><%= isEn ? 'A lean technical foundation' : 'Schlanke Technik, damit Inhalte und Bedienung im Mittelpunkt stehen' %></h2>
+            <span class="home-section-kicker"><i class="fas fa-code" aria-hidden="true"></i><%= isEn ? 'Technology' : 'Technik' %></span>
+            <h2><%= isEn ? 'Fast, secure and free of plugin hassle' : 'Schnell, sicher und ohne Plugin-Stress' %></h2>
             <div class="home-split home-tech-grid">
               <figure class="home-card-media home-wide-media animate-on-scroll-left">
                 <img src="/images/home-technik-node-ejs.webp" alt="<%= isEn ? 'Actual source code of this website: Express routes in Node.js and an EJS template' : 'Echter Quellcode dieser Website: Express-Routen in Node.js und ein EJS-Template' %>" width="920" height="520" loading="lazy" decoding="async">
               </figure>
               <div>
-                <p class="home-section-lead"><%= isEn ? 'Server-rendered HTML, focused CSS and purposeful JavaScript keep the implementation understandable.' : 'Serverseitig gerendertes HTML, gezieltes CSS und dosiertes JavaScript schaffen eine nachvollziehbare Grundlage für Performance, Suchmaschinenlesbarkeit und spätere Erweiterungen.' %></p>
+                <p class="home-section-lead"><%= isEn ? 'Your website is coded individually instead of being assembled in a page builder. For you this means:' : 'Deine Website wird individuell programmiert statt in einem Baukasten zusammengeklickt. Für dich heißt das:' %></p>
                 <ul class="home-list">
-                  <li><%= isEn ? 'clear HTML structure and metadata.' : 'klare HTML-Struktur, Metadaten und interne Links.' %></li>
-                  <li><%= isEn ? 'responsive layouts without a generic theme.' : 'responsive Layouts ohne überladenes Standard-Theme.' %></li>
-                  <li><%= isEn ? 'no ranking or inquiry guarantees.' : 'keine Ranking-, Anfrage- oder Umsatzgarantien.' %></li>
+                  <li><%= isEn ? 'short loading times, also on mobile.' : 'kurze Ladezeiten, auch auf dem Handy.' %></li>
+                  <li><%= isEn ? 'no plugins that constantly need updates and open security gaps.' : 'keine Plugins, die ständig Updates brauchen und Sicherheitslücken öffnen.' %></li>
+                  <li><%= isEn ? 'a clean structure that Google can read well.' : 'eine saubere Struktur, die Google gut lesen kann.' %></li>
+                  <li><%= isEn ? 'easy to extend later, for example with booking, a shop or more languages.' : 'später leicht erweiterbar, zum Beispiel um Buchung, Shop oder weitere Sprachen.' %></li>
                 </ul>
+                <p class="home-note"><%= isEn ? 'For the technically curious: built with Node.js and EJS, rendered on the server.' : 'Für Technik-Interessierte: gebaut mit Node.js und EJS, serverseitig gerendert.' %></p>
               </div>
             </div>
           </div>
@@ -880,17 +948,20 @@ const homePackageImages = {
           <a href="#leistungen" class="icon-link" aria-label="<%= isEn ? 'To services section' : 'Zu den Leistungen' %>">
             <i class="fas fa-info-circle"></i>
           </a>
+          <a href="#projekte" class="icon-link" aria-label="<%= isEn ? 'To projects section' : 'Zu den Projekten' %>">
+            <i class="fas fa-images"></i>
+          </a>
           <a href="#preise" class="icon-link" aria-label="<%= isEn ? 'To pricing section' : 'Zu den Preisen' %>">
             <i class="fas fa-money-bill"></i>
           </a>
           <a href="#enthalten-optional" class="icon-link" aria-label="<%= isEn ? 'To scope section' : 'Zum Umfang' %>">
             <i class="fas fa-sliders-h"></i>
           </a>
-          <a href="#technik" class="icon-link" aria-label="<%= isEn ? 'To technology section' : 'Zur Technik' %>">
-            <i class="fas fa-code"></i>
-          </a>
           <a href="#ablauf" class="icon-link" aria-label="<%= isEn ? 'To process section' : 'Zum Ablauf' %>">
             <i class="fas fa-route"></i>
+          </a>
+          <a href="#ueber-mich" class="icon-link" aria-label="<%= isEn ? 'To about me section' : 'Zu Über mich' %>">
+            <i class="fas fa-user"></i>
           </a>
           <a href="#trust" class="icon-link" aria-label="<%= isEn ? 'To trust section' : 'Zum Vertrauensbereich' %>">
             <i class="fas fa-star"></i>
@@ -903,6 +974,9 @@ const homePackageImages = {
           </a>
           <a href="#faq" class="icon-link" aria-label="<%= isEn ? 'To FAQ section' : 'Zum FAQ-Bereich' %>">
             <i class="fas fa-question-circle"></i>
+          </a>
+          <a href="#technik" class="icon-link" aria-label="<%= isEn ? 'To technology section' : 'Zur Technik' %>">
+            <i class="fas fa-code"></i>
           </a>
           <a href="#cta" class="icon-link" aria-label="<%= isEn ? 'To inquiry section' : 'Zum Anfragebereich' %>">
             <i class="fas fa-envelope icon-offset-up"></i>

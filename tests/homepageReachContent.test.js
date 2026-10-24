@@ -33,7 +33,7 @@ function renderIndustrySection(lng = 'de') {
 
 test('die deutsche Startseite beginnt mit Nutzen, Angebot und zwei eindeutigen Handlungen', () => {
   assert.match(controller, /heroTitle:\s*'Persönliche Websites für kleine Unternehmen in Berlin'/);
-  assert.match(controller, /Ich plane, gestalte und betreue Websites für kleine Unternehmen/);
+  assert.match(controller, /Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen/);
   assert.match(controller, /heroCtaPrimary:\s*'Beratungsgespräch anfragen'/);
   assert.match(controller, /heroCtaSecondary:\s*'Pakete ansehen'/);
 });
@@ -62,7 +62,7 @@ test('die sichtbare Startseitenfolge führt von Bedarf über Angebot zu Belegen 
   }
 });
 
-test('die Startseite rendert vier vorhandene Branchenpfade ohne Handwerk', () => {
+test('die Startseite rendert vier Branchenpfade inklusive Handwerk', () => {
   const $ = load(renderIndustrySection('de'));
   const cards = $('#branchenwege .home-industry-story');
 
@@ -72,12 +72,12 @@ test('die Startseite rendert vier vorhandene Branchenpfade ohne Handwerk', () =>
     [
       '/branchen/webdesign-fitnesscoach',
       '/branchen/webdesign-immobilienmakler',
-      '/branchen/webdesign-blumenladen',
+      '/handwerker',
       '/branchen/webdesign-cafe'
     ]
   );
-  assert.equal($('#branchenwege a[href="/handwerker"]').length, 0);
-  assert.doesNotMatch($('#branchenwege').text(), /\bHandwerk\b/i);
+  assert.equal($('#branchenwege a[href="/handwerker"]').length, 1);
+  assert.match($('#branchenwege').text(), /\bHandwerk\b/);
   assert.equal($('#branchenwege img').length, 4);
   assert.ok($('#branchenwege img').toArray().every((image) => $(image).attr('alt')?.trim()));
   assert.equal(
@@ -96,10 +96,10 @@ test('der englische Branchenbereich enthält vollständig englische Beschriftung
   );
   assert.match(text, /Health & Coaching/);
   assert.match(text, /Real Estate/);
-  assert.match(text, /Florists/);
+  assert.match(text, /Trades & Crafts/);
   assert.match(text, /Cafés & Hospitality/);
   assert.match(text, /Compare all industry solutions/);
-  assert.doesNotMatch(text, /Branchenlösungen|Gesundheit|Immobilien|Blumenladen|Öffnungszeiten/);
+  assert.doesNotMatch(text, /Branchenlösungen|Gesundheit|Immobilien|Handwerk\b|Öffnungszeiten/);
 });
 
 test('die vier Bildgeschichten wechseln von Desktop-Rhythmus zu mobilem Scroll-Snap', () => {

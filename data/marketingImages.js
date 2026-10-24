@@ -14,8 +14,8 @@ const ownSource = Object.freeze({
 
 export const MARKETING_IMAGES = Object.freeze({
   homeHero: freezeImage({
-    src: '/images/home-hero-klarblick-desktop.webp',
-    alt: 'Desktop-Entwurf einer klar strukturierten Unternehmenswebsite mit Kontakt- und Leistungsbereichen',
+    src: '/images/home-hero-sauber-desktop.webp',
+    alt: 'Startseite der Website von TM Sauber & Mehr, einer Gebäudereinigung in Berlin',
     source: ownSource
   }),
   homeProblem: freezeImage({

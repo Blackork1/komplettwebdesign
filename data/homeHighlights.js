@@ -12,28 +12,28 @@ const BASE_HERO_BRIDGE_HIGHLIGHTS = Object.freeze([
     iconClass: 'fa-ban'
   },
   {
-    key: 'node-ejs',
-    label: 'Node.js & EJS',
-    labelEn: 'Node.js & EJS',
-    iconClass: 'fa-code'
+    key: 'experience',
+    label: 'Seit 5 Jahren Webdesign',
+    labelEn: '5 years of web design',
+    iconClass: 'fa-award'
   },
   {
-    key: 'server-rendered-html',
-    label: 'Serverseitig gerendertes HTML',
-    labelEn: 'Server-rendered HTML',
-    iconClass: 'fa-file-code'
+    key: 'no-plugin-updates',
+    label: 'Keine Plugin-Updates',
+    labelEn: 'No plugin updates',
+    iconClass: 'fa-shield-halved'
   },
   {
-    key: 'clean-css',
-    label: 'Sauberes CSS',
-    labelEn: 'Clean CSS',
-    iconClass: 'fa-brush'
+    key: 'edit-texts',
+    label: 'Texte auf Wunsch selbst ändern',
+    labelEn: 'Edit texts yourself if you like',
+    iconClass: 'fa-pen'
   },
   {
-    key: 'focused-js',
-    label: 'Gezieltes JavaScript',
-    labelEn: 'Focused JavaScript',
-    iconClass: 'fa-bolt'
+    key: 'hosting-from',
+    label: 'Hosting ab 5 € im Monat',
+    labelEn: 'Hosting from 5 EUR a month',
+    iconClass: 'fa-server'
   },
   {
     key: 'packages-from',
@@ -61,8 +61,8 @@ const BASE_HERO_BRIDGE_HIGHLIGHTS = Object.freeze([
   },
   {
     key: 'performance-goal',
-    label: 'Schnelle Ladezeiten als Ziel',
-    labelEn: 'Fast loading as a goal',
+    label: 'Schnelle Ladezeiten',
+    labelEn: 'Fast loading',
     iconClass: 'fa-stopwatch'
   },
   {
@@ -79,8 +79,8 @@ const BASE_HERO_BRIDGE_HIGHLIGHTS = Object.freeze([
   },
   {
     key: 'optional-maintenance',
-    label: 'Wartung optional',
-    labelEn: 'Optional maintenance',
+    label: 'Wartung zu festen Monatspreisen',
+    labelEn: 'Maintenance at fixed monthly prices',
     iconClass: 'fa-tools'
   },
   {
