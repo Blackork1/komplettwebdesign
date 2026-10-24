@@ -1,10 +1,10 @@
 // Kontakt-Pop-up unten rechts mit Foto von Sören.
-// Erscheint nach 45 Sekunden oder ab 60 % Scrolltiefe, höchstens einmal pro Besuch,
+// Erscheint nach 20 Sekunden oder ab 30 % Scrolltiefe, höchstens einmal pro Besuch,
 // nicht solange der Cookie-Banner offen ist. Nach dem Schließen 7 Tage Ruhe, nach dem Senden 30 Tage.
 
 export const BUBBLE_SETTINGS = Object.freeze({
-  delayMs: 45000,
-  scrollProgress: 0.6,
+  delayMs: 20000,
+  scrollProgress: 0.3,
   dismissDays: 7,
   sentDays: 30,
   storageKey: 'kwdContactBubbleUntil',

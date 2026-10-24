@@ -133,6 +133,8 @@ test('mehr als drei Nachrichten pro IP im Zeitfenster werden gebremst', () => {
 });
 
 test('Auslöser: Scrolltiefe, Ruhezeiten und nächster freier Termin', () => {
+  assert.equal(BUBBLE_SETTINGS.delayMs, 20000);
+  assert.equal(BUBBLE_SETTINGS.scrollProgress, 0.3);
   assert.equal(scrollProgress({ scrollY: 600, innerHeight: 800, scrollHeight: 1800 }), 0.6);
   assert.equal(scrollProgress({ scrollY: 0, innerHeight: 900, scrollHeight: 800 }), 0);
 
@@ -166,7 +168,9 @@ test('Pop-up erscheint auf Angebotsseiten, aber nicht auf Kontakt-, Termin-, Rec
   assert.match(html, /href="\/booking\?src=kontakt-bubble"/);
   assert.match(html, /href="\/datenschutz"/);
   assert.match(html, /name="website"[^>]*tabindex="-1"/);
-  assert.match(html, /src="\/images\/soeren-kontakt\.webp"/);
+  assert.match(html, /src="\/images\/soeren-kontakt\.webp(?:\?v=[\w]+)?"/);
+  assert.match(html, /id="kwd-bubble-title">Sören<\/p>/);
+  assert.doesNotMatch(html, /Blocksdorf/);
   assert.match(html, /<script type="module" src="\/js\/contact-bubble\.js">/);
   for (const path of ['/kontakt', '/booking', '/booking/thankyou', '/impressum', '/datenschutz', '/en/webdesign-berlin', '/hinweise-rechtstexte-seo-datenschutz']) {
     assert.doesNotMatch(await render(path), /data-contact-bubble/, path);

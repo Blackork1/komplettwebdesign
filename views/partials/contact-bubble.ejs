@@ -5,6 +5,7 @@
   const bubbleExcluded = /^\/(?:en(?:\/|$)|kontakt|booking|impressum|datenschutz|hinweise-rechtstexte|swipeandcook|admin|newsletter)/i.test(bubblePath)
     || /(?:thankyou|danke|bestaetig|confirm)/i.test(bubblePath);
   const bubbleCss = typeof cssAsset === 'function' ? cssAsset('contact-bubble.css') : '/contact-bubble.css';
+  const bubblePhoto = typeof asset === 'function' ? asset('images/soeren-kontakt.webp') : '/images/soeren-kontakt.webp';
   const bubbleJs = typeof jsAsset === 'function'
     ? jsAsset('js/contact-bubble.js')
     : `/js/contact-bubble.js?v=${encodeURIComponent(typeof assetVersion !== 'undefined' ? assetVersion : '1')}`;
@@ -21,9 +22,9 @@
 
   <section class="kwd-bubble__panel" id="kwd-bubble-panel" role="dialog" aria-modal="false" aria-labelledby="kwd-bubble-title" data-bubble-panel hidden>
     <header class="kwd-bubble__head">
-      <img src="/images/soeren-kontakt.webp" alt="" width="44" height="44" loading="lazy" decoding="async">
+      <img src="<%= bubblePhoto %>" alt="" width="44" height="44" loading="lazy" decoding="async">
       <div>
-        <p class="kwd-bubble__name" id="kwd-bubble-title">Sören Blocksdorf</p>
+        <p class="kwd-bubble__name" id="kwd-bubble-title">Sören</p>
         <p class="kwd-bubble__role">Webdesigner in Berlin · antwortet persönlich</p>
       </div>
       <button type="button" class="kwd-bubble__close" data-bubble-close aria-label="Fenster schließen">&times;</button>
@@ -57,7 +58,7 @@
   </section>
 
   <button type="button" class="kwd-bubble__launcher" aria-expanded="false" aria-controls="kwd-bubble-panel" data-bubble-launcher data-track="contact_bubble_launcher" data-event-name="contact_bubble_open">
-    <img src="/images/soeren-kontakt.webp" alt="" width="56" height="56" decoding="async">
+    <img src="<%= bubblePhoto %>" alt="" width="56" height="56" decoding="async">
     <span class="kwd-bubble__sr">Kontakt zu Sören öffnen</span>
   </button>
 </div>
