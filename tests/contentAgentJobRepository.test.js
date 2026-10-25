@@ -302,7 +302,7 @@ test('Optimierungsstatus liest nur den jüngsten passenden Job ohne vollständig
   assert.deepEqual(db.calls[0].params, [19]);
 });
 
-test('manueller GSC-Sync wird atomar gegated und verwendet ausschließlich einen manuellen Tages-Key', async () => {
+test('manueller GSC-Sync läuft auch bei pausiertem Agent und verwendet ausschließlich einen manuellen Tages-Key', async () => {
   const db = createQueryRecorder([{ rows: [{ id: 72, status: 'queued' }] }]);
   const payload = { startDate: '2026-06-16', endDate: '2026-07-13' };
 
@@ -319,7 +319,7 @@ test('manueller GSC-Sync wird atomar gegated und verwendet ausschließlich einen
     4
   ]);
   assert.match(db.calls[0].sql, /INSERT INTO content_jobs/i);
-  assert.match(db.calls[0].sql, /WHERE EXISTS \([\s\S]*agent_enabled = TRUE/i);
+  assert.doesNotMatch(db.calls[0].sql, /agent_enabled/i);
   assert.match(db.calls[0].sql, /ON CONFLICT \(idempotency_key\) DO UPDATE/i);
   assert.match(db.calls[0].sql, /content_jobs\.job_type = 'sync_search_console'/i);
   assert.match(db.calls[0].sql, /content_jobs\.idempotency_key LIKE 'gsc-manual-sync:%'/i);
@@ -639,7 +639,7 @@ test('auch manuelle Admin-Entwürfe prüfen die operative Pause atomar im Insert
   );
 });
 
-test('beide GSC-Jobtypen prüfen die operative Pause atomar beim Enqueue', async () => {
+test('der GSC-Abruf läuft auch bei pausiertem Agent, die Auswertung wartet auf den Agent', async () => {
   const db = createQueryRecorder([
     { rows: [{ id: 72, status: 'queued' }] },
     { rows: [{ id: 73, status: 'queued' }] }
@@ -653,7 +653,8 @@ test('beide GSC-Jobtypen prüfen die operative Pause atomar beim Enqueue', async
     }, db);
   }
 
-  assert.deepEqual(db.calls.map((call) => call.params.at(-1)), [true, true]);
+  // sync_search_console: kein Agent nötig; analyze_search_opportunities: nur mit aktivem Agent
+  assert.deepEqual(db.calls.map((call) => call.params.at(-1)), [false, true]);
   for (const call of db.calls) {
     assert.match(call.sql, /WHERE \$6 = FALSE OR EXISTS/i);
   }

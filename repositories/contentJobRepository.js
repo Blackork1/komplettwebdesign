@@ -96,9 +96,10 @@ function normalizeMaxAttempts(value) {
   return Math.min(POSTGRES_INTEGER_MAX, Math.max(1, parsed));
 }
 
+// Der Search-Console-Abruf läuft bewusst auch bei pausiertem Content-Agent:
+// Suchdaten sollen lückenlos gesammelt werden, auch wenn keine Artikel entstehen.
 function requiresEnabledAgent(jobType, payload) {
   return [
-    'sync_search_console',
     'analyze_search_opportunities',
     'evaluate_revision_outcomes',
     'evaluate_article_performance',
@@ -409,11 +410,6 @@ export async function enqueueManualSearchConsoleSyncJob({
         max_attempts
       )
       SELECT 'sync_search_console', $1, $2, NOW(), $3
-      WHERE EXISTS (
-        SELECT 1
-        FROM content_agent_settings settings
-        WHERE settings.id = 1 AND settings.agent_enabled = TRUE
-      )
       ON CONFLICT (idempotency_key) DO UPDATE
       SET status = CASE
             WHEN content_jobs.status IN ('completed', 'failed', 'needs_manual_attention')
@@ -469,11 +465,6 @@ export async function enqueueManualSearchConsoleSyncJob({
         AND content_jobs.idempotency_key LIKE 'gsc-manual-sync:%'
         AND content_jobs.status IN (
           'queued', 'running', 'completed', 'failed', 'needs_manual_attention'
-        )
-        AND EXISTS (
-          SELECT 1
-          FROM content_agent_settings settings
-          WHERE settings.id = 1 AND settings.agent_enabled = TRUE
         )
       RETURNING content_jobs.*
     `,
