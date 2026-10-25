@@ -217,7 +217,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
       </div>
       <h2>Vor dem Relaunch messen</h2>
       <p>Nutze den <a href="/website-tester">Website-Tester</a>, bevor du ein Relaunch-Angebot anfragst. Der Test zeigt technische, SEO- und Inhaltsprobleme und hilft dabei, die richtigen Prioritäten für den Neustart zu setzen.</p>
-      <p><a class="btn btn-accent" href="/kontakt">Relaunch besprechen</a> <a class="btn btn-outline-primary" href="/ratgeber/website-kosten-berlin">Kosten einschätzen</a></p>
+      <p><a class="btn btn-accent" href="/kontakt">Relaunch besprechen</a> <a class="btn btn-outline-primary" href="/webdesign-berlin/kosten-preise-pakete">Kosten einschätzen</a></p>
     `,
     faq_json: [
       faq('Verliert man beim Relaunch Google-Rankings?', 'Nicht automatisch. Mit URL-Mapping, Weiterleitungen, sauberer Seitenstruktur, internen Links und Search-Console-Prüfung lassen sich Ranking-Risiken deutlich reduzieren.'),

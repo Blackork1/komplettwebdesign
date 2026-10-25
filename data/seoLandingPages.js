@@ -1016,7 +1016,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
     },
     secondaryCta: {
       label: 'Website-Kosten lesen',
-      href: '/ratgeber/website-kosten-berlin'
+      href: '/webdesign-berlin/kosten-preise-pakete'
     },
     faq: [
       {
@@ -1040,7 +1040,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       { label: 'Webdesign Berlin', href: '/', text: 'Vom Ablauf direkt zur Projektanfrage' },
       { label: 'Website Relaunch Berlin', href: '/leistungen/website-relaunch', text: 'Bestehende Website neu strukturieren' },
       { label: 'Websites für kleine Unternehmen', href: '/', text: 'Überblick, Pakete und Ansprechpartner' },
-      { label: 'Website-Kosten', href: '/ratgeber/website-kosten-berlin', text: 'Budget und laufende Kosten einordnen' },
+      { label: 'Website-Kosten', href: '/webdesign-berlin/kosten-preise-pakete', text: 'Budget und laufende Kosten einordnen' },
       { label: 'Kontakt', href: '/kontakt', text: 'Projektstart vorbereiten' }
     ]
   }

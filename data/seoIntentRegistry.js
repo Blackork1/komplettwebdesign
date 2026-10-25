@@ -145,6 +145,53 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     primaryAction: { label: 'Kostenloses Erstgespräch', href: '/kontakt' },
     supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
   }),
+  // Kostenthema gebündelt (25.10.2026): ein Ratgeber für allgemeine Kosten, eine Seite für Berliner Beispielrechnungen.
+  freezeTarget({
+    path: '/ratgeber/website-kosten-berlin',
+    intentId: 'website-kosten-berlin-beispielrechnungen',
+    state: 'redirect',
+    priority: 'B',
+    primaryQuery: 'website kosten berlin',
+    requiredLinks: [],
+    redirectTo: '/webdesign-berlin/kosten-preise-pakete'
+  }),
+  freezeTarget({
+    path: '/ratgeber/kosten-einfache-website',
+    intentId: 'website-kosten-informational',
+    state: 'redirect',
+    priority: 'B',
+    primaryQuery: 'kosten einfache website',
+    requiredLinks: [],
+    redirectTo: '/blog/website-kosten-2025-einfach-erklaert'
+  }),
+  freezeTarget({
+    path: '/ratgeber/website-kosten-zeitplan',
+    intentId: 'website-kosten-informational',
+    state: 'redirect',
+    priority: 'B',
+    primaryQuery: 'website kosten zeitplan',
+    requiredLinks: [],
+    redirectTo: '/blog/website-kosten-2025-einfach-erklaert'
+  }),
+  freezeTarget({
+    path: '/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten',
+    intentId: 'website-projekt-ablauf',
+    state: 'redirect',
+    priority: 'C',
+    primaryQuery: 'website erstellen ablauf dauer',
+    requiredLinks: [],
+    redirectTo: '/ablauf'
+  }),
+  // Die Branchenseite Restaurant hat seit 25.10.2026 eigenen Inhalt.
+  freezeTarget({
+    path: '/ratgeber/website-fuer-restaurants-cafes-berlin',
+    intentId: 'webdesign-restaurant',
+    state: 'redirect',
+    priority: 'C',
+    primaryQuery: 'website für restaurants berlin',
+    requiredLinks: [],
+    redirectTo: '/branchen/webdesign-restaurant'
+  }),
   freezeTarget({
     path: '/ratgeber/website-fuer-handwerker-berlin',
     intentId: 'website-fuer-handwerker-berlin',

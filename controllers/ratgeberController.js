@@ -113,6 +113,9 @@ export async function listGuides(req, res) {
 
 /* ---------- GET /ratgeber/:slug ---------- */
 export async function showGuide(req, res) {
+  // Zusammengeführte Ratgeber leiten auf die Seite mit derselben Suchabsicht (data/seoIntentRegistry.js).
+  const redirectTo = SEO_RECOVERY_REDIRECTS[`/ratgeber/${String(req.params.slug || '').toLowerCase()}`];
+  if (redirectTo) return res.redirect(301, redirectTo);
   let post = normalizeLegacyPublicCopy(await findGuideBySlugSafe(req.params.slug), res.locals.packagePricing || {});
   if (!post) post = normalizeLegacyPublicCopy(getSeoGuideBySlug(req.params.slug), res.locals.packagePricing || {});
   if (!post) return res.status(404).send('Ratgeber nicht gefunden');

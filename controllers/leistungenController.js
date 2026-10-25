@@ -213,7 +213,7 @@ const SERVICE_PAGE_OVERRIDES = {
       { label: 'Responsives Design & Mobile', href: '/leistungen/responsives-design-mobile' },
       { label: 'Inhalte & Texte (Content)', href: '/leistungen/inhalte-texte-content' },
       { label: 'Business-Paket', href: '/pakete/business' },
-      { label: 'Ratgeber: Website erstellen Berlin – Ablauf', href: '/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten' },
+      { label: 'Ablauf eines Website-Projekts', href: '/ablauf' },
       { label: 'Webdesign Berlin Mitte', href: '/webdesign-berlin/mitte' }
     ]
   },
@@ -264,7 +264,7 @@ const SERVICE_PAGE_OVERRIDES = {
       { label: 'Inhalte & Texte (Content)', href: '/leistungen/inhalte-texte-content' },
       { label: 'Website-Kosten und Beispielrechnungen', href: '/webdesign-berlin/kosten-preise-pakete' },
       { label: 'Business-Paket', href: '/pakete/business' },
-      { label: 'Ratgeber: Website-Kosten Berlin', href: '/ratgeber/website-kosten-berlin' },
+      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/website-kosten-2025-einfach-erklaert' },
       { label: 'Webdesign Berlin Friedrichshain', href: '/webdesign-berlin/friedrichshain' }
     ]
   },
@@ -315,7 +315,7 @@ const SERVICE_PAGE_OVERRIDES = {
       { label: 'Website-Relaunch', href: '/leistungen/website-relaunch' },
       { label: 'Laufende Website-Kosten', href: '/leistungen/laufende-kosten-website' },
       { label: 'Start-Paket', href: '/pakete/start' },
-      { label: 'Ratgeber: Website erstellen Berlin – Ablauf', href: '/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten' },
+      { label: 'Ablauf eines Website-Projekts', href: '/ablauf' },
       { label: 'Webdesign Berlin Kreuzberg', href: '/webdesign-berlin/kreuzberg' }
     ]
   },
@@ -468,7 +468,7 @@ const SERVICE_PAGE_OVERRIDES = {
       { label: 'Laufende Website-Kosten', href: '/leistungen/laufende-kosten-website' },
       { label: 'Local SEO', href: '/leistungen/local-seo' },
       { label: 'Wachstum-Paket', href: '/pakete/wachstum' },
-      { label: 'Ratgeber: Website-Kosten Berlin', href: '/ratgeber/website-kosten-berlin' },
+      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/website-kosten-2025-einfach-erklaert' },
       { label: 'Webdesign Berlin Charlottenburg', href: '/webdesign-berlin/charlottenburg' }
     ]
   },
@@ -569,7 +569,7 @@ const SERVICE_PAGE_OVERRIDES = {
       { label: 'Business-Paket', href: '/pakete/business' },
       { label: 'Laufende Website-Kosten', href: '/leistungen/laufende-kosten-website' },
       { label: 'Zusatzleistungen Webdesign', href: '/leistungen/zusatzleistungen-webdesign' },
-      { label: 'Ratgeber: Website-Kosten Berlin', href: '/ratgeber/website-kosten-berlin' },
+      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/website-kosten-2025-einfach-erklaert' },
       { label: 'Projekt anfragen', href: '/kontakt' }
     ],
     cta: {

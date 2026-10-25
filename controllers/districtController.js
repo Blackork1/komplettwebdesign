@@ -2,6 +2,7 @@ import { buildOrganizationSchema } from '../helpers/entitySchema.js';
 // controllers/districtController.js
 import { DISTRICTS, getDistrictBySlug } from "../models/districtModel.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
+import { SEO_RECOVERY_REDIRECTS } from "../data/seoIntentRegistry.js";
 import { webdesignBerlinPage } from "../data/webdesignBerlinPage.js";
 import { SITE_FACTS, formatGoogleRating } from "../helpers/siteFacts.js";
 import { interpolatePricingTokens } from "../util/pricingViewModel.js";
@@ -158,7 +159,7 @@ export async function renderDistrictPage(req, res, next) {
         .filter((item) => item.slug !== slug)
         .map((item) => ({ name: item.name, href: `/webdesign-berlin/${item.slug}` })),
       districtLastUpdatedIso: DISTRICT_CONTENT_UPDATED_ISO,
-      seoGuides: interpolatePricingTokens(SEO_GUIDE_CLUSTER, pricing, { lng }).slice(0, 6).map((guide) => ({
+      seoGuides: interpolatePricingTokens(SEO_GUIDE_CLUSTER.filter((guide) => !SEO_RECOVERY_REDIRECTS[`/ratgeber/${guide.slug}`]), pricing, { lng }).slice(0, 6).map((guide) => ({
         title: guide.title,
         excerpt: guide.excerpt,
         href: `/ratgeber/${guide.slug}`
@@ -720,12 +721,12 @@ export function renderWebdesignBerlinHub(req, res) {
     { label: "Webdesign Berlin", href: "/webdesign-berlin" },
     { label: "Website Relaunch Berlin", href: "/leistungen/website-relaunch" },
     { label: "Ablauf Webdesign Berlin", href: "/ablauf" },
-    { label: "Was kostet eine Website in Berlin?", href: "/ratgeber/website-kosten-berlin" },
-    { label: "Ablauf, Dauer und Kosten", href: "/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten" },
+    { label: "Was kostet eine Website in Berlin?", href: "/webdesign-berlin/kosten-preise-pakete" },
+    { label: "Ablauf eines Website-Projekts", href: "/ablauf" },
     { label: "Baukasten vs. professionelle Website", href: "/ratgeber/baukasten-vs-professionelle-website" }
   ];
 
-  const seoGuides = interpolatePricingTokens(SEO_GUIDE_CLUSTER, res.locals.packagePricing || {}, { lng }).map((guide) => ({
+  const seoGuides = interpolatePricingTokens(SEO_GUIDE_CLUSTER.filter((guide) => !SEO_RECOVERY_REDIRECTS[`/ratgeber/${guide.slug}`]), res.locals.packagePricing || {}, { lng }).map((guide) => ({
     title: guide.title,
     excerpt: guide.excerpt,
     slug: guide.slug,
@@ -1087,8 +1088,8 @@ export function renderWebdesignBerlinHub(req, res) {
     );
 
     resources.splice(0, resources.length,
-      { label: "Website costs in Berlin", href: "/ratgeber/website-kosten-berlin" },
-      { label: "Process, timeline, and costs", href: "/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten" },
+      { label: "Website costs in Berlin", href: "/webdesign-berlin/kosten-preise-pakete" },
+      { label: "Project process", href: "/ablauf" },
       { label: "Website builder vs. professional website", href: "/ratgeber/baukasten-vs-professionelle-website" }
     );
   }
