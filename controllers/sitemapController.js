@@ -7,6 +7,7 @@ import { createModifiedDateResolver } from "../helpers/contentDates.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
 import { SEO_RECOVERY_REDIRECTS } from "../data/seoIntentRegistry.js";
 import { UNLISTED_BLOG_SLUGS, canonicalBlogSlug } from "../data/blogRedirects.js";
+import { getNichePage } from "../services/nichePageViewModel.js";
 import pricingService from "../services/pricingService.js";
 import { canonicalLeistungPath, REDIRECTED_LEISTUNG_SLUGS } from "../helpers/leistungPageRouting.js";
 import {
@@ -164,9 +165,17 @@ export async function sitemapXml(req, res, next) {
     }));
 
     // Industries
+    // Reinigung und Blumenladen haben eigene Seiten im Code: deren Stand zählt, wenn er neuer ist.
+    const industryModified = (r) => {
+      const niche = getNichePage(r.slug);
+      if (!niche) return r.updated_at;
+      const stored = r.updated_at ? new Date(r.updated_at) : null;
+      const code = new Date(`${niche.updatedIso}T00:00:00Z`);
+      return stored && stored > code ? stored : code;
+    };
     const industryRoutes = industries.filter(shouldIncludeIndustryInSitemap).map(r => ({
       loc: `${base}/branchen/webdesign-${normalizeIndustrySlug(r.slug)}`,
-      lastmod: toIso(r.updated_at),
+      lastmod: toIso(industryModified(r)),
       changefreq: "weekly",
       priority: 0.85
     }));

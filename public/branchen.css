@@ -2374,3 +2374,85 @@ ul li {
     flex: 0 0 10%;
   }
 }
+
+/* Praxisbeispiel aus Berlin auf der Branchenseite (z. B. Café) */
+.industry-reference {
+  margin: 48px auto;
+  max-width: 1200px;
+  padding: 0 16px;
+}
+
+.industry-reference__inner {
+  align-items: center;
+  background: #f6f8fb;
+  border-radius: 20px;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  padding: 32px;
+}
+
+.industry-reference__eyebrow {
+  color: #ef4b1c;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.industry-reference h2 {
+  font-size: clamp(1.5rem, 2.4vw, 2.25rem);
+  letter-spacing: 0;
+  line-height: 1.12;
+  margin: 0 0 16px;
+}
+
+.industry-reference__copy p {
+  margin: 0 0 10px;
+}
+
+.industry-reference__quote {
+  border-left: 4px solid #ef4b1c;
+  margin: 16px 0;
+  padding: 2px 0 2px 14px;
+}
+
+.industry-reference__quote p {
+  font-style: italic;
+  margin: 0;
+}
+
+.industry-reference__quote footer {
+  color: #536173;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.industry-reference__link {
+  color: #b93618;
+  font-weight: 700;
+}
+
+.industry-reference__media {
+  margin: 0;
+}
+
+.industry-reference__media img {
+  border-radius: 14px;
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  .industry-reference__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 20px 16px;
+  }
+
+  .industry-reference__media {
+    order: -1;
+  }
+}

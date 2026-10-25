@@ -127,6 +127,20 @@ export const MARKETING_IMAGES = Object.freeze({
       licenseUrl: PEXELS_LICENSE_URL
     }
   }),
+  // Quadratischer Ausschnitt von industryFlorist für den Hero der Blumenladen-Seite.
+  industryFloristHero: freezeImage({
+    src: '/images/editorial/floristik-hero.webp',
+    alt: 'Floristin bindet in ihrem Blumenladen einen Strauß aus frischen Blumen',
+    width: 960,
+    height: 960,
+    source: {
+      kind: 'external',
+      provider: 'Pexels',
+      creator: 'Anna Shvets',
+      pageUrl: 'https://www.pexels.com/photo/a-florist-arranging-flowers-5894063/',
+      licenseUrl: PEXELS_LICENSE_URL
+    }
+  }),
   industryRealEstate: freezeImage({
     src: '/images/editorial/immobilienberatung.webp',
     alt: 'Immobilienberater bespricht mit einem Paar Unterlagen zu einer Immobilie',

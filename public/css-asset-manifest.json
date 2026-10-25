@@ -67,9 +67,9 @@
     "branchen.css": {
       "source": "branchen.css",
       "output": "branchen.min.css",
-      "href": "/branchen.min.css?v=5ef1ffdd76d6",
-      "hash": "5ef1ffdd76d6",
-      "bytes": 34105
+      "href": "/branchen.min.css?v=b24064e9a418",
+      "hash": "b24064e9a418",
+      "bytes": 35196
     },
     "carousel.css": {
       "source": "carousel.css",
@@ -298,9 +298,9 @@
     "webdesign-berlin.css": {
       "source": "webdesign-berlin.css",
       "output": "webdesign-berlin.min.css",
-      "href": "/webdesign-berlin.min.css?v=0c690c22af58",
-      "hash": "0c690c22af58",
-      "bytes": 35246
+      "href": "/webdesign-berlin.min.css?v=d6052ea50b2c",
+      "hash": "d6052ea50b2c",
+      "bytes": 36601
     },
     "website-tester.css": {
       "source": "website-tester.css",

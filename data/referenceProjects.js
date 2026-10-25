@@ -68,8 +68,8 @@ export const referenceProjects = [
       'Neue Team-Seite mit persönlichen Ansprechpartnern'
     ],
     suitableFor: 'Lokale Dienstleistungsbetriebe, deren bestehende Website Inhalte, Leistungen und Vertrauen nicht mehr klar genug vermittelt.',
-    relatedServiceHref: '/leistungen/website-relaunch',
-    relatedServiceLabel: 'Website-Relaunch ansehen',
+    relatedServiceHref: '/branchen/webdesign-reinigung',
+    relatedServiceLabel: 'Webdesign für Reinigungsfirmen ansehen',
     primaryOutcome: 'Leistungen, persönliche Ansprechpartner und Anfragewege lassen sich nach dem Relaunch schneller einordnen.',
     nextStepLabel: 'Relaunch für mein Unternehmen prüfen',
     nextStepHref: '/kontakt?projektart=website-relaunch',

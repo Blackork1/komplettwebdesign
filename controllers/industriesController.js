@@ -7,6 +7,9 @@ import { buildIndustrySchemas } from '../helpers/industrySchema.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { resolveSeoTitle } from '../data/seoMetaOverrides.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
+import { HOME_PROJECTS } from '../data/homeProjects.js';
+import { interpolatePricingTokens } from '../util/pricingViewModel.js';
+import { buildNichePageViewModel, getNichePage } from '../services/nichePageViewModel.js';
 
 const INDUSTRY_CONTEXT_LINKS = Object.freeze({
   blumenladen: Object.freeze([
@@ -121,6 +124,48 @@ const INDUSTRY_PRIMARY_CTAS = Object.freeze({
     supportingText: 'Vergleiche die Website-Pakete und ordne sie dem Umfang deines Blumenladens zu.'
   })
 });
+
+// Echte Kundenprojekte auf der passenden Branchenseite (Texte aus data/homeProjects.js).
+const INDUSTRY_REFERENCE_PROJECTS = Object.freeze({
+  cafe: 'zur-alten-backstube'
+});
+
+// Texte, die im Code statt in der Datenbank-Vorlage stehen. Grundlage sind echte Suchanfragen
+// aus der Search Console: gesucht wird „Fitnessstudio“, die Vorlage sprach nur von Coaches.
+const INDUSTRY_COPY_OVERRIDES = Object.freeze({
+  fitnesscoach: Object.freeze({
+    title: 'Fitnessstudio-Website erstellen lassen | Personal Trainer',
+    description: 'Webdesign für Fitnessstudios, Gyms und Personal Trainer in Berlin: Kurse, Probetraining und Online-Buchung klar zeigen. Pakete {{price.start}}.',
+    hero_h1: 'Website für Fitnessstudios und Personal Trainer',
+    hero_h2: 'Webdesign für Fitnessstudios, Gyms, Personal Trainer und Online-Coaches'
+  })
+});
+
+export function getIndustryReference(slug) {
+  const key = String(slug || '').toLowerCase().replace(/^webdesign-/, '');
+  const projectSlug = Object.hasOwn(INDUSTRY_REFERENCE_PROJECTS, key) ? INDUSTRY_REFERENCE_PROJECTS[key] : null;
+  const project = projectSlug ? HOME_PROJECTS.find((item) => item.slug === projectSlug) : null;
+  if (!project) return null;
+  return {
+    name: project.name,
+    href: project.href,
+    image: project.image,
+    imageWidth: project.imageWidth,
+    imageHeight: project.imageHeight,
+    alt: project.de.alt,
+    industry: project.de.industry,
+    before: project.de.before,
+    after: project.de.after,
+    quote: project.de.quote,
+    quoteAuthor: project.de.quoteAuthor
+  };
+}
+
+export function applyIndustryCopyOverrides(industry, pricing = {}) {
+  const key = String(industry?.slug || '').toLowerCase().replace(/^webdesign-/, '');
+  if (!industry || !Object.hasOwn(INDUSTRY_COPY_OVERRIDES, key)) return industry;
+  return { ...industry, ...interpolatePricingTokens(INDUSTRY_COPY_OVERRIDES[key], pricing, { lng: 'de' }) };
+}
 
 /* --- Hilfsfunktionen --- */
 function resolveBaseUrl(req) {
@@ -291,8 +336,14 @@ export async function listIndustries(req, res) {
 /* --- Detailseite (/branchen/:slug) – bleibt wie gehabt, nur mit /branchen-Canon --- */
 export async function showIndustryPage(req, res) {
   const slug = req.params.slug;
+  // Reinigung und Blumenladen haben eigene Seiten im Code statt der Datenbank-Vorlage.
+  const nichePage = getNichePage(slug);
+  if (nichePage) return res.render('niche-page', buildNichePageViewModel(nichePage, res.locals));
   try {
-    const industry = normalizeLegacyPublicCopy(await getIndustryBySlug(slug), res.locals.packagePricing || {});
+    const industry = applyIndustryCopyOverrides(
+      normalizeLegacyPublicCopy(await getIndustryBySlug(slug), res.locals.packagePricing || {}),
+      res.locals.packagePricing || {}
+    );
     if (!industry) {
       return res.status(404).render('404', {
         title: 'Branche nicht gefunden',
@@ -315,6 +366,7 @@ export async function showIndustryPage(req, res) {
       ogImage: industry.og_image_url || industry.hero_image_url,
       industry,
       industryContextLinks: getIndustryContextLinks(industry.slug),
+      industryReference: getIndustryReference(industry.slug),
       industryCommercialGuide: getIndustryCommercialGuide(industry.slug),
       industryPrimaryCta: getIndustryPrimaryCta(industry.slug),
       industryPricingCta: getIndustryPrimaryCta(industry.slug, { placement: 'pricing' }),

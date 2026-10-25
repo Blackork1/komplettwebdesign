@@ -215,13 +215,14 @@ test('Referenzkarten ziehen Ausgangslage, Kernleistungen, Ergebnis, Kundenstimme
   assert.match(showTemplate, /alt="<%= project\.imageAlt %>"/);
 });
 
-test('Referenzen führen passend zu Gastronomie-Webdesign oder Relaunch', () => {
+test('Referenzen führen zur passenden Branchenseite, der Relaunch bleibt verlinkt', () => {
   const backstube = getReferenceProjectBySlug('zur-alten-backstube');
   const relaunch = getReferenceProjectBySlug('tm-sauber-mehr');
 
   assert.equal(backstube.relatedServiceHref, '/branchen/webdesign-cafe');
   assert.equal(backstube.nextStepLabel, 'Ähnliches Website-Projekt besprechen');
-  assert.equal(relaunch.relatedServiceHref, '/leistungen/website-relaunch');
+  assert.equal(relaunch.relatedServiceHref, '/branchen/webdesign-reinigung');
+  assert.equal(relaunch.relaunchUrl, '/leistungen/website-relaunch');
   assert.equal(relaunch.nextStepLabel, 'Relaunch für mein Unternehmen prüfen');
 });
 

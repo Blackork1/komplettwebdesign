@@ -36,7 +36,6 @@ function renderHtmlBlock(v) {
 
 // Alle JSON-Felder normalisieren
 const carouselItems   = asArray(industry.carousel_items);
-const statsCards      = asArray(industry.stats_cards);
 const seoItems        = asArray(industry.seo_items);
 const funktionenItems = asArray(industry.funktionen_items);
 const tippsItems      = asArray(industry.tipps_items);
@@ -192,17 +191,6 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
           <% } %>
         </div>
         <div class="industry-wd-intro">
-          <h3 class="alignCenter animate-on-scroll">Webdesign Berlin - Was erwartet dich!</h3>
-          <p class="center animate-on-scroll"> Du suchst professionelles <strong>Webdesign in Berlin</strong>, das nicht nur gut aussieht,
-            sondern auch Ergebnisse liefert? Unser <strong>Webdesign</strong>-Service ist darauf ausgerichtet,
-            deine Online-Präsenz zu stärken und qualifizierte Anfragen besser messbar zu machen. Wir entwickeln moderne,
-            benutzerfreundliche Websites mit durchdachtem User-Interface, optimieren deine Seite für Suchmaschinen (SEO),
-            damit du bei Google besser gefunden werden kannst, und planen zuverlässiges Hosting sowie regelmäßige Wartung bei Bedarf separat ein.
-            Rechtlich relevante Seiten und Datenschutz-Hinweise binden wir technisch ein; die inhaltliche Prüfung erfolgt durch dich oder juristische Beratung.
-            Auf Wunsch erstellen wir auch überzeugende Inhalte und Texte, die deine Zielgruppe ansprechen.
-            Mit meinem ganzheitlichen <a href="/">Webdesign Berlin</a>-Ansatz erhältst du einen klar abgestimmten Projektprozess –
-            von der ersten Idee bis zur optionalen Weiterentwicklung deiner Online-Präsenz.
-          </p>
           <% if (renderedIndustryContextLinks.length) { %>
           <div class="industry-context-links" aria-label="Passende Branchenartikel">
             <p>
@@ -218,6 +206,29 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 
 
       </section>
+
+      <% if (typeof industryReference === 'object' && industryReference) { %>
+      <section id="Praxisbeispiel" class="industry-reference" aria-labelledby="industry-reference-title">
+        <div class="industry-reference__inner">
+          <div class="industry-reference__copy">
+            <p class="industry-reference__eyebrow">Praxisbeispiel aus Berlin</p>
+            <h2 id="industry-reference-title"><%= industryReference.name %>: <%= industryReference.industry %></h2>
+            <p><strong>Vorher:</strong> <%= industryReference.before %></p>
+            <p><strong>Nachher:</strong> <%= industryReference.after %></p>
+            <% if (industryReference.quote) { %>
+            <blockquote class="industry-reference__quote">
+              <p>„<%= industryReference.quote %>“</p>
+              <footer><%= industryReference.quoteAuthor %></footer>
+            </blockquote>
+            <% } %>
+            <a class="industry-reference__link" href="<%= industryReference.href %>">Projekt <%= industryReference.name %> ansehen</a>
+          </div>
+          <figure class="industry-reference__media">
+            <img src="<%= industryReference.image %>" alt="<%= industryReference.alt %>" width="<%= industryReference.imageWidth %>" height="<%= industryReference.imageHeight %>" loading="lazy" decoding="async">
+          </figure>
+        </div>
+      </section>
+      <% } %>
 
       <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_warum' }) %>
 
@@ -271,37 +282,6 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
       </section>
 
       <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_unverzichtbar' }) %>
-
-      <!-- ===================== STATISTIK / STUDIEN ===================== -->
-      <section id="Statistik">
-        <h2 class="alignCenter animate-on-scroll">Statistiken & Studien: Online-Suche im <%= industry.name %>-Bereich</h2>
-
-        <section class="statsSection" aria-label="Statistiken & Studien">
-          <div class="statsGrid">
-            <div class="statsLeft">
-              <ul class="statStack" role="list">
-                <% (industry.stats_cards||[]).forEach((c, idx) => { %>
-                <li class="statCard <%= idx===0?'is-open':'' %> animate-on-scroll">
-                  <button class="statHeader" aria-expanded="<%= idx===0 ? 'true' : 'false' %>">
-                    <span class="itemIcon" aria-hidden="true"><%= c.icon || '📊' %></span>
-                    <h3 class="itemLabel"><%- safeHtml(c.label) %></h3>
-                  </button>
-                  <div class="statBody" aria-hidden="<%= idx===0 ? 'false' : 'true' %>">
-                    <%- renderHtmlBlock(c.body) %>
-                  </div>
-                </li>
-                <% }) %>
-              </ul>
-            </div>
-
-            <div class="statsRight bleedRight animate-on-scroll">
-              <figure class="phoneFigure">
-                <img src="https://res.cloudinary.com/dvd2cd2be/image/upload/v1759516227/admin_gallery/g9dmb1cvmeghtfjqpz1k.webp" alt="Smartphone mit Statistik" loading="lazy" fetchpriority="low">
-              </figure>
-            </div>
-          </div>
-        </section>
-      </section>
 
       <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_statistik' }) %>
 
@@ -637,7 +617,6 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 <!-- Page JS -->
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/sliderAnimation.js') : '/js/sliderAnimation.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/carousel.js') : '/js/carousel.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
-<script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/openField.js') : '/js/openField.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/tracking.js') : '/js/tracking.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>
 
 <%- include('../partials/footer', { disableInteractionPolish: true }) %>

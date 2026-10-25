@@ -74,9 +74,11 @@ test('industry template uses dynamic, page-specific CTA and current-year pricing
   assert.doesNotMatch(template, /individual1|bereate|erh[aä]lst du/);
 });
 
-test('industry template keeps stat card labels below the section heading level', () => {
-  assert.match(template, /<h3 class="itemLabel"><%- safeHtml\(c\.label\) %><\/h3>/);
-  assert.doesNotMatch(template, /<h2 class="itemLabel"><%- c\.label %><\/h2>/);
+test('industry template zeigt keine Statistiken ohne Quelle und keinen gleichen Werbeblock auf jeder Seite', () => {
+  assert.doesNotMatch(template, /statsSection|stats_cards/);
+  assert.doesNotMatch(template, /Was erwartet dich/);
+  assert.doesNotMatch(template, /js\/openField\.js/);
+  assert.match(template, /renderedIndustryContextLinks\.length/, 'Vertiefungslinks bleiben');
 });
 
 test('industry template avoids wrapping trusted HTML fields in nested paragraphs', () => {

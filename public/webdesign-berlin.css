@@ -1900,6 +1900,87 @@
   }
 }
 
+/* Branchenseiten mit eigenem Inhalt (/branchen/webdesign-reinigung, /branchen/webdesign-blumenladen) */
+.webdesign-berlin.niche-page .niche-page__columns .wd-card {
+  align-content: start;
+  display: grid;
+  gap: 12px;
+}
+
+.webdesign-berlin.niche-page .niche-page__columns h3 {
+  margin: 0;
+}
+
+.webdesign-berlin.niche-page .niche-page__badge {
+  align-self: end;
+  background: rgba(239, 75, 28, 0.08);
+  border-radius: 10px;
+  color: var(--wd-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 4px 0 0;
+  padding: 8px 12px;
+}
+
+.webdesign-berlin.niche-page .niche-page__case h3 {
+  font-size: 1.05rem;
+  margin: 1.4rem 0 0.4rem;
+}
+
+.webdesign-berlin.niche-page .niche-page__quote {
+  border-left: 4px solid var(--wd-accent);
+  margin: 1.4rem 0;
+  padding: 4px 0 4px 16px;
+}
+
+.webdesign-berlin.niche-page .niche-page__quote p {
+  color: var(--wd-ink);
+  font-size: 1.05rem;
+  font-style: italic;
+  margin: 0;
+}
+
+.webdesign-berlin.niche-page .niche-page__quote footer {
+  color: var(--wd-muted);
+  font-size: 0.9rem;
+  margin-top: 6px;
+}
+
+.webdesign-berlin.niche-page .niche-page__case-media {
+  align-self: center;
+  margin: 0;
+}
+
+.webdesign-berlin.niche-page .niche-page__case-media img {
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(11, 42, 70, 0.12);
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  .webdesign-berlin.niche-page .niche-page__case-media {
+    order: -1;
+  }
+}
+
+/* Hero-Bild in voller Größe zeigen (Screenshots echter Projekte nicht beschneiden). */
+.webdesign-berlin.niche-page .wd-hero__media img {
+  aspect-ratio: auto;
+}
+
+@media (min-width: 861px) {
+  .webdesign-berlin.niche-page .wd-hero__media {
+    align-self: center;
+  }
+
+  .webdesign-berlin.niche-page .wd-hero__media img {
+    height: auto;
+    position: static;
+  }
+}
+
 /* Mobil: Abschnitte so breit wie der Hero (16 px Seitenabstand), ohne doppelten Innenabstand. */
 @media (max-width: 860px) {
   .webdesign-berlin-page .wd-section {

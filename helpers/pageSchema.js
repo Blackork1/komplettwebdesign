@@ -26,17 +26,46 @@ function toIsoDate(value) {
 
 export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl, faq = HANDWERKER_FAQ }) {
   const base = normalizeBaseUrl(baseUrl);
-  const pageUrl = url || `${base}/handwerker`;
+  return buildServiceLandingSchemas({
+    base,
+    pageUrl: url || `${base}/handwerker`,
+    title: page.title || 'Website für Handwerker in Berlin erstellen lassen',
+    description: page.description || 'Webdesign für Handwerksbetriebe in Berlin: Leistungen, Einsatzgebiet, Projektbilder und Anfragewege klar zeigen.',
+    image: toAbsoluteUrl('/images/handwerker-min.webp', base),
+    dateModified: toIsoDate(page.updated_at || page.created_at),
+    serviceName: 'Webdesign für Handwerker',
+    serviceType: ['Website für Handwerker', 'Webdesign für Handwerksbetriebe', 'Homepage für Handwerker', 'Local SEO für Handwerker'],
+    audienceType: 'Handwerksbetriebe',
+    breadcrumbName: 'Handwerker',
+    faq
+  });
+}
+
+// Branchenseiten mit eigenem Inhalt (data/reinigungPage.js, data/blumenladenPage.js).
+export function buildNichePageSchemas({ nichePage, title, description, url, baseUrl, faq = [], updatedIso }) {
+  const base = normalizeBaseUrl(baseUrl);
+  return buildServiceLandingSchemas({
+    base,
+    pageUrl: url || `${base}${nichePage.path}`,
+    title,
+    description,
+    image: toAbsoluteUrl(nichePage.hero.image, base),
+    dateModified: toIsoDate(updatedIso),
+    serviceName: nichePage.schema.serviceName,
+    serviceType: nichePage.schema.serviceType,
+    audienceType: nichePage.schema.audienceType,
+    breadcrumbName: nichePage.breadcrumb,
+    faq
+  });
+}
+
+function buildServiceLandingSchemas({ base, pageUrl, title, description, image, dateModified, serviceName, serviceType, audienceType, breadcrumbName, faq }) {
   const orgId = `${base}/#organization`;
   const websiteId = `${base}/#website`;
   const pageId = `${pageUrl}#webpage`;
   const serviceId = `${pageUrl}#service`;
   const breadcrumbId = `${pageUrl}#breadcrumb`;
   const faqId = `${pageUrl}#faq`;
-  const title = page.title || 'Website für Handwerker in Berlin erstellen lassen';
-  const description = page.description || 'Webdesign für Handwerksbetriebe in Berlin: Leistungen, Einsatzgebiet, Projektbilder und Anfragewege klar zeigen.';
-  const image = toAbsoluteUrl('/images/handwerker-min.webp', base);
-  const dateModified = toIsoDate(page.updated_at || page.created_at);
 
   return {
     '@context': 'https://schema.org',
@@ -66,8 +95,8 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl, faq = HAND
       {
         '@type': 'Service',
         '@id': serviceId,
-        name: 'Webdesign für Handwerker',
-        serviceType: ['Website für Handwerker', 'Webdesign für Handwerksbetriebe', 'Homepage für Handwerker', 'Local SEO für Handwerker'],
+        name: serviceName,
+        serviceType,
         description,
         url: pageUrl,
         provider: { '@id': orgId },
@@ -77,7 +106,7 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl, faq = HAND
         },
         audience: {
           '@type': 'BusinessAudience',
-          audienceType: 'Handwerksbetriebe'
+          audienceType
         },
         image
       },
@@ -87,7 +116,7 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl, faq = HAND
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Startseite', item: `${base}/` },
           { '@type': 'ListItem', position: 2, name: 'Branchen', item: `${base}/branchen` },
-          { '@type': 'ListItem', position: 3, name: 'Handwerker', item: pageUrl }
+          { '@type': 'ListItem', position: 3, name: breadcrumbName, item: pageUrl }
         ]
       },
       {
