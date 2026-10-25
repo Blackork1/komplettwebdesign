@@ -7,6 +7,7 @@ import { SEO_GUIDE_CLUSTER, getSeoGuideBySlug } from '../data/seoGuideCluster.js
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { resolveSeoDescription, resolveSeoTitle } from '../data/seoMetaOverrides.js';
+import { rewriteLegacyInternalLinks } from '../util/legacyInternalLinks.js';
 import { SEO_RECOVERY_REDIRECTS } from '../data/seoIntentRegistry.js';
 
 /* ---------- Helper: EJS aus DB-Inhalten sicher rendern ---------- */
@@ -130,7 +131,7 @@ export async function showGuide(req, res) {
   }
 
   // DB-Content (EJS) rendern
-  const renderedContent = demoteContentH1(normalizeLegacyPublicCopy(renderPricingTokens(renderDbEjs(post.content, {
+  const renderedContent = rewriteLegacyInternalLinks(demoteContentH1(normalizeLegacyPublicCopy(renderPricingTokens(renderDbEjs(post.content, {
     post: { ...post, description: post.description },
     modifiedISO,
     publishedISO,
@@ -139,7 +140,7 @@ export async function showGuide(req, res) {
     helpers: {
       date: d => new Date(d).toLocaleDateString('de-DE')
     }
-  }), res.locals.packagePricing || {}, { lng: 'de' }), res.locals.packagePricing || {}));
+  }), res.locals.packagePricing || {}, { lng: 'de' }), res.locals.packagePricing || {})));
 
   // Beschreibung/Excerpt fallback
   let desc = (post.excerpt && post.excerpt.trim()) || '';

@@ -332,6 +332,7 @@ p {
 }
 .logo img {
   height: 70px;
+  width: auto;
   transform: translate3d(-15px, 3px, 0);
 }
 a.logo {

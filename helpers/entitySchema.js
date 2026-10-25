@@ -15,10 +15,26 @@ export function buildOrganizationSchema(baseUrl) {
     telephone: SITE_FACTS.phone,
     email: SITE_FACTS.email,
     address: { '@type': 'PostalAddress', ...SITE_FACTS.address },
-    hasMap: SITE_FACTS.addressMapUrl,
+    geo: { '@type': 'GeoCoordinates', ...SITE_FACTS.geo },
+    hasMap: SITE_FACTS.googleProfileUrl,
+    priceRange: SITE_FACTS.priceRange,
+    openingHoursSpecification: SITE_FACTS.openingHours.map((slot) => ({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: slot.days.map((day) => `https://schema.org/${day}`),
+      opens: slot.opens,
+      closes: slot.closes
+    })),
     sameAs: [SITE_FACTS.googleProfileUrl, ...SITE_FACTS.socialProfiles],
     founder: { '@id': `${base}/#person` },
-    areaServed: [{ '@type': 'City', name: 'Berlin' }, { '@type': 'State', name: 'Brandenburg' }],
+    areaServed: [
+      { '@type': 'City', name: 'Berlin' },
+      ...SITE_FACTS.servedDistricts.map((district) => ({
+        '@type': 'AdministrativeArea',
+        name: `Berlin-${district.replace(' ', '-')}`,
+        containedInPlace: { '@type': 'City', name: 'Berlin' }
+      })),
+      { '@type': 'State', name: 'Brandenburg' }
+    ],
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: SITE_FACTS.phone,

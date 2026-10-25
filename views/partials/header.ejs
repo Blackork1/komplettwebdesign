@@ -108,7 +108,7 @@
     <div class="hero-nav">
       <div class="navigation" id="navigation" aria-label="Komplett Webdesign">
         <a href="<%= homeHref %>" class="logo" aria-label="<%= isEn ? 'To homepage' : 'Zur Startseite' %>">
-          <img src="/images/LogoTransparent.webp" alt="<%= isEn ? 'Icon to go to homepage' : 'Icon um zur Startseite zu kommen' %>" />
+          <img src="/images/LogoTransparent.webp" alt="<%= isEn ? 'Icon to go to homepage' : 'Icon um zur Startseite zu kommen' %>" width="480" height="480" />
         </a>
         <div class="nav-right">
           <button
@@ -121,14 +121,14 @@
             data-label-close="<%= isEn ? 'Close main navigation' : 'Hauptnavigation schließen' %>"
             aria-label="<%= isEn ? 'Open main navigation' : 'Hauptnavigation öffnen' %>"
           >
-            <img src="/images/Nav-Bar-Icon.svg" alt="" aria-hidden="true" />
+            <img src="/images/Nav-Bar-Icon.svg" alt="" aria-hidden="true" width="55" height="50" />
           </button>
           <button type="button" class="mobile-nav-backdrop" id="mobile-nav-backdrop" hidden aria-label="<%= isEn ? 'Close navigation' : 'Navigation schließen' %>"></button>
           <div class="links heroLinks mobile-nav-panel" id="nav-links" aria-label="<%= isEn ? 'Main navigation' : 'Hauptnavigation' %>">
             <div class="mobile-nav-panel__header">
               <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="<%= isEn ? 'Close navigation' : 'Navigation schließen' %>">×</button>
               <a href="<%= homeHref %>" class="mobile-nav-brand" aria-label="<%= isEn ? 'To homepage' : 'Zur Startseite' %>">
-                <img src="/images/LogoTransparent.webp" alt="Komplett Webdesign" />
+                <img src="/images/LogoTransparent.webp" alt="Komplett Webdesign" width="480" height="480" />
               </a>
             </div>
             <% navItems.forEach((item) => { %>
@@ -140,7 +140,7 @@
                     <li class="dropdown <%= isActiveNavItem(item) ? 'is-active' : '' %>">
                       <div class="dropdown-toggle">
                         <a href="<%= itemHref %>" class="nav-link-item <%= isActiveNavItem(item) ? 'is-active' : '' %>">
-                          <span class="mobile-nav-icon"><img src="<%= navIcon(item) %>" alt="" aria-hidden="true" loading="lazy" /></span>
+                          <span class="mobile-nav-icon"><img src="<%= navIcon(item) %>" alt="" aria-hidden="true" width="24" height="24" loading="lazy" /></span>
                           <span class="mobile-nav-label"><%= navLabel(item) %></span>
                         </a>
                         <button class="dropdown-toggle-btn" type="button" aria-expanded="false" aria-label="<%= isEn ? `Open ${navLabel(item)} submenu` : `${navLabel(item)} Untermenü öffnen` %>">
@@ -157,7 +157,7 @@
                           <% } %>
                           <li>
                             <a href="<%= navHref(child) %>" class="main-color nav-sub-link <%= isActiveSubNavItem(child) ? 'is-active' : '' %>">
-                              <span class="mobile-nav-icon"><img src="<%= navIcon(child) %>" alt="" aria-hidden="true" loading="lazy" /></span>
+                              <span class="mobile-nav-icon"><img src="<%= navIcon(child) %>" alt="" aria-hidden="true" width="24" height="24" loading="lazy" /></span>
                               <span class="mobile-nav-copy">
                                 <span class="mobile-nav-label"><%= navLabel(child) %></span>
                                 <% if (navDescription(child)) { %>
@@ -173,14 +173,14 @@
                 </nav>
               <% } else { %>
                 <a href="<%= itemHref %>" class="nav-link-item <%= isActiveNavItem(item) ? 'is-active' : '' %>">
-                  <span class="mobile-nav-icon"><img src="<%= navIcon(item) %>" alt="" aria-hidden="true" loading="lazy" /></span>
+                  <span class="mobile-nav-icon"><img src="<%= navIcon(item) %>" alt="" aria-hidden="true" width="24" height="24" loading="lazy" /></span>
                   <span class="mobile-nav-label"><%= navLabel(item) %></span>
                 </a>
               <% } %>
             <% }) %>
             <div class="mobile-nav-actions">
               <a href="<%= navHref(navCta) %>" class="btn btn-primary" data-track="cta" data-cta-name="header_project_request" data-cta-location="global_header">
-                <span class="mobile-nav-icon"><img src="<%= navIcon(navCta) %>" alt="" aria-hidden="true" loading="lazy" /></span>
+                <span class="mobile-nav-icon"><img src="<%= navIcon(navCta) %>" alt="" aria-hidden="true" width="24" height="24" loading="lazy" /></span>
                 <span><%= navLabel(navCta) %></span>
               </a>
               <a href="<%= isEn ? switchToDeHref : switchToEnHref %>" class="btn btn-secondary"><%= isEn ? 'DE' : 'EN' %></a>

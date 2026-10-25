@@ -177,6 +177,17 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
   }),
   freezeTarget({
+    path: '/blog/webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist',
+    intentId: 'warum-website-berlin-informational',
+    state: 'active',
+    priority: 'C',
+    primaryQuery: 'warum website für unternehmen berlin',
+    contentRole: 'Informativer Beitrag; die Suche „Webdesign Berlin“ gehört zur Startseite',
+    requiredLinks: ['/', '/pakete'],
+    primaryAction: { label: 'Webdesign Berlin', href: '/' },
+    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
+  }),
+  freezeTarget({
     path: '/blog/website-kosten-2025-einfach-erklaert',
     intentId: 'website-kosten-informational',
     state: 'active',

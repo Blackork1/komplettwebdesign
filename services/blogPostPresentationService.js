@@ -8,7 +8,8 @@ import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 import { sanitizeArticleHtml } from './contentAgent/articleSanitizer.js';
 import { buildLegacyRenderLocals } from './contentAgent/legacyEjsRenderService.js';
 import { getSeoRecoveryTarget } from '../data/seoIntentRegistry.js';
-import { resolveSeoDescription, resolveSeoTitle } from '../data/seoMetaOverrides.js';
+import { resolveHeadline, resolveSeoDescription, resolveSeoTitle } from '../data/seoMetaOverrides.js';
+import { rewriteLegacyInternalLinks } from '../util/legacyInternalLinks.js';
 
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
 const RESERVED_PREVIEW_IDS = Object.freeze([
@@ -45,6 +46,25 @@ function demoteContentH1(html) {
     .replace(/<\/h1>/gi, '</h2>');
 }
 
+// Bilder ohne alt-Attribut bekommen eine Beschreibung aus der nächsten Überschrift davor.
+// Bilder mit leerem alt="" gelten als bewusst dekorativ und bleiben unverändert.
+export function ensureContentImageAlt(html, fallback = '') {
+  const source = String(html ?? '');
+  if (!/<img\b/i.test(source)) return source;
+  const $ = cheerio.load(source, null, false);
+  let changed = false;
+  $('img').each((index, element) => {
+    const image = $(element);
+    if (image.attr('alt') !== undefined) return;
+    const heading = image.prevAll('h2, h3, h4').first().text().trim()
+      || image.parents().prevAll('h2, h3, h4').first().text().trim();
+    const label = (heading || String(fallback || '').trim() || 'Abbildung').replace(/\s+/g, ' ').slice(0, 120);
+    image.attr('alt', `Abbildung: ${label}`);
+    changed = true;
+  });
+  return changed ? $.html() : source;
+}
+
 function normalizeFaq(value) {
   if (Array.isArray(value)) return value;
   if (typeof value !== 'string' || !value.trim().startsWith('[')) return [];
@@ -57,14 +77,14 @@ function normalizeFaq(value) {
 }
 
 function renderStaticContent(content, pricing) {
-  return sanitizeArticleHtml(renderPricingTokens(content, pricing));
+  return rewriteLegacyInternalLinks(sanitizeArticleHtml(renderPricingTokens(content, pricing)));
 }
 
 function renderLegacyContent(post, { modifiedISO, pricing, publishedISO }) {
   const legacyLocals = buildLegacyRenderLocals({ post, modifiedISO, publishedISO });
-  return stripEmbeddedStructuredData(demoteContentH1(normalizeLegacyPublicCopy(
+  return rewriteLegacyInternalLinks(stripEmbeddedStructuredData(demoteContentH1(normalizeLegacyPublicCopy(
     renderPricingTokens(renderDbEjs(post.content, legacyLocals), pricing), pricing
-  )));
+  ))));
 }
 
 function riskAnchorsForHtml(html) {
@@ -174,16 +194,20 @@ export function buildBlogPostPageModel({
   }
 
   const postWithPricing = renderPricingTokens(rawPost, pricing);
-  const post = rawPost.content_format === 'legacy_ejs' && !previewMode
+  const normalizedPost = rawPost.content_format === 'legacy_ejs' && !previewMode
     ? normalizeLegacyPublicCopy(postWithPricing, pricing)
     : postWithPricing;
+  // Sichtbare Überschrift: in Ausnahmefällen fest überschrieben (Suchbegriff gehört einer Hauptseite).
+  const post = previewMode
+    ? normalizedPost
+    : { ...normalizedPost, title: resolveHeadline(`/blog/${normalizedPost.slug}`, normalizedPost.title) };
   const publishedISO = isoOffset(post.published_at || post.created_at);
   const modifiedISO = isoOffset(post.updated_at || post.created_at);
   let renderedContent;
   if (post.content_format === 'static_html') {
-    renderedContent = renderStaticContent(post.content, pricing);
+    renderedContent = ensureContentImageAlt(renderStaticContent(post.content, pricing), post.title);
   } else if (!previewMode && post.content_format === 'legacy_ejs') {
-    renderedContent = renderLegacyContent(post, { modifiedISO, pricing, publishedISO });
+    renderedContent = ensureContentImageAlt(renderLegacyContent(post, { modifiedISO, pricing, publishedISO }), post.title);
   } else {
     throw presentationError('CONTENT_POST_NOT_FOUND', 'Blogartikel mit unbekanntem Inhaltsformat wird nicht gerendert.');
   }

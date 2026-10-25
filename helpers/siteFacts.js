@@ -29,6 +29,16 @@ export const SITE_FACTS = {
     addressCountry: 'DE'
   },
   addressMapUrl: 'https://www.google.com/maps/search/?api=1&query=M%C3%B6llendorffstra%C3%9Fe+26%2C+10367+Berlin',
+  // Koordinaten der Adresse (OpenStreetMap, auf 4 Stellen gerundet)
+  geo: { latitude: 52.5199, longitude: 13.4805 },
+  // Wie im Google-Unternehmensprofil (Stand 25.10.2026)
+  openingHours: [
+    { days: ['Tuesday', 'Thursday'], opens: '16:00', closes: '21:00' },
+    { days: ['Saturday', 'Sunday'], opens: '10:00', closes: '18:00' }
+  ],
+  priceRange: 'ab 799 €',
+  // Bezirke mit eigener Seite unter /webdesign-berlin/:slug
+  servedDistricts: ['Friedrichshain', 'Kreuzberg', 'Prenzlauer Berg', 'Charlottenburg', 'Lichtenberg', 'Mitte'],
   socialProfiles: [
     'https://www.linkedin.com/in/komplettwebdesign',
     'https://instagram.com/komplettwebdesign',

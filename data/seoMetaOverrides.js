@@ -4,6 +4,19 @@
 
 export const SEO_TITLE_MAX_LENGTH = 65;
 
+// Feste Titel und Überschriften: gelten immer, auch wenn der gespeicherte Text kurz genug ist.
+// Einsatz nur, wo ein Beitrag sonst mit einer Hauptseite um denselben Suchbegriff konkurriert.
+export const FORCED_SEO_TITLES = Object.freeze({
+  // „Webdesign Berlin“ gehört zur Startseite, der Beitrag beantwortet die Frage nach dem Warum.
+  '/blog/webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist': 'Warum Berliner Unternehmen eine eigene Website brauchen'
+});
+
+export const FORCED_HEADLINES = Object.freeze({
+  '/blog/webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist': 'Warum Berliner Unternehmen eine professionelle Website brauchen',
+  // „Webdesign Lichtenberg“ gehört zur Bezirksseite /webdesign-berlin/lichtenberg.
+  '/blog/webdesign-lichtenberg-berlin': 'Warum Betriebe in Lichtenberg eine eigene Website brauchen'
+});
+
 export const SHORT_SEO_TITLES = Object.freeze({
   '/blog/barrierefreiheit-2020-websites-leitfaden': 'BFSG 2025: Anforderungen an barrierefreie Websites',
   '/blog/eigener-website-chatbot': 'Website-Chatbot einrichten: Mehr Anfragen generieren',
@@ -18,7 +31,6 @@ export const SHORT_SEO_TITLES = Object.freeze({
   '/blog/lokale-seo-hacks-fuer-berlin': 'Lokale SEO Berlin: 10 Tipps fürs Google-Unternehmensprofil',
   '/blog/scroll-snap-galerie-zoom-on-view': 'Micro-Motion-Design: Scroll-Snap-Galerie mit Zoom-on-View',
   '/blog/von-traffic-zu-terminen': 'Marketing-Funnel für KMU: Von Website-Traffic zu Terminen',
-  '/blog/webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist': 'Webdesign Berlin: Warum eine Website für Firmen wichtig ist',
   // Die kommerzielle Suche „Webdesign Lichtenberg“ gehört zur Bezirksseite, nicht zum Blogbeitrag.
   '/blog/webdesign-lichtenberg-berlin': 'Lokale Unternehmen in Lichtenberg: Warum eine Website zählt',
   '/blog/woche-1-was-ist-webdesign': 'Was ist Webdesign? Definition, Geschichte und Grundlagen',
@@ -32,8 +44,14 @@ export const SHORT_SEO_TITLES = Object.freeze({
 });
 
 export function resolveSeoTitle(pathname, storedTitle) {
+  const key = String(pathname || '').toLowerCase();
+  if (FORCED_SEO_TITLES[key]) return FORCED_SEO_TITLES[key];
   if (String(storedTitle ?? '').trim().length <= SEO_TITLE_MAX_LENGTH) return storedTitle;
-  return SHORT_SEO_TITLES[String(pathname || '').toLowerCase()] || storedTitle;
+  return SHORT_SEO_TITLES[key] || storedTitle;
+}
+
+export function resolveHeadline(pathname, storedHeadline) {
+  return FORCED_HEADLINES[String(pathname || '').toLowerCase()] || storedHeadline;
 }
 
 export const SEO_DESCRIPTION_MAX_LENGTH = 160;

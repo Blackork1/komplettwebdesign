@@ -2,7 +2,7 @@ import { MARKETING_IMAGES } from './marketingImages.js';
 
 export const leistungenOverviewPage = Object.freeze({
   canonicalPath: '/leistungen',
-  title: 'Leistungen Webdesign Berlin | Überblick',
+  title: 'Webdesign-Leistungen im Überblick | Komplett Webdesign',
   description:
     'Überblick über Webdesign-Leistungen in Berlin: Relaunch, Local SEO, Landingpages, Website-Audit, Wartung, Zusatzleistungen und laufende Kosten.',
   h1: 'Leistungen für deine Website',

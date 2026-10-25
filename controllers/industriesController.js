@@ -309,7 +309,8 @@ export async function showIndustryPage(req, res) {
     }
 
     res.render('industries/show.ejs', {
-      title: resolveSeoTitle(`/branchen/${industry.slug || slug}`, industry.title || `Webdesign für ${industry.name}`),
+      // Schlüssel ist der öffentliche Pfad (/branchen/webdesign-…), nicht der reine Slug.
+      title: resolveSeoTitle(`/branchen/webdesign-${industry.slug || slug}`.replace('/webdesign-webdesign-', '/webdesign-'), industry.title || `Webdesign für ${industry.name}`),
       description: industry.description || (`Website-Erstellung & SEO für ${industry.name}`),
       ogImage: industry.og_image_url || industry.hero_image_url,
       industry,

@@ -95,23 +95,23 @@
     "css/combined.css": {
       "source": "css/combined.css",
       "output": "css/combined.min.css",
-      "href": "/css/combined.min.css?v=b6519693ea1f",
-      "hash": "b6519693ea1f",
-      "bytes": 33805
+      "href": "/css/combined.min.css?v=c028a0a6b8ca",
+      "hash": "c028a0a6b8ca",
+      "bytes": 33816
     },
     "css/critical.css": {
       "source": "css/critical.css",
       "output": "css/critical.min.css",
-      "href": "/css/critical.min.css?v=957c4604d4cf",
-      "hash": "957c4604d4cf",
-      "bytes": 4792
+      "href": "/css/critical.min.css?v=a4f8703986a6",
+      "hash": "a4f8703986a6",
+      "bytes": 4803
     },
     "css/main.css": {
       "source": "css/main.css",
       "output": "css/main.min.css",
-      "href": "/css/main.min.css?v=d6d853c77545",
-      "hash": "d6d853c77545",
-      "bytes": 29145
+      "href": "/css/main.min.css?v=34910ce8416e",
+      "hash": "34910ce8416e",
+      "bytes": 29156
     },
     "demo/cq-compare/styles.css": {
       "source": "demo/cq-compare/styles.css",
@@ -165,9 +165,9 @@
     "heroMainpageStyle.css": {
       "source": "heroMainpageStyle.css",
       "output": "heroMainpageStyle.min.css",
-      "href": "/heroMainpageStyle.min.css?v=5dc6c64129cf",
-      "hash": "5dc6c64129cf",
-      "bytes": 4560
+      "href": "/heroMainpageStyle.min.css?v=cc89bdd1677d",
+      "hash": "cc89bdd1677d",
+      "bytes": 4571
     },
     "home.css": {
       "source": "home.css",
@@ -270,9 +270,9 @@
     "styles.css": {
       "source": "styles.css",
       "output": "styles.min.css",
-      "href": "/styles.min.css?v=82de11089fe3",
-      "hash": "82de11089fe3",
-      "bytes": 16398
+      "href": "/styles.min.css?v=550d144ceabd",
+      "hash": "550d144ceabd",
+      "bytes": 16409
     },
     "swipeandcook-invite.css": {
       "source": "swipeandcook-invite.css",
