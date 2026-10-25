@@ -125,8 +125,8 @@ test('Blumenladen und Immobilienmakler verbinden Leistung und bestehenden Ratgeb
     href: '/blog/seo-fuer-blumenladen'
   }]);
   assert.deepEqual(getIndustryContextLinks('webdesign-immobilienmakler'), [{
-    label: 'Immobilienmakler-Website im Blog planen',
-    href: '/blog/immobilienmakler-website-erstelle'
+    label: 'Homepage-Check für Immobilienmakler im Blog',
+    href: '/blog/immobilienmakler-homepage-check'
   }]);
 
   const flowerGuide = getIndustryCommercialGuide('blumenladen');

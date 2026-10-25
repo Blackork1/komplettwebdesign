@@ -166,26 +166,24 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     supportingAction: { label: 'Blumenladen-Website planen', href: '/branchen/webdesign-blumenladen' }
   }),
   freezeTarget({
+    // Blog-Bereinigung 25.10.2026: die Bezirksseite deckt das Thema ab.
     path: '/blog/webdesign-lichtenberg-berlin',
-    intentId: 'lichtenberg-website-informational',
-    state: 'active',
+    intentId: 'webdesign-lichtenberg',
+    state: 'redirect',
     priority: 'C',
-    primaryQuery: 'website lokale unternehmen lichtenberg',
-    contentRole: 'Informativer Beitrag; die kommerzielle Suchabsicht liegt bei der Bezirksseite Lichtenberg',
-    requiredLinks: ['/webdesign-berlin/lichtenberg', '/pakete'],
-    primaryAction: { label: 'Webdesign in Lichtenberg', href: '/webdesign-berlin/lichtenberg' },
-    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
+    primaryQuery: 'webdesign lichtenberg',
+    requiredLinks: [],
+    redirectTo: '/webdesign-berlin/lichtenberg'
   }),
   freezeTarget({
+    // Blog-Bereinigung 25.10.2026: „Webdesign Berlin“ gehört zur Startseite.
     path: '/blog/webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist',
-    intentId: 'warum-website-berlin-informational',
-    state: 'active',
+    intentId: 'webdesign-berlin',
+    state: 'redirect',
     priority: 'C',
-    primaryQuery: 'warum website für unternehmen berlin',
-    contentRole: 'Informativer Beitrag; die Suche „Webdesign Berlin“ gehört zur Startseite',
-    requiredLinks: ['/', '/pakete'],
-    primaryAction: { label: 'Webdesign Berlin', href: '/' },
-    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
+    primaryQuery: 'webdesign berlin',
+    requiredLinks: [],
+    redirectTo: '/'
   }),
   freezeTarget({
     path: '/blog/website-kosten-2025-einfach-erklaert',

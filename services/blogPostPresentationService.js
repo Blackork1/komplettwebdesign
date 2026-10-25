@@ -10,6 +10,7 @@ import { buildLegacyRenderLocals } from './contentAgent/legacyEjsRenderService.j
 import { getSeoRecoveryTarget } from '../data/seoIntentRegistry.js';
 import { resolveHeadline, resolveSeoDescription, resolveSeoTitle } from '../data/seoMetaOverrides.js';
 import { rewriteLegacyInternalLinks } from '../util/legacyInternalLinks.js';
+import { isNoindexBlogSlug } from '../data/blogRedirects.js';
 
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
 const RESERVED_PREVIEW_IDS = Object.freeze([
@@ -300,7 +301,9 @@ export function buildBlogPostPageModel({
     contextLinks,
     structuredDataBlocks,
     seoExtra,
-    robots: previewMode ? 'noindex,nofollow' : 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1',
+    robots: previewMode
+      ? 'noindex,nofollow'
+      : (isNoindexBlogSlug(post.slug) ? 'noindex,follow' : 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1'),
     previewMode: previewMode === true,
     showComments: previewMode !== true,
     disableTracking: previewMode === true,

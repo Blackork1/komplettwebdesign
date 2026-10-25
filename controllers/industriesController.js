@@ -17,8 +17,8 @@ const INDUSTRY_CONTEXT_LINKS = Object.freeze({
   ]),
   immobilienmakler: Object.freeze([
     Object.freeze({
-      label: 'Immobilienmakler-Website im Blog planen',
-      href: '/blog/immobilienmakler-website-erstelle'
+      label: 'Homepage-Check für Immobilienmakler im Blog',
+      href: '/blog/immobilienmakler-homepage-check'
     })
   ])
 });

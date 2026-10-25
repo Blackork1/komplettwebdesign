@@ -6,16 +6,10 @@ export const SEO_TITLE_MAX_LENGTH = 65;
 
 // Feste Titel und Überschriften: gelten immer, auch wenn der gespeicherte Text kurz genug ist.
 // Einsatz nur, wo ein Beitrag sonst mit einer Hauptseite um denselben Suchbegriff konkurriert.
-export const FORCED_SEO_TITLES = Object.freeze({
-  // „Webdesign Berlin“ gehört zur Startseite, der Beitrag beantwortet die Frage nach dem Warum.
-  '/blog/webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist': 'Warum Berliner Unternehmen eine eigene Website brauchen'
-});
+// Die Beiträge zu Webdesign Berlin und Lichtenberg leiten seit der Blog-Bereinigung weiter (data/blogRedirects.js).
+export const FORCED_SEO_TITLES = Object.freeze({});
 
-export const FORCED_HEADLINES = Object.freeze({
-  '/blog/webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist': 'Warum Berliner Unternehmen eine professionelle Website brauchen',
-  // „Webdesign Lichtenberg“ gehört zur Bezirksseite /webdesign-berlin/lichtenberg.
-  '/blog/webdesign-lichtenberg-berlin': 'Warum Betriebe in Lichtenberg eine eigene Website brauchen'
-});
+export const FORCED_HEADLINES = Object.freeze({});
 
 export const SHORT_SEO_TITLES = Object.freeze({
   '/blog/barrierefreiheit-2020-websites-leitfaden': 'BFSG 2025: Anforderungen an barrierefreie Websites',

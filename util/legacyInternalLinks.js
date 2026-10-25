@@ -1,6 +1,15 @@
 // Blog- und Ratgebertexte liegen in der Datenbank und enthalten teils Links auf Seiten, die inzwischen
 // weiterleiten. Beim Ausliefern zeigen sie direkt aufs Ziel, ohne Umweg über die Weiterleitung.
 import { SEO_RECOVERY_REDIRECTS } from '../data/seoIntentRegistry.js';
+import { BLOG_REDIRECTS, BLOG_SLUG_ALIASES } from '../data/blogRedirects.js';
+
+// Zusammengeführte Blogartikel, auch unter ihrem alten Datenbank-Slug.
+const BLOG_LINK_TARGETS = Object.fromEntries([
+  ...Object.entries(BLOG_REDIRECTS).map(([slug, target]) => [`/blog/${slug}`, target]),
+  ...Object.entries(BLOG_SLUG_ALIASES)
+    .filter(([, canonical]) => BLOG_REDIRECTS[canonical])
+    .map(([stored, canonical]) => [`/blog/${stored}`, BLOG_REDIRECTS[canonical]])
+]);
 
 const EXTRA_LINK_TARGETS = Object.freeze({
   '/en/webdesign-berlin': '/en',
@@ -9,7 +18,7 @@ const EXTRA_LINK_TARGETS = Object.freeze({
 
 function buildTargets() {
   const targets = new Map();
-  for (const [from, to] of Object.entries({ ...SEO_RECOVERY_REDIRECTS, ...EXTRA_LINK_TARGETS })) {
+  for (const [from, to] of Object.entries({ ...BLOG_LINK_TARGETS, ...SEO_RECOVERY_REDIRECTS, ...EXTRA_LINK_TARGETS })) {
     targets.set(from.replace(/\/+$/, '').toLowerCase() || '/', to);
   }
   return targets;

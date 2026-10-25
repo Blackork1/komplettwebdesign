@@ -6,7 +6,7 @@ import { DISTRICT_CONTENT_UPDATED_ISO } from "../data/districtPages.js";
 import { createModifiedDateResolver } from "../helpers/contentDates.js";
 import { SEO_GUIDE_CLUSTER } from "../data/seoGuideCluster.js";
 import { SEO_RECOVERY_REDIRECTS } from "../data/seoIntentRegistry.js";
-import { REDIRECTED_BLOG_SLUGS, canonicalBlogSlug } from "../data/blogRedirects.js";
+import { UNLISTED_BLOG_SLUGS, canonicalBlogSlug } from "../data/blogRedirects.js";
 import pricingService from "../services/pricingService.js";
 import { canonicalLeistungPath, REDIRECTED_LEISTUNG_SLUGS } from "../helpers/leistungPageRouting.js";
 import {
@@ -76,7 +76,7 @@ export async function sitemapXml(req, res, next) {
          FROM posts
         WHERE published = true
           AND slug <> ALL($1::text[])`,
-      [REDIRECTED_BLOG_SLUGS],
+      [UNLISTED_BLOG_SLUGS],
       "posts"
     );
 

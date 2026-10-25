@@ -1,3 +1,5 @@
+import { isNoindexBlogSlug } from '../data/blogRedirects.js';
+
 const OPAQUE_PREFIXES = ['/admin', '/api', '/auth', '/webhook', '/uploads', '/assets', '/images', '/js', '/css', '/fonts', '/create-checkout-session'];
 const matchesPrefix = (path, prefix) => path === prefix || path.startsWith(`${prefix}/`);
 
@@ -13,7 +15,18 @@ export function canonicalPublicPath(path = '/') {
 export function shouldNoindexPublicPath(path = '/') {
   return ['/booking', '/en/booking', '/return_policy', '/demo', '/swipeandcook-datenschutz', '/swipeandcook-nutzungsbedingungen', '/swipeandcook-support', '/swipeandcook-konto-loeschen']
     .some(prefix => matchesPrefix(path, prefix))
-    || /^\/en\/webdesign-berlin\/[^/]+$/.test(path);
+    || /^\/en\/webdesign-berlin\/[^/]+$/.test(path)
+    || isNoindexBlogPath(path);
+}
+
+function isNoindexBlogPath(path) {
+  const match = /^\/blog\/([^/]+)$/.exec(path);
+  if (!match) return false;
+  try {
+    return isNoindexBlogSlug(decodeURIComponent(match[1]));
+  } catch {
+    return isNoindexBlogSlug(match[1]);
+  }
 }
 
 export function publicSeoMiddleware(req, res, next) {

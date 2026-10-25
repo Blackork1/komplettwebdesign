@@ -4,7 +4,7 @@ import pool from '../util/db.js';              // dein pg-Pool (ES-Export)
 import slugify from 'slugify';
 import { enqueueAdminReviewNotificationJob } from '../repositories/contentJobRepository.js';
 import { createAdminReviewDelivery } from '../repositories/contentNotificationRepository.js';
-import { REDIRECTED_BLOG_SLUGS, storedBlogSlug, withCanonicalBlogSlug } from '../data/blogRedirects.js';
+import { REDIRECTED_BLOG_SLUGS, UNLISTED_BLOG_SLUGS, storedBlogSlug, withCanonicalBlogSlug } from '../data/blogRedirects.js';
 
 export default class BlogPostModel {
   /* ---------- CREATE ---------- */
@@ -204,7 +204,7 @@ export default class BlogPostModel {
        WHERE published = true
          AND slug <> ALL($1::text[])
        ORDER BY created_at DESC`,
-      [REDIRECTED_BLOG_SLUGS]
+      [UNLISTED_BLOG_SLUGS]
     );
     return rows.map(withCanonicalBlogSlug);
   }
@@ -217,7 +217,7 @@ export default class BlogPostModel {
        WHERE published = true
          AND slug <> ALL($1::text[])
        ORDER BY created_at DESC`,
-      [REDIRECTED_BLOG_SLUGS]
+      [UNLISTED_BLOG_SLUGS]
     );
     return rows.map(withCanonicalBlogSlug);
   }
@@ -237,7 +237,7 @@ export default class BlogPostModel {
        ORDER BY created_at DESC
        LIMIT $2
        OFFSET $3`,
-      [REDIRECTED_BLOG_SLUGS, limit, offset]
+      [UNLISTED_BLOG_SLUGS, limit, offset]
     );
     return rows.map(withCanonicalBlogSlug);
   }
@@ -248,7 +248,7 @@ export default class BlogPostModel {
        FROM posts
        WHERE published = true
          AND slug <> ALL($1::text[])`,
-      [REDIRECTED_BLOG_SLUGS]
+      [UNLISTED_BLOG_SLUGS]
     );
     return Number(rows[0]?.count || 0);
   }
@@ -261,7 +261,7 @@ export default class BlogPostModel {
          AND slug <> ALL($1::text[])
        ORDER BY created_at DESC
        LIMIT $2`,
-      [REDIRECTED_BLOG_SLUGS, limit]
+      [UNLISTED_BLOG_SLUGS, limit]
     );
     return rows.map(withCanonicalBlogSlug);
   }

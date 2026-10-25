@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 
 import { rewriteLegacyInternalLinks, resolveLegacyInternalLink } from '../util/legacyInternalLinks.js';
 import { FORCED_HEADLINES, FORCED_SEO_TITLES, resolveHeadline, resolveSeoTitle, SHORT_SEO_TITLES } from '../data/seoMetaOverrides.js';
-import { buildBlogPostPageModel, ensureContentImageAlt } from '../services/blogPostPresentationService.js';
+import { ensureContentImageAlt } from '../services/blogPostPresentationService.js';
+import { resolveBlogRedirect } from '../data/blogRedirects.js';
 import { buildOrganizationSchema } from '../helpers/entitySchema.js';
 import { getSeoRecoveryTarget } from '../data/seoIntentRegistry.js';
 
@@ -41,44 +42,20 @@ test('Blog und Ratgeber schreiben alte Links beim Ausliefern um', () => {
   assert.match(read('controllers/ratgeberController.js'), /const renderedContent = rewriteLegacyInternalLinks\(demoteContentH1/);
 });
 
-test('der Blogbeitrag „Warum Berliner Unternehmen …“ konkurriert nicht mehr um „Webdesign Berlin“', () => {
-  const model = buildBlogPostPageModel({
-    post: {
-      id: 7,
-      slug: BERLIN_POST.replace('/blog/', ''),
-      title: 'Webdesign Berlin: Warum eine professionelle Website für Unternehmen unverzichtbar ist',
-      content: '<h2>Abschnitt</h2><p>Mehr zu <a href="/webdesign-berlin">Webdesign Berlin</a>.</p><img src="/x.webp">',
-      content_format: 'static_html',
-      excerpt: 'Auszug',
-      image_url: '/images/blog.webp',
-      faq_json: [],
-      created_at: new Date('2026-07-10T08:00:00Z'),
-      updated_at: new Date('2026-07-10T09:00:00Z')
-    },
-    pricing: {},
-    canonicalBaseUrl: 'https://www.komplettwebdesign.de'
-  });
-  assert.equal(model.title, 'Warum Berliner Unternehmen eine eigene Website brauchen');
-  assert.ok(model.title.length <= 60);
-  assert.equal(model.post.title, 'Warum Berliner Unternehmen eine professionelle Website brauchen');
-  assert.doesNotMatch(`${model.title} ${model.post.title}`, /^Webdesign Berlin/);
-  assert.match(model.renderedContent, /<a href="\/">Webdesign Berlin<\/a>/);
-  assert.match(model.renderedContent, /alt="Abbildung: Abschnitt"/);
-  assert.deepEqual(model.contextLinks.map((link) => link.href), ['/', '/pakete']);
-  assert.equal(getSeoRecoveryTarget(BERLIN_POST)?.primaryAction?.label, 'Webdesign Berlin');
-});
-
-test('der Lichtenberg-Beitrag überlässt „Webdesign Lichtenberg“ der Bezirksseite', () => {
-  assert.equal(resolveHeadline('/blog/webdesign-lichtenberg-berlin', 'Webdesign Lichtenberg in Berlin: …'), FORCED_HEADLINES['/blog/webdesign-lichtenberg-berlin']);
-  assert.doesNotMatch(FORCED_HEADLINES['/blog/webdesign-lichtenberg-berlin'], /^Webdesign/);
-  assert.equal(getSeoRecoveryTarget('/blog/webdesign-lichtenberg-berlin')?.primaryAction?.href, '/webdesign-berlin/lichtenberg');
+test('die Beiträge zu Webdesign Berlin und Lichtenberg leiten auf die Hauptseiten weiter', () => {
+  assert.equal(resolveBlogRedirect(BERLIN_POST.replace('/blog/', '')), '/');
+  assert.equal(resolveBlogRedirect('webdesign-lichtenberg-berlin'), '/webdesign-berlin/lichtenberg');
+  assert.equal(getSeoRecoveryTarget(BERLIN_POST)?.state, 'redirect');
+  assert.equal(getSeoRecoveryTarget('/blog/webdesign-lichtenberg-berlin')?.redirectTo, '/webdesign-berlin/lichtenberg');
+  assert.match(rewriteLegacyInternalLinks(`<a href="${BERLIN_POST}">x</a>`), /<a href="\/">x<\/a>/);
+  // Feste Titel waren nur eine Zwischenlösung für diese beiden Beiträge.
+  assert.deepEqual(FORCED_SEO_TITLES, {});
+  assert.deepEqual(FORCED_HEADLINES, {});
   assert.equal(resolveHeadline('/blog/anderer-beitrag', 'Originaltitel'), 'Originaltitel');
 });
 
-test('feste Titel gelten immer, Kurztitel nur bei zu langen gespeicherten Titeln', () => {
-  assert.equal(resolveSeoTitle(BERLIN_POST, 'Kurz'), FORCED_SEO_TITLES[BERLIN_POST]);
-  assert.equal(SHORT_SEO_TITLES[BERLIN_POST], undefined);
-  for (const title of Object.values(FORCED_SEO_TITLES)) assert.ok(title.length <= 60, title);
+test('Kurztitel gelten nur bei zu langen gespeicherten Titeln', () => {
+  assert.equal(resolveSeoTitle('/blog/beliebig', 'Kurz'), 'Kurz');
   const long = 'Reinigungsfirma Website erstellen Berlin - Webdesign ab 799 € günstig';
   assert.equal(resolveSeoTitle('/branchen/webdesign-reinigung', long), SHORT_SEO_TITLES['/branchen/webdesign-reinigung']);
   assert.match(read('controllers/industriesController.js'), /resolveSeoTitle\(`\/branchen\/webdesign-\$\{industry\.slug \|\| slug\}`/);

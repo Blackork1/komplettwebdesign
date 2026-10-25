@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import pool from '../util/db.js';
 import BlogPostModel from '../models/BlogPostModel.js';
-import { BLOG_REDIRECTS, REDIRECTED_BLOG_SLUGS } from '../data/blogRedirects.js';
+import { BLOG_REDIRECTS, REDIRECTED_BLOG_SLUGS, UNLISTED_BLOG_SLUGS } from '../data/blogRedirects.js';
 import { SEO_RECOVERY_REDIRECTS } from '../data/seoIntentRegistry.js';
 
 const REDIRECT_SOURCE_SLUG = 'website-kosten-2026-berlin-vergleich-2025';
@@ -25,23 +25,20 @@ function queryDb(rows = []) {
 test('Kostenartikel besitzt eine einzige kanonische öffentliche URL', () => {
   assert.equal(
     BLOG_REDIRECTS['website-kosten-2026-berlin-vergleich-2025'],
-    'website-kosten-2025-einfach-erklaert'
+    '/blog/website-kosten-2025-einfach-erklaert'
   );
-  assert.deepEqual(REDIRECTED_BLOG_SLUGS, ['website-kosten-2026-berlin-vergleich-2025']);
+  assert.ok(REDIRECTED_BLOG_SLUGS.includes(REDIRECT_SOURCE_SLUG));
   assert.equal(Object.isFrozen(BLOG_REDIRECTS), true);
   assert.equal(Object.isFrozen(REDIRECTED_BLOG_SLUGS), true);
   assert.equal(
     SEO_RECOVERY_REDIRECTS['/blog/website-kosten-2026-berlin-vergleich-2025'],
-    `/blog/${BLOG_REDIRECTS['website-kosten-2026-berlin-vergleich-2025']}`
+    BLOG_REDIRECTS['website-kosten-2026-berlin-vergleich-2025']
   );
 });
 
-test('Blogroute setzt Redirect vor dynamischer Slugroute', () => {
+test('Blogroute prüft Weiterleitungen vor der Artikelanzeige', () => {
   const source = readFileSync(new URL('../routes/blogRoutes.js', import.meta.url), 'utf8');
-  const redirectIndex = source.indexOf("router.get('/blog/website-kosten-2026-berlin-vergleich-2025'");
-  const slugIndex = source.indexOf("router.get('/blog/:slug'");
-  assert.ok(redirectIndex >= 0 && redirectIndex < slugIndex);
-  assert.match(source, /res\.redirect\(301,\s*'\/blog\/website-kosten-2025-einfach-erklaert'\)/);
+  assert.match(source, /router\.get\('\/blog\/:slug', \(req, res, next\) => \{[\s\S]*?resolveBlogRedirect\(req\.params\.slug\)[\s\S]*?\}, showPost\);/);
 });
 
 test('alle öffentlichen Blogqueries filtern Redirectquellen mit korrekten SQL-Parametern', async () => {
@@ -73,10 +70,11 @@ test('alle öffentlichen Blogqueries filtern Redirectquellen mit korrekten SQL-P
   [allDb, pageDb, countDb, featuredDb, slugDb].forEach((db) => {
     assert.match(db.calls[0].sql, /slug <> ALL\(\$\d::text\[\]\)/);
   });
-  assert.deepEqual(allDb.calls[0].params, [REDIRECTED_BLOG_SLUGS]);
-  assert.deepEqual(pageDb.calls[0].params, [REDIRECTED_BLOG_SLUGS, 7, 3]);
-  assert.deepEqual(countDb.calls[0].params, [REDIRECTED_BLOG_SLUGS]);
-  assert.deepEqual(featuredDb.calls[0].params, [REDIRECTED_BLOG_SLUGS, 4]);
+  // Listen zeigen weder weitergeleitete noch noindex-Artikel, die Einzelseite nur keine weitergeleiteten.
+  assert.deepEqual(allDb.calls[0].params, [UNLISTED_BLOG_SLUGS]);
+  assert.deepEqual(pageDb.calls[0].params, [UNLISTED_BLOG_SLUGS, 7, 3]);
+  assert.deepEqual(countDb.calls[0].params, [UNLISTED_BLOG_SLUGS]);
+  assert.deepEqual(featuredDb.calls[0].params, [UNLISTED_BLOG_SLUGS, 4]);
   assert.deepEqual(slugDb.calls[0].params, [REDIRECT_SOURCE_SLUG, REDIRECTED_BLOG_SLUGS]);
 });
 
@@ -93,10 +91,10 @@ test('Adminliste bleibt vollständig und filtert Redirectquellen nicht heraus', 
 test('Sitemapquery schließt Redirectquellen über die zentrale Registry aus', () => {
   const source = readFileSync(new URL('../controllers/sitemapController.js', import.meta.url), 'utf8');
   const postsQuery = source.match(
-    /const posts = await querySafe\(\s*`([\s\S]*?)`\s*,\s*\[REDIRECTED_BLOG_SLUGS\]\s*,\s*"posts"\s*\)/
+    /const posts = await querySafe\(\s*`([\s\S]*?)`\s*,\s*\[UNLISTED_BLOG_SLUGS\]\s*,\s*"posts"\s*\)/
   );
 
   assert.ok(postsQuery, 'parametrisierte Posts-Sitemapquery nicht gefunden');
   assert.match(postsQuery[1], /WHERE published = true\s+AND slug <> ALL\(\$1::text\[\]\)/);
-  assert.match(source, /import \{ REDIRECTED_BLOG_SLUGS(?:, canonicalBlogSlug)? \} from ["']\.\.\/data\/blogRedirects\.js["']/);
+  assert.match(source, /import \{ UNLISTED_BLOG_SLUGS(?:, canonicalBlogSlug)? \} from ["']\.\.\/data\/blogRedirects\.js["']/);
 });
