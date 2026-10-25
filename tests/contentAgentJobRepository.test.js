@@ -146,7 +146,7 @@ test('claimNextJob reserviert atomar genau einen Job in derselben Transaktion', 
   assert.match(claimCall.sql, /WHERE status = 'queued' AND run_after <= NOW\(\)/i);
   assert.match(
     claimCall.sql,
-    /AND EXISTS \( SELECT 1 FROM content_agent_settings settings WHERE settings\.id = 1 AND settings\.agent_enabled = TRUE \)/i
+    /AND \( job_type = 'sync_search_console' OR EXISTS \( SELECT 1 FROM content_agent_settings settings WHERE settings\.id = 1 AND settings\.agent_enabled = TRUE \) \)/i
   );
   assert.match(claimCall.sql, /ORDER BY run_after, created_at/i);
   assert.match(claimCall.sql, /FOR UPDATE SKIP LOCKED/i);

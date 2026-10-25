@@ -857,6 +857,11 @@ export function createProductionJobHandler({
           providerName: 'google_search_console',
           success: true
         });
+        // Bei pausiertem Agent endet der Job hier: Die Daten sind gespeichert, Auswertungen und
+        // KI-Erklärungen warten, bis der Agent wieder läuft (sie würden sonst gar nicht eingeplant).
+        if (!(await contentAgentIsActive(getSettings))) {
+          return { status: 'completed' };
+        }
         await assertActiveLease(leaseGuard);
         const analysisJob = await enqueueJob({
           jobType: 'analyze_search_opportunities',
@@ -880,11 +885,6 @@ export function createProductionJobHandler({
             'Die lokale Outcome-Auswertung konnte noch nicht eingeplant werden.',
             'CONTENT_REVISION_OUTCOME_ENQUEUE_DEFERRED'
           );
-        }
-        await assertActiveLease(leaseGuard);
-        // Die Artikel-Performance stößt KI-Erklärungen an. Bei pausiertem Agent entstehen keine KI-Kosten.
-        if (!(await contentAgentIsActive(getSettings))) {
-          return { status: 'completed' };
         }
         await assertActiveLease(leaseGuard);
         const performanceJob = await enqueueJob({

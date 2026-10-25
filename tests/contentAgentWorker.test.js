@@ -4536,7 +4536,7 @@ test('ohne Lücke oder bei einem Fehler der Lückensuche synchronisiert der Job 
   }
 });
 
-test('bei pausiertem Content-Agent plant der Sync keine KI-gestützte Artikel-Performance ein', async () => {
+test('bei pausiertem Content-Agent speichert der Sync nur die Daten und plant keine Folgejobs ein', async () => {
   for (const [settings, expectPerformance] of [
     [async () => ({ agent_enabled: false }), false],
     [async () => { throw new Error('Einstellungen nicht lesbar'); }, false],
@@ -4558,7 +4558,11 @@ test('bei pausiertem Content-Agent plant der Sync keine KI-gestützte Artikel-Pe
     }, { leaseGuard: async () => true });
 
     assert.deepEqual(result, { status: 'completed' });
-    assert.deepEqual(jobTypes.slice(0, 2), ['analyze_search_opportunities', 'evaluate_revision_outcomes']);
-    assert.equal(jobTypes.includes('evaluate_article_performance'), expectPerformance);
+    if (expectPerformance) {
+      assert.deepEqual(jobTypes, ['analyze_search_opportunities', 'evaluate_revision_outcomes', 'evaluate_article_performance']);
+    } else {
+      // Folgejobs würden bei pausiertem Agent ohnehin nicht angelegt; der Sync darf daran nicht scheitern.
+      assert.deepEqual(jobTypes, []);
+    }
   }
 });

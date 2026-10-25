@@ -31,15 +31,19 @@ import {
   lockContentPostRevisionInvariant
 } from './contentPostRevisionInvariant.js';
 
+// Der Search-Console-Abruf wird auch bei pausiertem Agent abgeholt, alle anderen Jobs nur bei aktivem Agent.
 const CLAIM_NEXT_JOB_SQL = `
   WITH candidate AS (
     SELECT id
     FROM content_jobs
     WHERE status = 'queued' AND run_after <= NOW()
-      AND EXISTS (
-        SELECT 1
-        FROM content_agent_settings settings
-        WHERE settings.id = 1 AND settings.agent_enabled = TRUE
+      AND (
+        job_type = 'sync_search_console'
+        OR EXISTS (
+          SELECT 1
+          FROM content_agent_settings settings
+          WHERE settings.id = 1 AND settings.agent_enabled = TRUE
+        )
       )
     ORDER BY run_after, created_at
     FOR UPDATE SKIP LOCKED
