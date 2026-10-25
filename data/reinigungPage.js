@@ -77,11 +77,11 @@ export const REINIGUNG_PAGE = Object.freeze({
     highlights: [
       'Leistungen nach Reinigungsart und Objekt',
       'Angebotsanfrage mit Fläche, Turnus und Bezirk',
-      'Praxisbeispiel: Relaunch für TM Sauber & Mehr'
+      'Nachweise, Team und Bewertungen, die Vertrauen schaffen'
     ],
-    image: '/images/home-hero-sauber-desktop.webp',
-    imageAlt: 'Startseite der Website von TM Sauber & Mehr, einer Gebäudereinigung in Berlin',
-    imageSize: [1152, 720]
+    image: 'https://res.cloudinary.com/dvd2cd2be/image/upload/v1769938589/admin_gallery/dtaagkdge9twn0pdgrhk.webp',
+    imageAlt: 'Gebäudereiniger reinigen an Seilen die Glasfassade eines Bürogebäudes',
+    imageSize: [1080, 608]
   },
   sections: [
     {

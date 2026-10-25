@@ -73,7 +73,7 @@ test('Seiten rendern ohne offene Platzhalter, mit Preisen und vollständigen str
     assert.doesNotMatch(main, /\{\{|undefined|NaN|\[object/, slug);
     assert.ok(text.split(' ').length > 1500, `${slug}: zu wenig Inhalt`);
     assert.deepEqual(model.packageCards.map((card) => card.price), ['ab 799 €', 'ab 1.499 €', 'ab 2.499 €']);
-    assert.match(model.ogImage, /^https:\/\/www\.komplettwebdesign\.de\/images\//);
+    assert.match(model.ogImage, /^https:\/\/(www\.komplettwebdesign\.de\/images|res\.cloudinary\.com)\//);
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'];
     const faqPage = graph.find((node) => node['@type'] === 'FAQPage');
     assert.equal(faqPage.mainEntity.length, model.nicheFaq.length);
