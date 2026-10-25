@@ -49,9 +49,9 @@
     </section>
 
     <% pg.sections.forEach((section) => { const titleId = `${section.id}-title`; %>
-    <% if (section.type === 'why') { %>
+    <% if (section.type === 'why') { const hasStats = Array.isArray(section.stats) && section.stats.length > 0; %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
-      <div class="wd-container wd-split">
+      <div class="wd-container<%= hasStats ? ' wd-split' : ' niche-page__narrow' %>">
         <div class="handwerk-page__why">
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
@@ -59,6 +59,7 @@
           <p><%= paragraph %></p>
           <% }) %>
         </div>
+        <% if (hasStats) { %>
         <ul class="handwerk-page__stats" aria-label="Zahlen zur Branche">
           <% section.stats.forEach((stat) => { %>
           <li class="wd-card">
@@ -68,6 +69,7 @@
           </li>
           <% }) %>
         </ul>
+        <% } %>
       </div>
     </section>
 

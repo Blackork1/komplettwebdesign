@@ -174,12 +174,12 @@
 .home-page .home-industry-stories {
   display: grid;
   gap: clamp(12px, 1.8vw, 20px);
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: clamp(28px, 4vw, 48px);
 }
 
 .home-page .home-industry-story {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1 / 1;
   border: 1px solid rgba(11, 42, 70, 0.12);
   border-radius: 22px;
   box-shadow: 0 20px 46px rgba(11, 42, 70, 0.12);
@@ -193,7 +193,8 @@
   transition: border-color 180ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 
-.home-page .home-industry-story:nth-child(even) {
+/* Mittlere Spalte leicht versetzt, damit die sechs Karten nicht wie eine Tabelle wirken. */
+.home-page .home-industry-story:nth-child(3n + 2) {
   margin-top: 28px;
 }
 
@@ -230,11 +231,6 @@
 .home-page .home-industry-story__media img {
   object-fit: cover;
   transition: transform 300ms ease;
-}
-
-.home-page .home-industry-story:nth-child(2) .home-industry-story__media img {
-  transform: scale(1.3);
-  transform-origin: 50% 100%;
 }
 
 .home-page .home-industry-story:is(:hover, :focus-visible) .home-industry-story__media img {
@@ -333,7 +329,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .home-page .home-industry-story:nth-child(even) {
+  .home-page .home-industry-story:nth-child(3n + 2) {
     margin-top: 0;
   }
 

@@ -1981,6 +1981,10 @@
   }
 }
 
+.webdesign-berlin.niche-page .niche-page__narrow > div {
+  max-width: 820px;
+}
+
 /* Mobil: Abschnitte so breit wie der Hero (16 px Seitenabstand), ohne doppelten Innenabstand. */
 @media (max-width: 860px) {
   .webdesign-berlin-page .wd-section {

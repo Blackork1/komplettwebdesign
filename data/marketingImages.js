@@ -152,6 +152,20 @@ export const MARKETING_IMAGES = Object.freeze({
       licenseUrl: PEXELS_LICENSE_URL
     }
   }),
+  // Quadratischer Ausschnitt von industryRealEstate für den Hero der Makler-Seite.
+  industryRealEstateHero: freezeImage({
+    src: '/images/editorial/immobilienberatung-hero.webp',
+    alt: 'Immobilienmaklerin zeigt einem Paar bei der Besichtigung eine Wohnung',
+    width: 960,
+    height: 960,
+    source: {
+      kind: 'external',
+      provider: 'Pexels',
+      creator: 'Pavel Danilyuk',
+      pageUrl: 'https://www.pexels.com/photo/real-estate-agent-talking-to-clients-7937312/',
+      licenseUrl: PEXELS_LICENSE_URL
+    }
+  }),
   industryHealthCoaching: freezeImage({
     src: '/images/editorial/gesundheit-coaching.webp',
     alt: 'Personal Trainer unterstützt eine Kundin beim begleiteten Training im Fitnessstudio',

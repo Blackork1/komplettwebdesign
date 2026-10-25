@@ -6,6 +6,7 @@ import { render } from 'ejs';
 import postcss from 'postcss';
 
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
+import { PRIORITY_INDUSTRY_SLUGS } from '../helpers/seoPagePolicy.js';
 
 const controller = readFileSync(new URL('../controllers/mainController.js', import.meta.url), 'utf8');
 const template = readFileSync(new URL('../views/index.ejs', import.meta.url), 'utf8');
@@ -62,23 +63,28 @@ test('die sichtbare Startseitenfolge führt von Bedarf über Angebot zu Belegen 
   }
 });
 
-test('die Startseite rendert vier Branchenpfade inklusive Handwerk', () => {
+test('die Startseite verlinkt nur Branchen mit eigener, indexierter Seite', () => {
   const $ = load(renderIndustrySection('de'));
   const cards = $('#branchenwege .home-industry-story');
 
-  assert.equal(cards.length, 4);
+  assert.equal(cards.length, 6);
   assert.deepEqual(
     cards.map((_index, element) => $(element).attr('href')).get(),
     [
+      '/handwerker',
+      '/branchen/webdesign-reinigung',
+      '/branchen/webdesign-blumenladen',
       '/branchen/webdesign-fitnesscoach',
       '/branchen/webdesign-immobilienmakler',
-      '/handwerker',
-      '/branchen/webdesign-cafe'
+      '/branchen/webdesign-restaurant'
     ]
   );
-  assert.equal($('#branchenwege a[href="/handwerker"]').length, 1);
+  for (const href of cards.map((_index, element) => $(element).attr('href')).get()) {
+    if (href === '/handwerker') continue;
+    assert.ok(PRIORITY_INDUSTRY_SLUGS.includes(href.replace('/branchen/webdesign-', '')), `${href} steht nicht im Index`);
+  }
   assert.match($('#branchenwege').text(), /\bHandwerk\b/);
-  assert.equal($('#branchenwege img').length, 4);
+  assert.equal($('#branchenwege img').length, 6);
   assert.ok($('#branchenwege img').toArray().every((image) => $(image).attr('alt')?.trim()));
   assert.equal(
     $('#branchenwege .home-industry-overview-link').attr('href'),
@@ -92,26 +98,28 @@ test('der englische Branchenbereich enthält vollständig englische Beschriftung
 
   assert.equal(
     $('#home-industry-title').text().trim(),
-    'Four industries. Four different paths to an enquiry.'
+    'Six industries. Six different paths to an enquiry.'
   );
-  assert.match(text, /Health & Coaching/);
-  assert.match(text, /Real Estate/);
   assert.match(text, /Trades & Crafts/);
-  assert.match(text, /Cafés & Hospitality/);
+  assert.match(text, /Cleaning & Facility Services/);
+  assert.match(text, /Florists/);
+  assert.match(text, /Gyms & Personal Training/);
+  assert.match(text, /Real Estate/);
+  assert.match(text, /Restaurants & Cafés/);
   assert.match(text, /Compare all industry solutions/);
-  assert.doesNotMatch(text, /Branchenlösungen|Gesundheit|Immobilien|Handwerk\b|Öffnungszeiten/);
+  assert.doesNotMatch(text, /Branchenlösungen|Gebäudeservice|Immobilien|Handwerk\b|Öffnungszeiten|Floristik/);
 });
 
-test('die vier Bildgeschichten wechseln von Desktop-Rhythmus zu mobilem Scroll-Snap', () => {
+test('die sechs Bildgeschichten wechseln von Desktop-Rhythmus zu mobilem Scroll-Snap', () => {
   const css = readFileSync(new URL('../public/home.css', import.meta.url), 'utf8');
 
   assert.match(
     css,
-    /\.home-industry-stories\s*\{[\s\S]*?grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);/
+    /\.home-industry-stories\s*\{[\s\S]*?grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\);/
   );
   assert.match(
     css,
-    /\.home-industry-story:nth-child\(even\)\s*\{[\s\S]*?margin-top:\s*28px;/
+    /\.home-industry-story:nth-child\(3n \+ 2\)\s*\{[\s\S]*?margin-top:\s*28px;/
   );
   assert.match(
     css,
@@ -124,10 +132,6 @@ test('die vier Bildgeschichten wechseln von Desktop-Rhythmus zu mobilem Scroll-S
   assert.match(
     css,
     /@media \(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.home-industry-story[\s\S]*?transition:\s*none\s*!important;/
-  );
-  assert.match(
-    css,
-    /\.home-industry-story:nth-child\(2\)[\s\S]*?\.home-industry-story__media img\s*\{[\s\S]*?transform:\s*scale\(1\.3\);/
   );
 });
 

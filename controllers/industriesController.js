@@ -8,7 +8,6 @@ import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { resolveSeoTitle } from '../data/seoMetaOverrides.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
 import { HOME_PROJECTS } from '../data/homeProjects.js';
-import { interpolatePricingTokens } from '../util/pricingViewModel.js';
 import { buildNichePageViewModel, getNichePage } from '../services/nichePageViewModel.js';
 
 const INDUSTRY_CONTEXT_LINKS = Object.freeze({
@@ -130,17 +129,6 @@ const INDUSTRY_REFERENCE_PROJECTS = Object.freeze({
   cafe: 'zur-alten-backstube'
 });
 
-// Texte, die im Code statt in der Datenbank-Vorlage stehen. Grundlage sind echte Suchanfragen
-// aus der Search Console: gesucht wird „Fitnessstudio“, die Vorlage sprach nur von Coaches.
-const INDUSTRY_COPY_OVERRIDES = Object.freeze({
-  fitnesscoach: Object.freeze({
-    title: 'Fitnessstudio-Website erstellen lassen | Personal Trainer',
-    description: 'Webdesign für Fitnessstudios, Gyms und Personal Trainer in Berlin: Kurse, Probetraining und Online-Buchung klar zeigen. Pakete {{price.start}}.',
-    hero_h1: 'Website für Fitnessstudios und Personal Trainer',
-    hero_h2: 'Webdesign für Fitnessstudios, Gyms, Personal Trainer und Online-Coaches'
-  })
-});
-
 export function getIndustryReference(slug) {
   const key = String(slug || '').toLowerCase().replace(/^webdesign-/, '');
   const projectSlug = Object.hasOwn(INDUSTRY_REFERENCE_PROJECTS, key) ? INDUSTRY_REFERENCE_PROJECTS[key] : null;
@@ -159,12 +147,6 @@ export function getIndustryReference(slug) {
     quote: project.de.quote,
     quoteAuthor: project.de.quoteAuthor
   };
-}
-
-export function applyIndustryCopyOverrides(industry, pricing = {}) {
-  const key = String(industry?.slug || '').toLowerCase().replace(/^webdesign-/, '');
-  if (!industry || !Object.hasOwn(INDUSTRY_COPY_OVERRIDES, key)) return industry;
-  return { ...industry, ...interpolatePricingTokens(INDUSTRY_COPY_OVERRIDES[key], pricing, { lng: 'de' }) };
 }
 
 /* --- Hilfsfunktionen --- */
@@ -336,14 +318,11 @@ export async function listIndustries(req, res) {
 /* --- Detailseite (/branchen/:slug) – bleibt wie gehabt, nur mit /branchen-Canon --- */
 export async function showIndustryPage(req, res) {
   const slug = req.params.slug;
-  // Reinigung und Blumenladen haben eigene Seiten im Code statt der Datenbank-Vorlage.
+  // Reinigung, Blumenladen, Fitness, Immobilienmakler und Restaurant haben eigene Seiten im Code.
   const nichePage = getNichePage(slug);
   if (nichePage) return res.render('niche-page', buildNichePageViewModel(nichePage, res.locals));
   try {
-    const industry = applyIndustryCopyOverrides(
-      normalizeLegacyPublicCopy(await getIndustryBySlug(slug), res.locals.packagePricing || {}),
-      res.locals.packagePricing || {}
-    );
+    const industry = normalizeLegacyPublicCopy(await getIndustryBySlug(slug), res.locals.packagePricing || {});
     if (!industry) {
       return res.status(404).render('404', {
         title: 'Branche nicht gefunden',

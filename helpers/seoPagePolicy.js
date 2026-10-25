@@ -51,7 +51,9 @@ export const PRIORITY_INDUSTRY_SLUGS = [
   'reinigungsfirma',
   'reinigung',
   'blumenladen',
-  'immobilienmakler'
+  'immobilienmakler',
+  // Seit 25.10.2026 mit eigenem Inhalt statt Vorlage (data/fitnessPage.js).
+  'fitnesscoach'
 ];
 
 export const REVIEWED_DISTRICT_SLUGS = [

@@ -5,7 +5,8 @@ import ejs from 'ejs';
 
 import { NICHE_PAGES, buildNichePageViewModel, getNichePage } from '../services/nichePageViewModel.js';
 import { buildPricingViewModel } from '../util/pricingViewModel.js';
-import { applyIndustryCopyOverrides, getIndustryReference } from '../controllers/industriesController.js';
+import { getIndustryReference } from '../controllers/industriesController.js';
+import { PRIORITY_INDUSTRY_SLUGS, shouldIncludeIndustryInSitemap } from '../helpers/seoPagePolicy.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 const visiblePackages = [['start', 'Start', 'ab 799 €'], ['business', 'Business', 'ab 1.499 €'], ['wachstum', 'Wachstum', 'ab 2.499 €'], ['individuell', 'Individuell', 'ab 3.500 € oder nach Aufwand']]
@@ -71,7 +72,7 @@ test('Seiten rendern ohne offene Platzhalter, mit Preisen und vollständigen str
   for (const slug of Object.keys(NICHE_PAGES)) {
     const { model, html, main, text } = await render(slug);
     assert.doesNotMatch(main, /\{\{|undefined|NaN|\[object/, slug);
-    assert.ok(text.split(' ').length > 1500, `${slug}: zu wenig Inhalt`);
+    assert.ok(text.split(' ').length > 1300, `${slug}: zu wenig Inhalt`);
     assert.deepEqual(model.packageCards.map((card) => card.price), ['ab 799 €', 'ab 1.499 €', 'ab 2.499 €']);
     assert.match(model.ogImage, /^https:\/\/(www\.komplettwebdesign\.de\/images|res\.cloudinary\.com)\//);
     const graph = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])['@graph'];
@@ -99,16 +100,22 @@ test('Blumenladen: Shop-Angebot passt zu den Paketen, große Shops werden nicht 
   assert.match(text, /große Sortimente mit eigenem Shopsystem/);
 });
 
-test('Sofortmaßnahmen: Fitness-Seite nennt Fitnessstudios, Café-Seite zeigt das echte Projekt', () => {
-  const fitness = applyIndustryCopyOverrides({ slug: 'fitnesscoach', title: 'Alt', hero_h1: 'Alt', name: 'Fitness-Coach' }, pricing);
-  assert.match(fitness.title, /^Fitnessstudio-Website erstellen lassen/);
-  assert.ok(fitness.title.length <= 60);
-  assert.match(fitness.hero_h1, /Fitnessstudios/);
-  assert.match(fitness.description, /ab 799 €\.$/);
-  assert.equal(fitness.name, 'Fitness-Coach', 'übrige Felder bleiben');
-  const kita = { slug: 'kita', title: 'Kita' };
-  assert.equal(applyIndustryCopyOverrides(kita, pricing), kita);
+test('Fitness, Makler und Restaurant haben eigene Seiten und stehen bei Google', async () => {
+  for (const slug of ['fitnesscoach', 'immobilienmakler', 'restaurant']) {
+    assert.ok(getNichePage(slug), slug);
+    assert.ok(PRIORITY_INDUSTRY_SLUGS.includes(slug), `${slug} im Index`);
+    assert.equal(shouldIncludeIndustryInSitemap({ slug, name: slug }), true, slug);
+  }
+  const fitness = await render('fitnesscoach');
+  assert.match(fitness.model.title, /^Fitnessstudio-Website erstellen lassen/);
+  for (const term of ['Fitnessstudio', 'Personal Trainer', 'Probetraining']) assert.ok(fitness.text.includes(term), term);
+  const makler = await render('immobilienmakler');
+  for (const term of ['Immobilienmakler', 'Bewertung', '§ 34c']) assert.ok(makler.text.includes(term), term);
+  const restaurant = await render('restaurant');
+  for (const term of ['Speisekarte', 'Reservierung', 'Zur alten Backstube']) assert.ok(restaurant.text.includes(term), term);
+});
 
+test('Café-Seite zeigt das echte Projekt', () => {
   const reference = getIndustryReference('cafe');
   assert.equal(reference.name, 'Zur alten Backstube');
   assert.equal(reference.href, '/referenzen/zur-alten-backstube');

@@ -74,8 +74,9 @@ test('deaktivierte statische Routen stehen nicht in der Sitemap', async () => {
 test('industry sitemap policy only includes reviewed priority industries and excludes schools and daycare', () => {
   assert.deepEqual(
     PRIORITY_INDUSTRY_SLUGS,
-    ['handwerker', 'restaurant', 'cafe', 'reinigungsfirma', 'reinigung', 'blumenladen', 'immobilienmakler']
+    ['handwerker', 'restaurant', 'cafe', 'reinigungsfirma', 'reinigung', 'blumenladen', 'immobilienmakler', 'fitnesscoach']
   );
+  assert.equal(shouldIncludeIndustryInSitemap({ slug: 'fitnesscoach', name: 'Fitness-Coach' }), true);
 
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-handwerker' }), true);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'restaurant' }), true);

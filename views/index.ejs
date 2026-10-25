@@ -467,41 +467,22 @@ const homePackageImages = {
       <%
       const homeIndustryCopy = isEn ? {
         kicker: 'Industry solutions',
-        title: 'Four industries. Four different paths to an enquiry.',
+        title: 'Six industries. Six different paths to an enquiry.',
         lead: 'Every industry needs different content, images and contact paths. Choose the entry point closest to your offer.',
         overview: 'Compare all industry solutions',
         scrollHint: 'Swipe to explore all industries'
       } : {
         kicker: 'Branchenlösungen',
-        title: 'Vier Branchen. Vier unterschiedliche Wege zur Anfrage.',
+        title: 'Sechs Branchen. Sechs unterschiedliche Wege zur Anfrage.',
         lead: 'Jede Branche braucht andere Inhalte, Bilder und Kontaktwege. Wähle den Einstieg, der deinem Angebot am nächsten kommt.',
         overview: 'Alle Branchenlösungen vergleichen',
         scrollHint: 'Wischen, um alle Branchen zu entdecken'
       };
 
+      // Nur Branchen mit eigener, geprüfter Seite (siehe PRIORITY_INDUSTRY_SLUGS in helpers/seoPagePolicy.js).
       const homeIndustryStories = [
         {
           number: '01',
-          href: '/branchen/webdesign-fitnesscoach',
-          name: isEn ? 'Health & Coaching' : 'Gesundheit & Coaching',
-          detail: isEn ? 'Trust, services and appointment paths' : 'Vertrauen, Angebote und Terminwege',
-          image: homeMarketingImages.industryHealthCoaching,
-          imageAlt: isEn
-            ? 'Personal trainer supporting a client during guided exercise in a gym'
-            : homeMarketingImages.industryHealthCoaching.alt
-        },
-        {
-          number: '02',
-          href: '/branchen/webdesign-immobilienmakler',
-          name: isEn ? 'Real Estate' : 'Immobilien',
-          detail: isEn ? 'Region, properties and personal advice' : 'Region, Objekte und persönliche Beratung',
-          image: homeMarketingImages.industryRealEstate,
-          imageAlt: isEn
-            ? 'Real estate agent discussing property documents with clients'
-            : homeMarketingImages.industryRealEstate.alt
-        },
-        {
-          number: '03',
           href: '/handwerker',
           name: isEn ? 'Trades & Crafts' : 'Handwerk',
           detail: isEn ? 'Services, service area and quick enquiries' : 'Leistungen, Einsatzgebiet und schnelle Anfrage',
@@ -514,10 +495,56 @@ const homePackageImages = {
             : 'Handwerker in Arbeitskleidung mit Schutzhandschuhen auf der Baustelle'
         },
         {
+          number: '02',
+          href: '/branchen/webdesign-reinigung',
+          name: isEn ? 'Cleaning & Facility Services' : 'Reinigung & Gebäudeservice',
+          detail: isEn ? 'Services, properties and quote requests' : 'Leistungen, Objekte und Angebotsanfrage',
+          image: {
+            src: 'https://res.cloudinary.com/dvd2cd2be/image/upload/c_fill,w_720,h_720,q_auto/v1769938589/admin_gallery/dtaagkdge9twn0pdgrhk.webp',
+            source: { kind: 'own', provider: 'Komplett Webdesign' }
+          },
+          imageAlt: isEn
+            ? 'Building cleaners on ropes cleaning the glass facade of an office building'
+            : 'Gebäudereiniger reinigen an Seilen die Glasfassade eines Bürogebäudes'
+        },
+        {
+          number: '03',
+          href: '/branchen/webdesign-blumenladen',
+          name: isEn ? 'Florists' : 'Blumenladen & Floristik',
+          detail: isEn ? 'Bouquets, occasions and orders' : 'Sträuße, Anlässe und Bestellung',
+          image: homeMarketingImages.industryFloristHero,
+          imageAlt: isEn
+            ? 'Florist arranging a bouquet of fresh flowers in her shop'
+            : homeMarketingImages.industryFloristHero.alt
+        },
+        {
           number: '04',
-          href: '/branchen/webdesign-cafe',
-          name: isEn ? 'Cafés & Hospitality' : 'Café & Gastronomie',
-          detail: isEn ? 'Atmosphere, opening hours and reservations' : 'Atmosphäre, Öffnungszeiten und Reservierung',
+          href: '/branchen/webdesign-fitnesscoach',
+          name: isEn ? 'Gyms & Personal Training' : 'Fitness & Personal Training',
+          detail: isEn ? 'Classes, prices and trial sessions' : 'Kurse, Preise und Probetraining',
+          image: {
+            src: 'https://res.cloudinary.com/dvd2cd2be/image/upload/c_fill,w_720,h_720,q_auto/v1761069298/admin_gallery/aqro92igklmkmydyfz1p.webp',
+            source: { kind: 'own', provider: 'Komplett Webdesign' }
+          },
+          imageAlt: isEn
+            ? 'Woman training with a barbell in a gym'
+            : 'Frau trainiert im Fitnessstudio an der Langhantel'
+        },
+        {
+          number: '05',
+          href: '/branchen/webdesign-immobilienmakler',
+          name: isEn ? 'Real Estate' : 'Immobilien',
+          detail: isEn ? 'Owners, properties and valuation requests' : 'Eigentümer, Objekte und Bewertungsanfrage',
+          image: homeMarketingImages.industryRealEstateHero,
+          imageAlt: isEn
+            ? 'Real estate agent showing a couple an apartment during a viewing'
+            : homeMarketingImages.industryRealEstateHero.alt
+        },
+        {
+          number: '06',
+          href: '/branchen/webdesign-restaurant',
+          name: isEn ? 'Restaurants & Cafés' : 'Restaurant & Café',
+          detail: isEn ? 'Menu, opening hours and reservations' : 'Speisekarte, Öffnungszeiten und Reservierung',
           image: {
             src: '/images/cafe-min.webp',
             source: { kind: 'own', provider: 'Komplett Webdesign' }
