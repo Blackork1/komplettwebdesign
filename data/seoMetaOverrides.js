@@ -22,7 +22,7 @@ export const SHORT_SEO_TITLES = Object.freeze({
   '/blog/immobilienmakler-website-erstelle': 'Immobilienmakler-Website erstellen: moderne Homepage',
   '/blog/landingpages-webshop-webdesign-berlin': 'Landingpages & Webshop-Webdesign Berlin: Zwei Praxisfälle',
   '/blog/local-seo-berlin-fuer-freelancer': 'Local SEO Berlin für Freelancer und kleine Unternehmen',
-  '/blog/lokale-seo-hacks-fuer-berlin': 'Lokale SEO Berlin: 10 Tipps fürs Google-Unternehmensprofil',
+  '/blog/lokale-seo-hacks-fuer-berlin': 'Lokale SEO Berlin: 12 Tipps für Google-Profil und Website',
   '/blog/scroll-snap-galerie-zoom-on-view': 'Micro-Motion-Design: Scroll-Snap-Galerie mit Zoom-on-View',
   '/blog/von-traffic-zu-terminen': 'Marketing-Funnel für KMU: Von Website-Traffic zu Terminen',
   // Die kommerzielle Suche „Webdesign Lichtenberg“ gehört zur Bezirksseite, nicht zum Blogbeitrag.
