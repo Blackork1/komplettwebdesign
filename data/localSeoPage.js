@@ -41,7 +41,7 @@ export const localSeoPage = Object.freeze({
       { label: 'Laufende Arbeit', text: 'Profil, Inhalte, Fotos und Kontaktdaten benötigen Pflege. Einzelmaßnahmen ersetzen keine fortlaufende Beobachtung des lokalen Markts.' }
     ],
     links: [
-      { label: 'Webdesign Berlin', href: '/webdesign-berlin' },
+      { label: 'Webdesign Berlin', href: '/' },
       { label: 'Branchenlösung Blumenladen', href: '/branchen/webdesign-blumenladen' },
       { label: 'Local-SEO-Ratgeber für Blumenläden', href: '/blog/seo-fuer-blumenladen' }
     ]
@@ -427,7 +427,7 @@ export const localSeoPage = Object.freeze({
   internalLinks: [
     {
       label: 'Webdesign Berlin',
-      href: '/webdesign-berlin',
+      href: '/',
       text: 'Individuelle Websites mit technischer SEO-Grundlage.'
     },
     {

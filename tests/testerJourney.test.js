@@ -41,7 +41,7 @@ test('Nach dem Ergebnis stehen vier getrennte Wege bereit', () => {
   const expectedLinks = [
     '/ratgeber',
     '/leistungen/website-audit',
-    '/webdesign-berlin',
+    '/',
     '/kontakt?projektart=website-audit'
   ];
   for (const href of expectedLinks) {

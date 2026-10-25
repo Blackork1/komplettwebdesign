@@ -27,7 +27,7 @@ test('die Leistungsübersicht gruppiert vorhandene Angebote nach vier Nutzerziel
   );
 
   assert.deepEqual(linksByGroup['Neue Website'], [
-    '/webdesign-berlin',
+    '/',
     '/pakete',
     '/leistungen/landingpage-erstellen-lassen'
   ]);

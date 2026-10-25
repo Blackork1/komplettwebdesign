@@ -99,6 +99,7 @@ test('erster Generierungsrun lädt Linkinventar vor createRun und Retry verwende
   assert.equal(createRuns, 1);
   assert.equal(storedRun.runtime_snapshot_json.ruleManifestHash, CONTENT_AGENT_RULE_MANIFEST_HASH);
   assert.deepEqual(storedRun.runtime_snapshot_json.allowedInternalLinks, [
+    '/',
     '/blog',
     '/blog/bestehender-artikel',
     '/branchen',
@@ -108,8 +109,7 @@ test('erster Generierungsrun lädt Linkinventar vor createRun und Retry verwende
     '/leistungen/seo',
     '/pakete',
     '/ratgeber',
-    '/ratgeber/website-planen',
-    '/webdesign-berlin'
+    '/ratgeber/website-planen'
   ]);
   assert.match(storedRun.runtime_snapshot_json.allowedInternalLinksHash, /^[0-9a-f]{64}$/);
   assert.deepEqual(

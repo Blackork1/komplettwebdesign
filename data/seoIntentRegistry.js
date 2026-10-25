@@ -10,38 +10,36 @@ function freezeTarget(target) {
 export const SEO_RECOVERY_TARGETS = Object.freeze([
   freezeTarget({
     path: '/',
-    intentId: 'brand-overview',
+    intentId: 'webdesign-berlin',
     state: 'active',
     priority: 'A',
-    primaryQuery: 'komplett webdesign berlin',
-    contentRole: 'Marken- und Angebotsüberblick',
-    requiredLinks: ['/webdesign-berlin', '/leistungen', '/pakete', '/referenzen'],
+    primaryQuery: 'webdesign berlin',
+    contentRole: 'Hauptseite für Webdesign Berlin, Webdesigner Berlin und Website erstellen lassen in Berlin',
+    requiredLinks: ['/pakete', '/leistungen', '/referenzen', '/webdesign-berlin/kreuzberg', '/webdesign-berlin/lichtenberg'],
     primaryAction: { label: 'Website-Projekt anfragen', href: '/kontakt' },
     supportingAction: { label: 'Pakete ansehen', href: '/pakete' }
   }),
   freezeTarget({
     path: '/webdesign-berlin',
-    intentId: 'website-erstellen-lassen-berlin',
-    state: 'active',
+    intentId: 'webdesign-berlin',
+    state: 'redirect',
     priority: 'A',
-    primaryQuery: 'website erstellen lassen berlin',
-    contentRole: 'Kommerzielle Hauptseite für Website-Erstellung in Berlin',
-    requiredLinks: ['/pakete', '/leistungen/website-audit', '/referenzen'],
-    primaryAction: { label: 'Beratungsgespräch anfragen', href: '/kontakt?projektart=webdesign' },
-    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
+    primaryQuery: 'webdesign berlin',
+    requiredLinks: [],
+    redirectTo: '/'
   }),
   freezeTarget({
     path: '/website-erstellen-lassen-berlin',
-    intentId: 'website-erstellen-lassen-berlin',
+    intentId: 'webdesign-berlin',
     state: 'redirect',
     priority: 'A',
     primaryQuery: 'website erstellen lassen berlin',
     requiredLinks: [],
-    redirectTo: '/webdesign-berlin'
+    redirectTo: '/'
   }),
   freezeTarget({
     path: '/webdesign-kleine-unternehmen-berlin',
-    intentId: 'brand-overview',
+    intentId: 'webdesign-berlin',
     state: 'redirect',
     priority: 'B',
     primaryQuery: 'webdesign kleine unternehmen berlin',
@@ -55,7 +53,7 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     priority: 'A',
     primaryQuery: 'webdesign preise berlin',
     contentRole: 'Preis- und Paketauswahl',
-    requiredLinks: ['/webdesign-berlin', '/leistungen/laufende-kosten-website'],
+    requiredLinks: ['/', '/leistungen/laufende-kosten-website'],
     primaryAction: { label: 'Passendes Paket anfragen', href: '/kontakt' },
     supportingAction: { label: 'Leistungen einordnen', href: '/leistungen' }
   }),
@@ -77,7 +75,7 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     priority: 'A',
     primaryQuery: 'webdesign leistungen',
     contentRole: 'Auswahlhilfe nach Ausgangslage und Ziel',
-    requiredLinks: ['/webdesign-berlin', '/leistungen/website-relaunch', '/leistungen/website-audit'],
+    requiredLinks: ['/', '/leistungen/website-relaunch', '/leistungen/website-audit'],
     primaryAction: { label: 'Website prüfen', href: '/website-tester' },
     supportingAction: { label: 'Ausgangslage beschreiben', href: '/kontakt' }
   }),
@@ -110,7 +108,7 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     priority: 'A',
     primaryQuery: 'local seo berlin',
     contentRole: 'Kommerzielle Local-SEO-Leistung mit klaren Grenzen',
-    requiredLinks: ['/webdesign-berlin', '/branchen/webdesign-blumenladen', '/blog/seo-fuer-blumenladen'],
+    requiredLinks: ['/', '/branchen/webdesign-blumenladen', '/blog/seo-fuer-blumenladen'],
     primaryAction: { label: 'Local SEO anfragen', href: '/kontakt?projektart=local-seo' },
     supportingAction: { label: 'Praxisbeispiel Blumenladen', href: '/blog/seo-fuer-blumenladen' }
   }),

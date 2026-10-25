@@ -32,8 +32,8 @@ function renderIndustrySection(lng = 'de') {
 }
 
 test('die deutsche Startseite beginnt mit Nutzen, Angebot und zwei eindeutigen Handlungen', () => {
-  assert.match(controller, /heroTitle:\s*'Persönliche Websites für kleine Unternehmen in Berlin'/);
-  assert.match(controller, /Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen/);
+  assert.match(controller, /heroTitle:\s*'Webdesign Berlin für kleine Unternehmen'/);
+  assert.match(controller, /Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen, Selbstständige und Handwerksbetriebe/);
   assert.match(controller, /heroCtaPrimary:\s*'Beratungsgespräch anfragen'/);
   assert.match(controller, /heroCtaSecondary:\s*'Pakete ansehen'/);
 });

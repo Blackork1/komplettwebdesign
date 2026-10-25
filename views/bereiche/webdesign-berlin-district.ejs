@@ -10,9 +10,8 @@ const structuredDataBlocks = [
     "@type": "BreadcrumbList",
     "@id": `${districtUrl}#breadcrumb`,
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Startseite", item: `${siteBase}/` },
-      { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: `${siteBase}${hubPath}` },
-      { "@type": "ListItem", position: 3, name: district.name, item: districtUrl }
+      { "@type": "ListItem", position: 1, name: "Webdesign Berlin", item: `${siteBase}/` },
+      { "@type": "ListItem", position: 2, name: district.name, item: districtUrl }
     ]
   },
   {
@@ -50,7 +49,6 @@ const structuredDataBlocks = [
     <div class="wd-hero__copy unified-hero__copy">
       <nav class="district-breadcrumb unified-hero__breadcrumbs" aria-label="Breadcrumb">
         <ol>
-          <li><a href="/">Startseite</a></li>
           <li><a href="<%= hubPath %>">Webdesign Berlin</a></li>
           <li aria-current="page"><%= district.name %></li>
         </ol>

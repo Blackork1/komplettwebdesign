@@ -87,7 +87,7 @@ export const leistungenOverviewPage = Object.freeze({
       description: 'Angebot, Umfang und Anfrageweg für einen neuen Auftritt festlegen.',
       image: MARKETING_IMAGES.webdesignHero,
       items: Object.freeze([
-        Object.freeze({ title: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Website-Struktur, Gestaltung und Umsetzung gemeinsam planen.' }),
+        Object.freeze({ title: 'Webdesign Berlin', href: '/', text: 'Website-Struktur, Gestaltung und Umsetzung gemeinsam planen.' }),
         Object.freeze({ title: 'Pakete & Preise', href: '/pakete', text: 'Start, Business, Wachstum und Individuell vergleichen.' }),
         Object.freeze({ title: 'Landingpage', href: '/leistungen/landingpage-erstellen-lassen', text: 'Eine fokussierte Seite für ein Angebot oder eine Kampagne erstellen.' })
       ])

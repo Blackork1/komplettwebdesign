@@ -477,7 +477,7 @@ export const maintenancePage = Object.freeze({
     { label: 'Laufende Website-Kosten', href: '/leistungen/laufende-kosten-website', text: 'Domain, E-Mail, Hosting, Wartung und Tools getrennt betrachten' },
     { label: 'Zusatzleistungen Webdesign', href: '/leistungen/zusatzleistungen-webdesign', text: 'Einmalige Erweiterungen und stundenweise Unterstützung ansehen' },
     { label: 'Website-Pakete', href: '/pakete', text: 'Start, Business, Wachstum und Individuell vergleichen' },
-    { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Hauptleistung und lokale Umsetzung ansehen' },
+    { label: 'Webdesign Berlin', href: '/', text: 'Hauptleistung und lokale Umsetzung ansehen' },
     { label: 'Website-Audit', href: '/leistungen/website-audit', text: 'Bestehende Website vor größerer Pflege oder Optimierung strukturiert prüfen lassen' },
     { label: 'Website-Relaunch', href: '/leistungen/website-relaunch', text: 'Größere technische und inhaltliche Erneuerung planen' },
     { label: 'Kontakt aufnehmen', href: '/kontakt', text: 'Wartung oder Website-Betreuung besprechen' }

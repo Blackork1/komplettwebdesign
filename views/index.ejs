@@ -85,7 +85,7 @@ const structuredDataBlocks = [
     '@id': schemaWebsiteId,
     name: 'Komplett Webdesign',
     url: schemaHomeUrl,
-    description: `Website erstellen lassen in Berlin: individuell programmiertes Webdesign mit SEO-Grundlage und ${homePackagesPriceText}.`,
+    description: `Webdesign Berlin: individuell programmierte Websites für kleine Unternehmen mit SEO-Grundlage und ${homePackagesPriceText}.`,
     publisher: { '@id': schemaOrgId },
     inLanguage: isEn ? 'en-US' : 'de-DE'
   },
@@ -93,7 +93,7 @@ const structuredDataBlocks = [
     '@context': 'https://schema.org',
     '@type': 'Service',
     '@id': `${schemaBase}/#webdesign-service`,
-    name: 'Individuelles Webdesign',
+    name: 'Webdesign Berlin',
     serviceType: 'Webdesign und Webentwicklung',
     provider: { '@id': schemaOrgId },
     areaServed: [
@@ -101,20 +101,20 @@ const structuredDataBlocks = [
       { '@type': 'State', name: 'Brandenburg' },
       { '@type': 'Country', name: 'Deutschland' }
     ],
-    description: 'Individuelle Websites mit serverseitig gerendertem HTML, klarer Seitenstruktur und technischer SEO-Grundlage im vereinbarten Umfang.'
+    description: 'Webdesign in Berlin für kleine Unternehmen: individuell programmierte Websites mit klarer Seitenstruktur, SEO-Grundlage und persönlicher Betreuung.'
   },
   {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     '@id': `${schemaBase}/#webpage`,
-    name: isEn ? 'Personal web design in Berlin' : 'Persönliches Webdesign in Berlin',
-    description: `Komplett Webdesign plant und entwickelt individuelle Websites für kleine Unternehmen in Berlin. Technische SEO-Grundlagen, ${homePackagesPriceText} und separate Zusatzleistungen werden transparent abgegrenzt.`,
+    name: isEn ? 'Web design Berlin' : 'Webdesign Berlin',
+    description: `Webdesign Berlin von Komplett Webdesign: individuell programmierte Websites für kleine Unternehmen, ${homePackagesPriceText} und persönliche Betreuung vom Erstgespräch bis nach dem Launch.`,
     url: schemaHomeUrl,
     inLanguage: isEn ? 'en-US' : 'de-DE',
     datePublished: '2024-01-01',
-    dateModified: '2026-10-24',
+    dateModified: '2026-10-25',
     isPartOf: { '@id': schemaWebsiteId },
-    about: { '@id': schemaOrgId },
+    about: [{ '@id': schemaOrgId }, { '@id': `${schemaBase}/#webdesign-service` }],
     author: { '@id': schemaPersonId },
     primaryImageOfPage: {
       '@type': 'ImageObject',
@@ -123,8 +123,8 @@ const structuredDataBlocks = [
       height: 720
     },
     relatedLink: [
-      `${schemaBase}/webdesign-berlin`,
       `${schemaBase}/pakete`,
+      `${schemaBase}/webdesign-berlin/kosten-preise-pakete`,
       `${schemaBase}/leistungen/website-audit`,
       `${schemaBase}/kontakt`
     ],
@@ -222,7 +222,7 @@ const homePackageImages = {
               <% if (isEn) { %>
                 One direct contact from first call to launch.
               <% } else { %>
-                Du möchtest deine <a href="/webdesign-berlin">Website erstellen lassen in Berlin</a>? Dann sprichst du vom ersten Gespräch bis zum Launch direkt mit mir.
+                Du möchtest deine Website in Berlin erstellen lassen? Dann sprichst du vom ersten Gespräch bis zum Launch direkt mit mir, nicht mit wechselnden Agentur-Teams.
               <% } %>
             </span>
           </div>
@@ -256,7 +256,7 @@ const homePackageImages = {
               <% if (isEn) { %>
                 Komplett Webdesign is a fit when you want a personal web designer, clear decisions and a website that is planned around inquiries, local visibility and maintainable technology.
               <% } else { %>
-                Besucher springen ab, wenn Leistungen, Zielgruppe oder der nächste Schritt nicht schnell erkennbar sind. Ich ordne Inhalte, Bilder und Kontaktwege so, dass dein Angebot sofort verständlich ist und Google deine Seite gut einordnen kann.
+                Besucher springen ab, wenn Leistungen, Zielgruppe oder der nächste Schritt nicht schnell erkennbar sind. Gutes Webdesign in Berlin heißt für mich: Inhalte, Bilder und Kontaktwege so ordnen, dass dein Angebot sofort verständlich ist und Google deine Seite gut einordnen kann.
               <% } %>
             </p>
             <figure class="home-reference-band animate-on-scroll">
@@ -300,11 +300,11 @@ const homePackageImages = {
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left animate-on-scroll">
             <span class="home-section-kicker"><i class="fas fa-layer-group" aria-hidden="true"></i><%= isEn ? 'Services' : 'Leistungen' %></span>
-            <h2><%= isEn ? copy.servicesTitle : 'Die Lösung: Angebot, Inhalte und Technik als ein gemeinsames System' %></h2>
+            <h2><%= isEn ? copy.servicesTitle : 'Webdesign-Leistungen für kleine Unternehmen in Berlin' %></h2>
             <p class="home-section-lead">
               <%= isEn
                 ? 'The homepage, package pages and inquiry path are planned together so visitors quickly understand your offer and can contact you without friction.'
-                : 'Startseite, Paketlogik und Anfrageweg werden zusammen geplant, damit Besucher dein Angebot schnell verstehen und ohne Reibung Kontakt aufnehmen können.'
+                : 'Als Webdesigner in Berlin plane ich Startseite, Leistungsseiten und Anfrageweg zusammen, damit Besucher dein Angebot schnell verstehen und ohne Umwege Kontakt aufnehmen.'
               %>
             </p>
             <div class="home-card-grid">
@@ -315,7 +315,7 @@ const homePackageImages = {
                 <div class="home-card-body">
                   <h3><%= isEn ? 'Website strategy and structure' : 'Website-Strategie und Struktur' %></h3>
                   <p><%= isEn ? 'Clear page architecture, priorities and content order before design starts.' : 'Klare Seitenstruktur, Prioritäten und Inhaltsreihenfolge, bevor das Design beginnt.' %></p>
-                  <a href="/webdesign-berlin" class="linkColor"><%= isEn ? 'Web design in Berlin' : 'Webdesign Berlin' %></a>
+                  <a href="/ablauf" class="linkColor"><%= isEn ? 'How a project works' : 'So läuft ein Projekt ab' %></a>
                 </div>
               </article>
               <article class="home-card home-service-card animate-on-scroll">
@@ -325,7 +325,7 @@ const homePackageImages = {
                 <div class="home-card-body">
                   <h3><%= isEn ? 'Custom design and frontend' : 'Individuelles Design und Frontend' %></h3>
                   <p><%= isEn ? 'Responsive layouts for mobile, tablet and desktop, built to match your offer.' : 'Responsive Layouts für Smartphone, Tablet und Desktop, passend zu deinem Angebot.' %></p>
-                  <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>" class="linkColor"><%= isEn ? 'View Webdesign Berlin' : 'Webdesign Berlin ansehen' %></a>
+                  <a href="/referenzen" class="linkColor"><%= isEn ? 'View projects' : 'Projekte ansehen' %></a>
                 </div>
               </article>
               <article class="home-card home-service-card animate-on-scroll">
@@ -362,7 +362,7 @@ const homePackageImages = {
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left animate-on-scroll">
             <span class="home-section-kicker"><i class="fas fa-images" aria-hidden="true"></i><%= isEn ? 'Projects' : 'Projekte' %></span>
-            <h2 id="home-projects-title"><%= isEn ? 'Real projects: what changed for my clients' : 'Echte Projekte: was sich für meine Kunden geändert hat' %></h2>
+            <h2 id="home-projects-title"><%= isEn ? 'Real projects from Berlin: what changed for my clients' : 'Webdesign aus Berlin: was sich für meine Kunden geändert hat' %></h2>
             <p class="home-section-lead"><%= isEn ? 'Three websites from Berlin, from a local café to a multilingual festival platform.' : 'Drei Websites aus Berlin, vom Café um die Ecke bis zur mehrsprachigen Festivalplattform.' %></p>
             <div class="home-project-grid">
               <% homeProjectList.forEach((project) => { %>
@@ -763,7 +763,7 @@ const homePackageImages = {
         <div class="outer-wrapper">
           <div class="inner-wrapper text-left animate-on-scroll">
             <span class="home-section-kicker"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><%= isEn ? 'Visibility' : 'Lokale Sichtbarkeit' %></span>
-            <h2><%= isEn ? 'SEO foundation for local inquiries' : 'SEO-Grundlage für lokale Anfragen' %></h2>
+            <h2><%= isEn ? 'Get found in Berlin' : 'In Berlin bei Google gefunden werden' %></h2>
             <p class="home-section-lead">
               <%= isEn
                 ? 'Your website is prepared for local search: with clear service pages, page titles, internal links and local context, so people nearby can find you.'
@@ -771,14 +771,14 @@ const homePackageImages = {
               %>
             </p>
             <div class="home-card-grid home-card-grid--centered">
-              <a href="<%= isEn ? '/en/webdesign-berlin' : '/webdesign-berlin' %>" class="home-card home-service-card home-service-card--link animate-on-scroll" aria-label="<%= isEn ? 'Open Webdesign Berlin page' : 'Unterseite Webdesign Berlin öffnen' %>">
+              <a href="#bezirke" class="home-card home-service-card home-service-card--link animate-on-scroll" aria-label="<%= isEn ? 'To the Berlin districts' : 'Zu den Berliner Bezirken' %>">
                 <figure class="home-card-media">
                   <img src="/images/webdesign-berlin-begruessung.jpg" alt="<%= isEn ? 'Personal greeting for a web design consultation in Berlin' : 'Persönliche Begrüßung zum Webdesign-Erstgespräch in Berlin' %>" width="540" height="338" loading="lazy" decoding="async">
-                  <span class="home-card-media-cta" aria-hidden="true"><%= isEn ? 'to Webdesign Berlin' : 'zu Webdesign Berlin' %></span>
+                  <span class="home-card-media-cta" aria-hidden="true"><%= isEn ? 'to the districts' : 'zu den Bezirken' %></span>
                 </figure>
                 <div class="home-card-body">
                   <h3><%= isEn ? 'Berlin focus' : 'Berlin-Fokus' %></h3>
-                  <p><%= isEn ? 'Useful for businesses that want to be found by people in Berlin and Brandenburg.' : 'Sinnvoll für Unternehmen, die in Berlin und Brandenburg gefunden und angefragt werden möchten.' %></p>
+                  <p><%= isEn ? 'For businesses that want to be found by people in their Berlin district and in Brandenburg.' : 'Für Unternehmen, die in ihrem Berliner Bezirk und in Brandenburg gefunden und angefragt werden möchten.' %></p>
                 </div>
               </a>
               <a href="/leistungen" class="home-card home-service-card home-service-card--link animate-on-scroll" aria-label="<%= isEn ? 'Open services overview' : 'Unterseite Leistungen öffnen' %>">
@@ -806,6 +806,41 @@ const homePackageImages = {
         </div>
       </div>
     </section>
+
+    <!-- 10b) Bezirke -->
+    <% const homeDistrictList = (typeof homeDistricts !== 'undefined' && Array.isArray(homeDistricts)) ? homeDistricts : []; %>
+    <% if (homeDistrictList.length) { %>
+    <section class="section" id="bezirke" aria-labelledby="home-districts-title">
+      <div class="container">
+        <div class="outer-wrapper">
+          <div class="inner-wrapper text-left animate-on-scroll">
+            <span class="home-section-kicker"><i class="fas fa-location-dot" aria-hidden="true"></i><%= isEn ? 'Districts' : 'Bezirke' %></span>
+            <h2 id="home-districts-title"><%= isEn ? 'Web design in your Berlin district' : 'Webdesign in deinem Berliner Bezirk' %></h2>
+            <p class="home-section-lead">
+              <%= isEn
+                ? 'I work for businesses all over Berlin and meet on site if you like. Each district page shows what matters for websites there.'
+                : 'Ich arbeite für Unternehmen in ganz Berlin und komme für das Erstgespräch gern vorbei. Auf den Bezirksseiten steht, worauf es bei Websites vor Ort ankommt.' %>
+            </p>
+            <ul class="home-district-grid">
+              <% homeDistrictList.forEach((district) => { %>
+              <li>
+                <a class="home-district-card" href="<%= district.href %>">
+                  <span class="home-district-card__name"><%= isEn ? 'Web design' : 'Webdesign' %> <%= district.name %></span>
+                  <% if (district.label) { %><span class="home-district-card__label"><%= district.label %></span><% } %>
+                  <% if (district.teaser) { %><span class="home-district-card__teaser"><%= district.teaser %></span><% } %>
+                  <span class="home-district-card__more" aria-hidden="true"><%= isEn ? 'Open' : 'Ansehen' %> <i class="fas fa-arrow-right"></i></span>
+                </a>
+              </li>
+              <% }); %>
+            </ul>
+            <% if (!isEn) { %>
+            <p class="home-note">Dein Bezirk ist nicht dabei? Ich betreue Unternehmen in allen Berliner Bezirken und in Brandenburg. <a href="/kontakt" class="linkColor">Schreib mir einfach.</a></p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </section>
+    <% } %>
 
     <!-- 11) Website-Check -->
     <section class="section" id="website-check">
@@ -913,7 +948,7 @@ const homePackageImages = {
       <div class="container">
         <div class="home-cta-panel">
           <span class="home-section-kicker"><i class="fas fa-paper-plane" aria-hidden="true"></i><%= isEn ? 'Next step' : 'Nächster Schritt' %></span>
-          <h2><%= isEn ? 'Request a realistic website scope' : 'Website-Projekt realistisch einschätzen lassen' %></h2>
+          <h2><%= isEn ? 'Have your website built in Berlin' : 'Website erstellen lassen in Berlin: lass uns sprechen' %></h2>
           <p>
             <%= isEn
               ? 'Tell me what you need, what already exists and which timeline matters. I will recommend whether Start, Business, Growth or an individual estimate is the cleaner fit.'
@@ -968,6 +1003,9 @@ const homePackageImages = {
           </a>
           <a href="#sichtbarkeit" class="icon-link" aria-label="<%= isEn ? 'To visibility section' : 'Zur Sichtbarkeit' %>">
             <i class="fas fa-map-marker-alt"></i>
+          </a>
+          <a href="#bezirke" class="icon-link" aria-label="<%= isEn ? 'To districts section' : 'Zu den Bezirken' %>">
+            <i class="fas fa-location-dot"></i>
           </a>
           <a href="#website-check" class="icon-link" aria-label="<%= isEn ? 'To website check section' : 'Zum Website-Check' %>">
             <i class="fas fa-search"></i>

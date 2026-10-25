@@ -479,7 +479,7 @@ export const runningCostsPage = Object.freeze({
     { label: 'Website-Pakete ansehen', href: '/pakete' },
     { label: 'Projekt anfragen', href: '/kontakt' },
     { label: 'Website-Wartung', href: '/leistungen/website-wartung' },
-    { label: 'Webdesign Berlin', href: '/webdesign-berlin' },
+    { label: 'Webdesign Berlin', href: '/' },
     { label: 'Website-Kosten und Beispielrechnungen', href: '/webdesign-berlin/kosten-preise-pakete' },
     { label: 'Einmalige Website-Kosten im Blog', href: '/blog/website-kosten-2025-einfach-erklaert' },
     { label: 'Website-Tester starten', href: '/website-tester' }

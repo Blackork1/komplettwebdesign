@@ -33,8 +33,10 @@ const allNavigationHrefs = allNavigationItems
 test('phase 11 header uses the new lean primary navigation and project CTA', () => {
   assert.deepEqual(
     headerNavigation.map((item) => item.label),
-    ['Start', 'Webdesign Berlin', 'Pakete & Preise', 'Leistungen', 'Referenzen', 'Branchen']
+    ['Webdesign Berlin', 'Pakete & Preise', 'Leistungen', 'Referenzen', 'Branchen']
   );
+  // „Webdesign Berlin“ ist die Startseite.
+  assert.equal(headerNavigation[0].href, '/');
 
   assert.equal(headerCta.label, 'Kontakt');
   assert.equal(headerCta.href, '/kontakt');
@@ -44,7 +46,7 @@ test('phase 11 header uses the new lean primary navigation and project CTA', () 
 });
 
 test('Paketübersicht verbindet die Auswahlhilfe kontextuell mit Webdesign Berlin', () => {
-  assert.match(packagesList, /isEn \? '\/en\/webdesign-berlin' : '\/webdesign-berlin'/);
+  assert.match(packagesList, /isEn \? '\/en' : '\/'/);
   assert.match(packagesList, /Website-Erstellung in Berlin einordnen/);
 });
 

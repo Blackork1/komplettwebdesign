@@ -20,7 +20,7 @@ Verbindliche aktuelle Preise und Leistungsgrenzen stehen auf den verlinkten Pake
 
 ## Leistungen und Wissen
 
-- [Webdesign Berlin](${base}/webdesign-berlin): zentrale Leistungsseite für Website-Erstellung in Berlin.
+- [Webdesign Berlin](${base}/): Hauptseite für Webdesign und Website-Erstellung in Berlin, mit Bezirksseiten für Kreuzberg, Friedrichshain, Prenzlauer Berg, Charlottenburg, Lichtenberg und Mitte.
 - [Pakete vergleichen](${base}/pakete): Umfang, Preise und Zusatzleistungen.
 - [Website-Relaunch](${base}/leistungen/website-relaunch): bestehende Websites erneuern.
 - [Local SEO](${base}/leistungen/local-seo): technische und inhaltliche Grundlagen lokaler Sichtbarkeit.

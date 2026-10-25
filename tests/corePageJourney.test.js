@@ -30,7 +30,8 @@ function assertJourney(paths) {
 }
 
 test('die wichtigsten Besucherwege sind vollständig verbunden', () => {
-  assertJourney(['/', '/webdesign-berlin', '/pakete', '/kontakt']);
+  assertJourney(['/', '/pakete', '/kontakt']);
+  assertJourney(['/', '/webdesign-berlin/kreuzberg']);
   assertJourney(['/', '/leistungen', '/leistungen/website-relaunch', '/referenzen/tm-sauber-mehr']);
   assertJourney(['/website-tester', '/leistungen/website-audit', '/kontakt']);
   assertJourney(['/branchen/webdesign-blumenladen', '/blog/seo-fuer-blumenladen', '/leistungen/local-seo']);

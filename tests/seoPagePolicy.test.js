@@ -15,7 +15,6 @@ test('static sitemap policy keeps important existing marketing, legal, FAQ, blog
 
   [
     '/',
-    '/webdesign-berlin',
     '/leistungen/website-relaunch',
     '/leistungen/website-audit',
     '/leistungen/landingpage-erstellen-lassen',

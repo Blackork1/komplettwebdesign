@@ -251,7 +251,7 @@ test('mark profile and links expose stable approved context', () => {
   [
     '/kontakt',
     '/pakete',
-    '/webdesign-berlin',
+    '/',
     '/leistungen/website-relaunch',
     '/leistungen/local-seo',
     '/leistungen/website-audit',

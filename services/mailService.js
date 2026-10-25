@@ -1385,7 +1385,7 @@ export async function sendTesterDrip48hMail({
     const srcLabel = sourceLabel(source, lng);
     const base = testerBaseUrl();
     const bookingUrl = `${base}${isEn ? "/en/booking" : "/booking"}?src=${encodeURIComponent(source)}-tester${domain ? `&domain=${encodeURIComponent(domain)}` : ""}${scoreBand ? `&score=${encodeURIComponent(scoreBand)}` : ""}`;
-    const servicesUrl = `${base}${isEn ? "/en/webdesign-berlin" : "/webdesign-berlin"}`;
+    const servicesUrl = `${base}${isEn ? "/en" : "/"}`;
     const subject = isEn
         ? `Ready for the full playbook for ${domain || "your website"}?`
         : `Bereit für die volle Anleitung zu ${domain || "deiner Website"}?`;

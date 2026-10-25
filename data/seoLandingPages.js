@@ -303,7 +303,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       }
     ],
     internalLinks: [
-      { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Die Hauptseite für Webdesign in Berlin' },
+      { label: 'Webdesign Berlin', href: '/', text: 'Die Hauptseite für Webdesign in Berlin' },
       { label: 'Pakete vergleichen', href: '/pakete', text: 'Business, Wachstum und Individuell einordnen' },
       { label: 'Business-Paket', href: '/pakete/business', text: 'Kleinerer Relaunch mit klarer Struktur' },
       { label: 'Wachstum-Paket', href: '/pakete/wachstum', text: 'Umfangreicherer Relaunch mit mehreren Leistungsseiten' },
@@ -644,7 +644,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       { label: 'Kostenloser Website-Tester', href: '/website-tester', text: 'Erste Orientierung vor dem bezahlten Audit starten' },
       { label: 'Website-Relaunch Berlin', href: '/leistungen/website-relaunch', text: 'Audit-Ergebnisse für Relaunch-Entscheidungen nutzen' },
       { label: 'Local SEO Berlin', href: '/leistungen/local-seo', text: 'Lokale Sichtbarkeit als Folgethema einordnen' },
-      { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Komplette Website-Umsetzung nach der Analyse prüfen' },
+      { label: 'Webdesign Berlin', href: '/', text: 'Komplette Website-Umsetzung nach der Analyse prüfen' },
       { label: 'Pakete', href: '/pakete', text: 'Start, Business, Wachstum und Individuell vergleichen' },
       { label: 'Zusatzleistungen', href: '/leistungen/zusatzleistungen-webdesign', text: 'Audit, Tracking, Local SEO und weitere Add-ons einordnen' },
       { label: 'Laufende Kosten', href: '/leistungen/laufende-kosten-website', text: 'Betriebskosten und externe Tools nach dem Audit einplanen' }
@@ -675,7 +675,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       ],
       proof: {
         label: 'Unterschied zur vollständigen Website verstehen',
-        href: '/webdesign-berlin',
+        href: '/',
         text: 'Eine Landingpage bündelt die Argumentation auf ein Conversion-Ziel. Die Webdesign-Hauptseite zeigt, wann mehrere Leistungen, Seiten und Zielgruppen eine vollständige Website benötigen.'
       }
     },
@@ -939,7 +939,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       { label: 'Kontakt', href: '/kontakt?projektart=landingpage', text: 'Landingpage-Aufwand einschätzen lassen' },
       { label: 'Zusatzleistungen', href: '/leistungen/zusatzleistungen-webdesign', text: 'Landingpages, Tracking, Texte und weitere Add-ons einordnen' },
       { label: 'Pakete', href: '/pakete', text: 'Website-Pakete mit Landingpage-Zusatzleistung vergleichen' },
-      { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Komplette Website statt einzelner Zielseite prüfen' },
+      { label: 'Webdesign Berlin', href: '/', text: 'Komplette Website statt einzelner Zielseite prüfen' },
       { label: 'Website-Audit', href: '/leistungen/website-audit', text: 'Bestehende Website vor einer Landingpage prüfen' },
       { label: 'Website-Tester', href: '/website-tester', text: 'Bestehende Website vor einer Zielseite prüfen' },
       { label: 'Local SEO Berlin', href: '/leistungen/local-seo', text: 'Lokale Landingpages und Suchintentionen besser einordnen' },
@@ -1037,7 +1037,7 @@ export const SEO_LANDING_PAGES = Object.freeze([
       }
     ],
     internalLinks: [
-      { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Vom Ablauf direkt zur Projektanfrage' },
+      { label: 'Webdesign Berlin', href: '/', text: 'Vom Ablauf direkt zur Projektanfrage' },
       { label: 'Website Relaunch Berlin', href: '/leistungen/website-relaunch', text: 'Bestehende Website neu strukturieren' },
       { label: 'Websites für kleine Unternehmen', href: '/', text: 'Überblick, Pakete und Ansprechpartner' },
       { label: 'Website-Kosten', href: '/ratgeber/website-kosten-berlin', text: 'Budget und laufende Kosten einordnen' },

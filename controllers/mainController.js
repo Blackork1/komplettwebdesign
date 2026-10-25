@@ -12,6 +12,8 @@ import { buildHomeHeroBridgeHighlights } from '../data/homeHighlights.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
 import { aboutPage } from '../data/aboutPage.js';
 import { localizedHomeProjects } from '../data/homeProjects.js';
+import { DISTRICTS } from '../models/districtModel.js';
+import { DISTRICT_PAGES } from '../data/districtPages.js';
 
 const GOOGLE_PROFILE_URL = SITE_FACTS.googleProfileUrl;
 const GOOGLE_REVIEW_URL = SITE_FACTS.googleReviewUrl;
@@ -20,8 +22,16 @@ const MIN_REVIEWS_FOR_AGGREGATE = 3;
 const HOMEPAGE_FAQ = {
   de: [
     {
-      q: 'Was kostet eine Website bei Komplett Webdesign?',
+      q: 'Was kostet Webdesign in Berlin bei Komplett Webdesign?',
       a: 'Website-Pakete starten bei {{lowestPackagePriceLabel}} mit klar definiertem Umfang. Business-Websites gibt es {{price.business}}, Wachstum-Projekte {{price.wachstum}} und individuelle Anforderungen {{price.individuell}}.'
+    },
+    {
+      q: 'Was ist der Unterschied zu einer Webagentur in Berlin?',
+      a: 'Du arbeitest direkt mit mir als festem Ansprechpartner, vom ersten Gespräch bis nach dem Launch. Dadurch bleiben Abstimmung, Umsetzung und Entscheidungen schlanker. Große Kampagnen-Teams oder umfassende Markenprozesse sind nicht der Kern meines Angebots.'
+    },
+    {
+      q: 'Können wir uns in Berlin auch persönlich treffen?',
+      a: 'Ja. Ich sitze in Berlin-Lichtenberg und komme für das Erstgespräch gern zu dir, egal ob Kreuzberg, Mitte oder Charlottenburg. Genauso gut geht es per Telefon oder Video. Kunden aus Brandenburg und dem übrigen Deutschland betreue ich online.'
     },
     {
       q: 'Warum starten die Pakete bei {{lowestPackagePriceLabel}}?',
@@ -58,6 +68,10 @@ const HOMEPAGE_FAQ = {
     {
       q: 'Wie viele Feedbackrunden sind enthalten?',
       a: 'Das steht bei jedem Paket: Start enthält 1 Feedbackrunde, Business 2 und Wachstum 2 bis 3. Bei individuellen Projekten steht die Zahl im Angebot. Weitere Änderungswünsche nach der Freigabe besprechen wir vorher, damit du keine Überraschungen erlebst.'
+    },
+    {
+      q: 'Kann ich meine bestehende Website relaunchen lassen?',
+      a: 'Ja. Ein Relaunch ist sinnvoll, wenn Struktur, Technik, Inhalte oder die Darstellung auf dem Handy nicht mehr passen. Umfang, Weiterleitungen alter Adressen und Risiken klären wir vorab, damit bestehende Google-Rankings nicht verloren gehen.'
     },
     {
       q: 'Wie lange dauert ein Projekt?',
@@ -110,16 +124,16 @@ const HOMEPAGE_FAQ = {
 
 const HOMEPAGE_I18N = {
   de: {
-    seoTitle: 'Komplett Webdesign Berlin | Websites für kleine Unternehmen',
-    seoDescription: 'Individuelle Websites für kleine Unternehmen in Berlin, seit 5 Jahren persönlich umgesetzt: klare Pakete ab {{lowestPackagePriceLabel}}, schnelle Technik, ein Ansprechpartner.',
-    seoKeywords: 'website erstellen lassen berlin, webdesign berlin, webdesigner berlin, website für kleine unternehmen berlin, webdesign preise berlin, website pakete berlin, webdesign brandenburg, local seo berlin',
-    ogTitle: 'Komplett Webdesign Berlin | Websites für kleine Unternehmen',
-    ogDescription: 'Individuelle Websites für kleine Unternehmen in Berlin mit klaren Leistungen, transparenten Paketen und persönlicher Umsetzung.',
-    heroBadge: 'Komplett Webdesign aus Berlin',
-    heroTitle: 'Persönliche Websites für kleine Unternehmen in Berlin',
+    seoTitle: 'Webdesign Berlin: Websites ab {{lowestPackagePriceLabel}} | Komplett Webdesign',
+    seoDescription: 'Webdesign in Berlin für kleine Unternehmen: individuell programmierte Websites ab {{lowestPackagePriceLabel}}, persönlich betreut seit 5 Jahren. Kostenloses Erstgespräch.',
+    seoKeywords: 'webdesign berlin, webdesigner berlin, website erstellen lassen berlin, homepage erstellen lassen berlin, webdesign agentur berlin, webdesign preise berlin, website für kleine unternehmen berlin, webdesign brandenburg',
+    ogTitle: 'Webdesign Berlin: Websites für kleine Unternehmen | Komplett Webdesign',
+    ogDescription: 'Webdesign in Berlin für kleine Unternehmen: individuell programmierte Websites ab {{lowestPackagePriceLabel}}, persönlich betreut vom ersten Gespräch bis nach dem Launch.',
+    heroBadge: 'Dein Webdesigner aus Berlin-Lichtenberg',
+    heroTitle: 'Webdesign Berlin für kleine Unternehmen',
     heroTitle2: '',
-    heroSubline: 'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin. Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen – mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
-    heroBullet1: 'Maßgeschneidert statt Baukasten oder Template-Look',
+    heroSubline: 'Ich bin Sören, dein Webdesigner in Berlin. Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen, Selbstständige und Handwerksbetriebe – mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
+    heroBullet1: 'Individuelles Webdesign statt Baukasten oder Template-Look',
     heroBullet2: 'Klare Pakete ab {{lowestPackagePriceLabel}} mit transparentem Leistungsumfang',
     heroBullet3: 'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen',
     heroCtaPrimary: 'Beratungsgespräch anfragen',
@@ -131,7 +145,7 @@ const HOMEPAGE_I18N = {
     introTitleStrong: 'Webdesign, Pakete und persönliche Umsetzung',
     introTitleRest: 'aus einer Hand bei',
     featuresTitle: 'Warum Komplett Webdesign anders arbeitet',
-    timelineTitle: 'So läuft dein Website-Projekt ab',
+    timelineTitle: 'So läuft dein Webdesign-Projekt in Berlin ab',
     timelineNote: 'Vom ersten Gespräch bis zum Launch weißt du immer, was als Nächstes passiert und was es kostet.',
     servicesTitle: 'Webdesign-Leistungen im Überblick',
     blogSectionTitle: 'Aktuelles zum Thema Webseiten und bisherige Kundenstimmen',
@@ -142,10 +156,10 @@ const HOMEPAGE_I18N = {
     blogToOverview: 'Zum Blog',
     reviewCardTitle: 'Kundenstimme',
     reviewSoon: '(Demnächst echte Stimmen...)',
-    pricingTitle: 'Website-Pakete ab {{lowestPackagePriceLabel}}',
+    pricingTitle: 'Webdesign-Preise in Berlin: Pakete ab {{lowestPackagePriceLabel}}',
     pricingTagline: 'Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer. Zusatzwünsche und laufende Kosten werden separat ausgewiesen.',
     industryTitle: 'Für wen Komplett Webdesign passt',
-    trustTitle: 'Persönlich, transparent und lokal ausgerichtet',
+    trustTitle: 'Was Kunden aus Berlin über mich sagen',
     trustSubline: 'Echte Bewertungen aus meinem Google-Profil von Kunden, die schon mit mir zusammengearbeitet haben.',
     trustCtaAll: 'Alle Bewertungen bei Google ansehen',
     trustCtaWrite: 'Eigene Bewertung abgeben',
@@ -153,17 +167,17 @@ const HOMEPAGE_I18N = {
     trustCountLabel: 'verifizierte Bewertungen',
     trustNoReviewsHeadline: 'Bald echte Stimmen an dieser Stelle',
     trustNoReviewsLead: 'Die ersten Kundenstimmen erscheinen hier, sobald sie im Google-Profil verifiziert sind. In der Zwischenzeit findest du mein öffentliches Profil direkt bei Google.',
-    faqTitle: 'Häufige Fragen rund um die Websiteerstellung in Berlin',
+    faqTitle: 'Häufige Fragen zu Webdesign in Berlin',
     faqSubline: 'Antworten auf die Fragen, die mir Interessenten am häufigsten stellen.'
   },
   en: {
-    seoTitle: 'Website Development Berlin from {{lowestPackagePriceLabel.en}} | Komplett Webdesign',
+    seoTitle: 'Web Design Berlin from {{lowestPackagePriceLabel.en}} | Komplett Webdesign',
     seoDescription: 'Have your website built in Berlin: custom web design, responsive implementation, technical SEO basics and clear packages from {{lowestPackagePriceLabel.en}}.',
     seoKeywords: 'website development berlin, web design berlin, berlin web designer, local seo berlin, website creation berlin',
     ogTitle: 'Website Development in Berlin – packages from {{lowestPackagePriceLabel.en}}',
     ogDescription: 'Custom web design, technical SEO basics and clear website packages from {{lowestPackagePriceLabel.en}} for small businesses in Berlin.',
     heroBadge: 'Komplett Webdesign from Berlin',
-    heroTitle: 'Get a custom website built in Berlin',
+    heroTitle: 'Web design in Berlin for small businesses',
     heroTitle2: '',
     heroSubline: 'I’m Sören, your web designer and developer in Berlin. For 5 years I have been planning, designing and maintaining custom websites for small businesses, solo professionals and local service providers.',
     heroBullet1: 'Fast, custom-coded websites without plugin hassle',
@@ -401,6 +415,12 @@ export async function getIndex(req, res) {
       googleReviewUrl: GOOGLE_REVIEW_URL,
       faq: homepageFaq,
       homeProjects: localizedHomeProjects(lng),
+      homeDistricts: DISTRICTS.map((district) => ({
+        name: district.name,
+        href: `${lng === 'en' ? '/en' : ''}/webdesign-berlin/${district.slug}`,
+        label: lng === 'en' ? '' : (DISTRICT_PAGES[district.slug]?.label || ''),
+        teaser: lng === 'en' ? '' : (DISTRICT_PAGES[district.slug]?.hubTeaser || '')
+      })),
       heroBridgeHighlights,
       marketingImages: MARKETING_IMAGES,
       lowestPackagePriceLabel: localizedLowestPackagePriceLabel,

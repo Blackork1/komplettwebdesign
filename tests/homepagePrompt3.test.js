@@ -122,11 +122,11 @@ test('homepage visibility cards link to their detail pages with image hover labe
   const visibilitySection = homepageTemplate.match(/<section class="section" id="sichtbarkeit"[\s\S]*?<\/section>/)?.[0] || '';
 
   assert.ok(visibilitySection, 'visibility section should exist');
-  assert.match(visibilitySection, /href="<%= isEn \? '\/en\/webdesign-berlin' : '\/webdesign-berlin' %>"/);
+  assert.match(visibilitySection, /href="#bezirke"/);
   assert.match(visibilitySection, /href="\/leistungen"/);
   assert.match(visibilitySection, /href="\/leistungen\/local-seo"/);
   assert.equal((visibilitySection.match(/home-service-card--link/g) || []).length, 3);
-  assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zu Webdesign Berlin/);
+  assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zu den Bezirken/);
   assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zur Leistungsübersicht/);
   assert.match(visibilitySection, /class="home-card-media-cta"[\s\S]*?zu Local SEO/);
   assert.doesNotMatch(visibilitySection, /<article class="home-card home-service-card animate-on-scroll">/);
@@ -251,13 +251,13 @@ test('homepage shows real projects early and keeps the trust section for reviews
 test('homepage hero uses the final recommended copy and a quieter CTA hierarchy', () => {
   const joined = `${homepage}\n${controller}`;
 
-  assert.match(controller, /seoTitle:\s*'Komplett Webdesign Berlin \| Websites für kleine Unternehmen'/);
-  assert.match(controller, /seoDescription:\s*'Individuelle Websites für kleine Unternehmen in Berlin, seit 5 Jahren persönlich umgesetzt: klare Pakete ab \{\{lowestPackagePriceLabel\}\}, schnelle Technik, ein Ansprechpartner\.'/);
-  assert.match(controller, /heroBadge:\s*'Komplett Webdesign aus Berlin'/);
-  assert.match(controller, /heroTitle:\s*'Persönliche Websites für kleine Unternehmen in Berlin'/);
+  assert.match(controller, /seoTitle:\s*'Webdesign Berlin: Websites ab \{\{lowestPackagePriceLabel\}\} \| Komplett Webdesign'/);
+  assert.match(controller, /seoDescription:\s*'Webdesign in Berlin für kleine Unternehmen: individuell programmierte Websites ab \{\{lowestPackagePriceLabel\}\}, persönlich betreut seit 5 Jahren\. Kostenloses Erstgespräch\.'/);
+  assert.match(controller, /heroBadge:\s*'Dein Webdesigner aus Berlin-Lichtenberg'/);
+  assert.match(controller, /heroTitle:\s*'Webdesign Berlin für kleine Unternehmen'/);
   assert.match(controller, /heroTitle2:\s*''/);
-  assert.match(controller, /heroSubline:\s*'Ich bin Sören, dein Webdesigner und Webentwickler in Berlin\. Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen/);
-  assert.match(controller, /heroBullet1:\s*'Maßgeschneidert statt Baukasten oder Template-Look'/);
+  assert.match(controller, /heroSubline:\s*'Ich bin Sören, dein Webdesigner in Berlin\. Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen/);
+  assert.match(controller, /heroBullet1:\s*'Individuelles Webdesign statt Baukasten oder Template-Look'/);
   assert.match(controller, /heroBullet2:\s*'Klare Pakete ab \{\{lowestPackagePriceLabel\}\} mit transparentem Leistungsumfang'/);
   assert.match(controller, /heroBullet3:\s*'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen'/);
   assert.match(controller, /heroCtaPrimary:\s*'Beratungsgespräch anfragen'/);
@@ -265,7 +265,7 @@ test('homepage hero uses the final recommended copy and a quieter CTA hierarchy'
   assert.match(controller, /heroTrustNote:\s*'Kostenlose Ersteinschätzung'/);
 
   assert.match(homepage, /class="home-hero-trust-note home-hero-reveal home-hero-reveal--trust animate-on-scroll"/);
-  assert.match(homepageTemplate, /<a href="\/webdesign-berlin">Website erstellen lassen in Berlin<\/a>/);
+  assert.match(homepageTemplate, /Du möchtest deine Website in Berlin erstellen lassen\?/);
   assert.doesNotMatch(homepage, /heroBadgePackages/);
   assert.doesNotMatch(homepage, /badge text-bg-success/);
   assert.doesNotMatch(joined, /Antwort meist innerhalb von 24 Stunden/);

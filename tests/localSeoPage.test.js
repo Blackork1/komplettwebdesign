@@ -96,7 +96,7 @@ test('local SEO trennt die fünf Arbeitsbereiche sichtbar und bebildert', () => 
   assert.equal(localSeoPage.editorialImage.src, '/images/leistungen/local-seo-hero.webp');
   assert.ok(localSeoPage.editorialImage.alt.length >= 20);
   assert.deepEqual(localSeoPage.overview.links.map((link) => link.href), [
-    '/webdesign-berlin',
+    '/',
     '/branchen/webdesign-blumenladen',
     '/blog/seo-fuer-blumenladen'
   ]);
@@ -144,7 +144,7 @@ test('local SEO FAQ, internal links, route, template and sitemap are wired safel
   ]);
 
   [
-    '/webdesign-berlin',
+    '/',
     '/pakete',
     '/leistungen/zusatzleistungen-webdesign',
     '/website-tester',

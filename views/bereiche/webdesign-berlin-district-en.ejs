@@ -4,9 +4,8 @@ const structuredDataBlocks = [
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.komplettwebdesign.de/en" },
-      { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: `https://www.komplettwebdesign.de${hubPath}` },
-      { "@type": "ListItem", position: 3, name: district.name, item: `https://www.komplettwebdesign.de${districtPath}` }
+      { "@type": "ListItem", position: 1, name: "Web design Berlin", item: "https://www.komplettwebdesign.de/en" },
+      { "@type": "ListItem", position: 2, name: district.name, item: `https://www.komplettwebdesign.de${districtPath}` }
     ]
   }
 ];
@@ -16,8 +15,7 @@ const structuredDataBlocks = [
 
 <nav class="district-breadcrumb unified-hero__breadcrumbs" aria-label="Breadcrumb">
   <ol>
-    <li><a href="/en">Home</a></li>
-    <li><a href="<%= hubPath %>">Webdesign Berlin</a></li>
+    <li><a href="<%= hubPath %>">Web design Berlin</a></li>
     <li aria-current="page"><%= district.name %></li>
   </ol>
 </nav>

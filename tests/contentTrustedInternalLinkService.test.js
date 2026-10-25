@@ -35,7 +35,7 @@ test('Brancheninventar verwendet denselben webdesign-Präfix wie die öffentlich
 
 test('vertrauenswürdige Inhaltslinks zeigen auf die aktiven kanonischen Kernseiten', () => {
   const expectedLinks = [
-    { url: '/webdesign-berlin', type: 'service', label: 'Website erstellen lassen in Berlin' },
+    { url: '/', type: 'service', label: 'Website erstellen lassen in Berlin' },
     { url: '/pakete', type: 'pricing', label: 'Website-Pakete und Preise' },
     { url: '/leistungen/website-audit', type: 'service', label: 'Website-Audit' },
     { url: '/leistungen/local-seo', type: 'service', label: 'Local SEO Berlin' },

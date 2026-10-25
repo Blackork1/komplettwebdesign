@@ -107,9 +107,9 @@ test('das Laufband nennt Vorteile statt Fachbegriffe', () => {
   assert.ok(!labels.some((label) => /Node\.js|EJS|HTML|CSS|JavaScript/.test(label)));
 });
 
-test('der erste Abschnitt verlinkt die Berliner Hauptseite in einem vollständigen Satz', () => {
-  assert.match(section('usp-strip'), /Du möchtest deine <a href="\/webdesign-berlin">Website erstellen lassen in Berlin<\/a>\?/);
-  assert.doesNotMatch(template, /Wenn du <a href="\/webdesign-berlin">Website erstellen lassen in Berlin<\/a> möchtest/);
+test('der erste Abschnitt nennt „Website in Berlin erstellen lassen“ in einem vollständigen Satz ohne Selbstverweis', () => {
+  assert.match(section('usp-strip'), /Du möchtest deine Website in Berlin erstellen lassen\? Dann sprichst du/);
+  assert.doesNotMatch(section('usp-strip'), /href="\/webdesign-berlin"|href="\/"/);
 });
 
 test('auf dem Handy steht das Über-mich-Foto klein neben der Überschrift', () => {

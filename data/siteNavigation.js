@@ -1,15 +1,9 @@
 export const headerNavigation = Object.freeze([
   {
-    label: 'Start',
-    labelEn: 'Home',
+    label: 'Webdesign Berlin',
+    labelEn: 'Web design Berlin',
     href: '/',
     hrefEn: '/en'
-  },
-  {
-    label: 'Webdesign Berlin',
-    labelEn: 'Webdesign Berlin',
-    href: '/webdesign-berlin',
-    hrefEn: '/en/webdesign-berlin'
   },
   {
     label: 'Pakete & Preise',
@@ -126,7 +120,7 @@ export const footerNavigation = Object.freeze([
     labelEn: 'Offer',
     links: [
       { label: 'Leistungsübersicht', labelEn: 'Service overview', href: '/leistungen' },
-      { label: 'Webdesign Berlin', labelEn: 'Webdesign Berlin', href: '/webdesign-berlin', hrefEn: '/en/webdesign-berlin' },
+      { label: 'Webdesign Berlin', labelEn: 'Web design Berlin', href: '/', hrefEn: '/en' },
       { label: 'Pakete & Preise', labelEn: 'Packages & pricing', href: '/pakete', hrefEn: '/en/pakete' },
       { label: 'Website-Relaunch', labelEn: 'Website relaunch', href: '/leistungen/website-relaunch' },
       { label: 'Landingpage', labelEn: 'Landing page', href: '/leistungen/landingpage-erstellen-lassen' },

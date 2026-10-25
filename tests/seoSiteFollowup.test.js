@@ -84,8 +84,8 @@ test('contact page starts with a request type choice instead of showing both for
 });
 
 test('the canonical Berlin page is linked from global and core pages', () => {
-  assert.ok(footerHrefs.includes('/webdesign-berlin'));
-  assert.match(files.index, /href="\/webdesign-berlin"/);
+  assert.ok(footerHrefs.includes('/'));
+  assert.doesNotMatch(files.index, /href="\/webdesign-berlin"/);
   assert.match(files.webdesignBerlin, /\/webdesign-berlin/);
 });
 
@@ -97,7 +97,8 @@ test('important website-relaunch landing page is linked from global and core pag
 });
 
 test('phase 11 navigation links core webdesign, package and service pages', () => {
-  assert.ok(headerHrefs.includes('/webdesign-berlin'));
+  assert.ok(headerHrefs.includes('/'));
+  assert.ok(!headerHrefs.includes('/webdesign-berlin'));
   assert.ok(headerHrefs.includes('/pakete'));
   assert.ok(headerHrefs.includes('/leistungen/website-relaunch'));
   assert.ok(headerHrefs.includes('/leistungen/local-seo'));

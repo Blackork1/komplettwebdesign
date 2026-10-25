@@ -142,7 +142,7 @@ export const SEO_GUIDE_CLUSTER = Object.freeze([
       <p>Hilfreich sind 3 bis 5 Wettbewerber, eine grobe Liste deiner Leistungen, vorhandene Bilder, Wunschfunktionen und eine ehrliche Einschätzung, was deine aktuelle Website nicht leistet. Das spart Abstimmung und macht das Angebot genauer.</p>
       <h2>Was kostet die Website-Erstellung?</h2>
       <p>Bei Komplett Webdesign starten Websites {{price.start}}. Für eine mehrseitige Unternehmenswebsite mit Kontaktformular, Leistungsseiten und On-Page-SEO solltest du eher mit dem Business-Paket {{price.business}} planen. Umfangreichere Projekte mit mehr Seiten, Strategie oder Buchungssystem starten im Wachstum-Paket {{price.wachstum}} oder werden individuell kalkuliert.</p>
-      <p><a class="btn btn-accent" href="/webdesign-berlin">Webdesign Berlin ansehen</a> <a class="btn btn-outline-primary" href="/website-tester">Bestehende Website prüfen</a></p>
+      <p><a class="btn btn-accent" href="/">Webdesign Berlin ansehen</a> <a class="btn btn-outline-primary" href="/website-tester">Bestehende Website prüfen</a></p>
     `,
     faq_json: [
       faq('Wie lange dauert eine Website-Erstellung in Berlin?', 'Je nach Paket und Inhaltsstand variiert die Umsetzung. Start-Projekte sind meist schneller, Business-Projekte brauchen mehr Abstimmung und Wachstum- oder Individualprojekte hängen stärker von Content, Funktionen und Feedback ab.'),

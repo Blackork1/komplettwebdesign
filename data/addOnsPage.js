@@ -542,7 +542,7 @@ export const addOnsPage = Object.freeze({
     { label: 'Website-Kosten und Beispielrechnungen', href: '/webdesign-berlin/kosten-preise-pakete', text: 'Einmalige Projektkosten und Beispiele ansehen' },
     { label: 'Website-Relaunch', href: '/leistungen/website-relaunch', text: 'Bestehende Website geordnet erneuern' },
     { label: 'Website-Tester', href: '/website-tester', text: 'Schnellen technischen Check starten' },
-    { label: 'Webdesign Berlin', href: '/webdesign-berlin', text: 'Hauptleistung und lokale Ausrichtung ansehen' }
+    { label: 'Webdesign Berlin', href: '/', text: 'Hauptleistung und lokale Ausrichtung ansehen' }
   ],
   finalCta: {
     title: 'Welche Erweiterung brauchst du wirklich?',

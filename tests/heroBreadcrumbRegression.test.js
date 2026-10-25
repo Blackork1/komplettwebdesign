@@ -148,7 +148,7 @@ test('leistung heroes use a shared leistungen breadcrumb, kicker and right-side 
   const leistungen = read('views/leistungen/show.ejs');
   const seoLanding = read('views/seo_landing/show.ejs');
 
-  assert.match(leistungen, /isPricePage\s*\?\s*\{\s*label:\s*'Webdesign Berlin',\s*href:\s*'\/webdesign-berlin'\s*\}/);
+  assert.match(leistungen, /isPricePage\s*\?\s*\{\s*label:\s*'Webdesign Berlin',\s*href:\s*'\/'\s*\}/);
   assert.match(leistungen, /:\s*\{\s*label:\s*'Leistungen',\s*href:\s*'\/leistungen'\s*\}/);
   assert.match(leistungen, /<li><a href="<%=\s*parentBreadcrumb\.href\s*%>"><%=\s*parentBreadcrumb\.label\s*%><\/a><\/li>/);
   assert.match(leistungen, /class="service-kicker\s+leistungen-service-kicker/);

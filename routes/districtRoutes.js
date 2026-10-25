@@ -1,12 +1,14 @@
 // routes/districtRoutes.js
 import { Router } from "express";
-import { renderDistrictPage, renderWebdesignBerlinHub } from "../controllers/districtController.js";
+import { renderDistrictPage } from "../controllers/districtController.js";
 import { processWebdesignBerlinForm, webdesignBerlinUpload } from "../controllers/contactController.js";
 
 
 const router = Router();
 
-router.get("/", renderWebdesignBerlinHub);
+// „Webdesign Berlin“ ist jetzt die Startseite: Google hat die Startseite für diesen Begriff deutlich
+// besser bewertet als die Unterseite. Die Bezirksseiten bleiben unter /webdesign-berlin/:slug.
+router.get("/", (req, res) => res.redirect(301, req.baseUrl.startsWith("/en") ? "/en" : "/"));
 // Kontaktformular der Landingpage
 router.post("/kontakt", webdesignBerlinUpload, processWebdesignBerlinForm);
 

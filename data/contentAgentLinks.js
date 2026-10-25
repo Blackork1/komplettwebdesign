@@ -1,7 +1,7 @@
 export const CONTENT_AGENT_LINKS = Object.freeze([
   { url: '/kontakt', type: 'contact', label: 'Beratung anfragen' },
   { url: '/pakete', type: 'pricing', label: 'Website-Pakete und Preise' },
-  { url: '/webdesign-berlin', type: 'service', label: 'Website erstellen lassen in Berlin' },
+  { url: '/', type: 'service', label: 'Website erstellen lassen in Berlin' },
   { url: '/leistungen/website-relaunch', type: 'service', label: 'Website-Relaunch' },
   { url: '/leistungen/local-seo', type: 'service', label: 'Local SEO Berlin' },
   { url: '/leistungen/website-audit', type: 'service', label: 'Website-Audit' },

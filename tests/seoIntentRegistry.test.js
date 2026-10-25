@@ -12,7 +12,8 @@ test('jede aktive SEO-Suchabsicht besitzt genau eine Zielseite', () => {
 });
 
 test('die doppelten Haupt- und Kostenseiten besitzen ein eindeutiges Ziel', () => {
-  assert.equal(SEO_RECOVERY_REDIRECTS['/website-erstellen-lassen-berlin'], '/webdesign-berlin');
+  assert.equal(SEO_RECOVERY_REDIRECTS['/website-erstellen-lassen-berlin'], '/');
+  assert.equal(SEO_RECOVERY_REDIRECTS['/webdesign-berlin'], '/');
   assert.equal(
     SEO_RECOVERY_REDIRECTS['/blog/website-kosten-2026-berlin-vergleich-2025'],
     '/blog/website-kosten-2025-einfach-erklaert'
@@ -27,12 +28,12 @@ test('priorisierte aktive Seiten verlangen mindestens zwei kontextuelle Links', 
   }
 });
 
-test('die zentrale Berliner Seite ist Eigentümerin der kommerziellen Hauptabsicht', () => {
-  assert.equal(
-    getSeoRecoveryTarget('/webdesign-berlin')?.intentId,
-    'website-erstellen-lassen-berlin'
-  );
-  assert.equal(getSeoRecoveryTarget('/webdesign-berlin')?.state, 'active');
+test('die Startseite ist Eigentümerin von „Webdesign Berlin“, die alte Berliner Seite leitet dorthin', () => {
+  assert.equal(getSeoRecoveryTarget('/')?.intentId, 'webdesign-berlin');
+  assert.equal(getSeoRecoveryTarget('/')?.primaryQuery, 'webdesign berlin');
+  assert.equal(getSeoRecoveryTarget('/')?.state, 'active');
+  assert.equal(getSeoRecoveryTarget('/webdesign-berlin')?.state, 'redirect');
+  assert.equal(getSeoRecoveryTarget('/webdesign-berlin')?.redirectTo, '/');
 });
 
 test('priorisierte Seiten besitzen eine eindeutige Inhaltsrolle und Handlung', () => {

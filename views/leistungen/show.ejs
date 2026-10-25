@@ -10,7 +10,7 @@
   const canonicalPath = page.canonicalPath || (isPricePage ? `/webdesign-berlin/${pageSlug}` : `/leistungen/${pageSlug}`);
   const pageUrl = `${baseUrl}${canonicalPath}`;
   const parentBreadcrumb = isPricePage
-    ? { label: 'Webdesign Berlin', href: '/webdesign-berlin' }
+    ? { label: 'Webdesign Berlin', href: '/' }
     : { label: 'Leistungen', href: '/leistungen' };
   const pageName = (page.hero && page.hero.title) || page.title || title || 'Leistung';
   const pageDesc = description || page.meta_description || (page.hero && page.hero.subtitle) || '';

@@ -48,7 +48,7 @@ test('Relaunch, Audit und Landingpage besitzen den jeweils entscheidenden Beleg'
   assert.match(audit.overview.proof.text, /priorisierte|Beispielausgabe/i);
   assert.equal(audit.overview.proof.href, '/website-tester');
   assert.match(landingpage.overview.proof.text, /ein Conversion-Ziel/i);
-  assert.equal(landingpage.overview.proof.href, '/webdesign-berlin');
+  assert.equal(landingpage.overview.proof.href, '/');
 });
 
 test('seo landing pages expose exactly the planned static money pages', () => {
@@ -128,7 +128,7 @@ test('website relaunch page is available as a distinct seo landing page', () => 
   assert.equal(page.primaryKeyword, 'website relaunch berlin');
   assert.match(page.h1, /Website Relaunch/i);
   assert.ok(page.sections.length >= 14);
-  assert.ok(page.internalLinks.some((link) => link.href === '/webdesign-berlin'));
+  assert.ok(page.internalLinks.some((link) => link.href === '/'));
 });
 
 test('website relaunch phase 10b contains required sections, cautious pricing and safe links', () => {
@@ -172,7 +172,7 @@ test('website relaunch phase 10b contains required sections, cautious pricing an
   ].forEach((snippet) => assert.match(pageText, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))));
 
   [
-    '/webdesign-berlin',
+    '/',
     '/pakete',
     '/pakete/business',
     '/pakete/wachstum',
@@ -266,7 +266,7 @@ test('website audit phase 10d contains required sections, cautious pricing and s
     '/website-tester',
     '/leistungen/website-relaunch',
     '/leistungen/local-seo',
-    '/webdesign-berlin',
+    '/',
     '/pakete',
     '/leistungen/zusatzleistungen-webdesign',
     '/leistungen/laufende-kosten-website'
@@ -346,7 +346,7 @@ test('landingpage phase 10c contains required sections, cautious pricing and saf
     '/kontakt?projektart=landingpage',
     '/leistungen/zusatzleistungen-webdesign',
     '/pakete',
-    '/webdesign-berlin',
+    '/',
     '/leistungen/website-audit',
     '/website-tester',
     '/leistungen/local-seo',
