@@ -12,7 +12,7 @@ export const FORCED_SEO_TITLES = Object.freeze({});
 export const FORCED_HEADLINES = Object.freeze({});
 
 export const SHORT_SEO_TITLES = Object.freeze({
-  '/blog/barrierefreiheit-2020-websites-leitfaden': 'BFSG 2025: Anforderungen an barrierefreie Websites',
+  '/blog/barrierefreie-website-bfsg': 'Barrierefreie Website: Was das BFSG seit 2025 verlangt',
   '/blog/eigener-website-chatbot': 'Website-Chatbot einrichten: Mehr Anfragen generieren',
   '/blog/full-service-webdesign-in-berlin': 'Full-Service-Webdesign Berlin: Design, SEO und Wartung',
   '/blog/google-ads-vs-meta-ads': 'Google Ads vs. Meta Ads: Was bringt Berliner KMU Leads?',

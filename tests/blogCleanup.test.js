@@ -27,7 +27,7 @@ const KEPT = [
   'lokale-seo-hacks-fuer-berlin',
   'ki-suche-webdesign-2026',
   'mehr-anfragen-website-kontaktfehler-kmu-2026',
-  'barrierefreiheit-2020-websites-leitfaden',
+  'barrierefreie-website-bfsg',
   'website-checkliste-fuer-selbststaendige'
 ];
 
@@ -100,7 +100,8 @@ test('die Blogroute antwortet mit 301 aufs Ziel und behält Abfrageparameter', a
     ['/blog/google-unternehmensprofil-website-widerspruch-berlin-brandenburg', '/blog/lokale-seo-hacks-fuer-berlin'],
     ['/blog/website-kosten-2026-berlin-vergleich-2025', '/blog/website-kosten-2025-einfach-erklaert'],
     ['/blog/GA4-Tracking-Framework', '/blog/ga4-tracking-framework'],
-    ['/blog/Lokale-SEO-Hacks-fuer-Berlin', '/blog/lokale-seo-hacks-fuer-berlin']
+    ['/blog/Lokale-SEO-Hacks-fuer-Berlin', '/blog/lokale-seo-hacks-fuer-berlin'],
+    ['/blog/barrierefreiheit-2020-websites-leitfaden', '/blog/barrierefreie-website-bfsg']
   ]) {
     const response = await request(path);
     assert.equal(response.status, 301, path);
@@ -139,13 +140,15 @@ test('Links in Artikeltexten auf zusammengeführte Artikel zeigen direkt aufs Zi
     '<a href="/blog/Landingpages-Webshop-Webdesign-Berlin">B</a>',
     '<a href="https://www.komplettwebdesign.de/blog/relaunch-wegen-ki-suche#teil">C</a>',
     '<a href="/blog/seo-fuer-blumenladen">D</a>',
-    '<a href="/blog/woche-2-webdesign-arten-im-vergleich-statisch-dynamisch-cms-onepager">E</a>'
+    '<a href="/blog/woche-2-webdesign-arten-im-vergleich-statisch-dynamisch-cms-onepager">E</a>',
+    '<a href="/blog/barrierefreiheit-2020-websites-leitfaden">F</a>'
   ].join(' '));
   assert.match(out, /href="\/blog\/ki-suche-webdesign-2026">A/);
   assert.match(out, /href="\/leistungen\/landingpage-erstellen-lassen">B/);
   assert.match(out, /href="\/blog\/website-relaunch-berlin-checkliste">C/);
   assert.match(out, /href="\/blog\/seo-fuer-blumenladen">D/);
   assert.match(out, /href="\/blog\/woche-2-webdesign-arten-im-vergleich-statisch-dynamisch-cms-onepager">E/, 'noindex-Artikel bleiben verlinkbar');
+  assert.match(out, /href="\/blog\/barrierefreie-website-bfsg">F/, 'alter Slug zeigt auf die neue Adresse');
 });
 
 test('fest eingebaute Links zeigen nicht mehr auf zusammengeführte Artikel', () => {

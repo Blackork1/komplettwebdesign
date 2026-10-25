@@ -3,8 +3,11 @@
 import { SEO_RECOVERY_REDIRECTS } from '../data/seoIntentRegistry.js';
 import { BLOG_REDIRECTS, BLOG_SLUG_ALIASES } from '../data/blogRedirects.js';
 
-// Zusammengeführte Blogartikel, auch unter ihrem alten Datenbank-Slug.
+// Zusammengeführte Blogartikel, auch unter ihrem alten Datenbank-Slug, und alte Slugs mit neuer Adresse.
 const BLOG_LINK_TARGETS = Object.fromEntries([
+  ...Object.entries(BLOG_SLUG_ALIASES)
+    .filter(([stored, canonical]) => stored.toLowerCase() !== canonical && !BLOG_REDIRECTS[canonical])
+    .map(([stored, canonical]) => [`/blog/${stored}`, `/blog/${canonical}`]),
   ...Object.entries(BLOG_REDIRECTS).map(([slug, target]) => [`/blog/${slug}`, target]),
   ...Object.entries(BLOG_SLUG_ALIASES)
     .filter(([, canonical]) => BLOG_REDIRECTS[canonical])

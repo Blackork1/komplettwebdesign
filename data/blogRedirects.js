@@ -9,6 +9,8 @@ export const BLOG_SLUG_ALIASES = Object.freeze({
   'Landingpages-Webshop-Webdesign-Berlin': 'landingpages-webshop-webdesign-berlin',
   'Lokale-SEO-Hacks-fuer-Berlin': 'lokale-seo-hacks-fuer-berlin',
   'Scoll-Snapp-Galery-&-Zoom‑on‑View': 'scroll-snap-galerie-zoom-on-view',
+  // Gespeicherter Slug enthält „2020“, der Artikel behandelt das BFSG ab 2025.
+  'barrierefreiheit-2020-websites-leitfaden': 'barrierefreie-website-bfsg',
   'website-checkliste-für-selbstandige': 'website-checkliste-fuer-selbststaendige'
 });
 const storedSlugs = Object.fromEntries(Object.entries(BLOG_SLUG_ALIASES).map(([stored, canonical]) => [canonical, stored]));
