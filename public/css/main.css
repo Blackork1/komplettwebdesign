@@ -262,10 +262,13 @@ p {
   /* ← oben ansetzen */
   left: 0;
   width: 100%;
-  height: var(--progress-ratio, 0%);
+  height: 100%;
   background: var(--color-accent);
   border-radius: 2px;
-  transition: height 0.2s ease;
+  /* transform statt height: flüssig auf der Grafikkarte, ohne Layout-Neuberechnung */
+  transform: scaleY(var(--progress-scale, 0));
+  transform-origin: top center;
+  transition: transform 0.2s ease;
 }
 
 /* 3) Icons als absolute Elemente innerhalb .progress-line */
@@ -559,7 +562,8 @@ a.logo {
   color: var(--color-primary);
   font-weight: bold;
   padding: 5px;
-  transition: all 0.2s ease;
+  /* Keine Layout-Eigenschaften animieren (Rahmen, Abstände): sonst ruckelt es beim Laden nachgeladener Styles. */
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 .heroLinks a:hover:not(.btn) {
   color: var(--color-accent);
@@ -644,7 +648,7 @@ nav.main-nav {
   padding: 0.5rem 1rem;
   text-decoration: none;
   color: #333;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Hover-Effekt */

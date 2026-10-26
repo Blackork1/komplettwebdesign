@@ -108,7 +108,7 @@
     <div class="hero-nav">
       <div class="navigation" id="navigation" aria-label="Komplett Webdesign">
         <a href="<%= homeHref %>" class="logo" aria-label="<%= isEn ? 'To homepage' : 'Zur Startseite' %>">
-          <img src="/images/LogoTransparent.webp" alt="<%= isEn ? 'Icon to go to homepage' : 'Icon um zur Startseite zu kommen' %>" width="480" height="480" />
+          <img srcset="/images/LogoTransparent-140.webp 140w, /images/LogoTransparent-210.webp 210w, /images/LogoTransparent.webp 480w" sizes="70px" src="/images/LogoTransparent.webp" alt="<%= isEn ? 'Icon to go to homepage' : 'Icon um zur Startseite zu kommen' %>" width="480" height="480" />
         </a>
         <div class="nav-right">
           <button
@@ -128,7 +128,7 @@
             <div class="mobile-nav-panel__header">
               <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="<%= isEn ? 'Close navigation' : 'Navigation schließen' %>">×</button>
               <a href="<%= homeHref %>" class="mobile-nav-brand" aria-label="<%= isEn ? 'To homepage' : 'Zur Startseite' %>">
-                <img src="/images/LogoTransparent.webp" alt="Komplett Webdesign" width="480" height="480" />
+                <img srcset="/images/LogoTransparent-140.webp 140w, /images/LogoTransparent-210.webp 210w, /images/LogoTransparent.webp 480w" sizes="58px" src="/images/LogoTransparent.webp" alt="Komplett Webdesign" width="480" height="480" />
               </a>
             </div>
             <% navItems.forEach((item) => { %>

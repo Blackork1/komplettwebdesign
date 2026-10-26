@@ -160,6 +160,7 @@ validateCssAssetManifest(cssAssetManifest, [
   'branchen.css',
   'carousel.css',
   'cost-pages.css',
+  'css/bootstrap-site.css',
   'css/main.css',
   'district-berlin.css',
   'extra.css',

@@ -58,7 +58,7 @@ test('homepage hero has sequenced after-load reveal targets', () => {
     /class="home-hero-showcase home-hero-reveal home-hero-reveal--visual animate-on-scroll"/
   );
   assert.match(hero, /\/images\/home-hero-sauber-desktop\.webp/);
-  assert.match(hero, /\/images\/home-hero-sauber-kontakt\.webp/);
+  assert.match(hero, /\/images\/home-hero-filmfestival-video-880\.webp/);
   assert.match(hero, /\/images\/home-hero-backstube-mobile\.webp/);
   assert.doesNotMatch(hero, /heroBadgePackages/);
   assert.doesNotMatch(hero, /heroPriceInfo/);

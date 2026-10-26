@@ -1,0 +1,28 @@
+// Bootstrap-Klassen aus Inhalten in der Datenbank (Blogartikel, Ratgeber, Komponenten,
+// Branchenseiten). Stand: 26.10.2026. Diese Klassen bleiben im schlanken Bootstrap immer erhalten.
+export const CONTENT_BOOTSTRAP_CLASSES = [
+  'accordion', 'accordion-body', 'accordion-button', 'accordion-collapse', 'accordion-header',
+  'accordion-item', 'alert', 'alert-danger', 'alert-info', 'alert-light', 'alert-link',
+  'alert-primary', 'alert-secondary', 'alert-warning', 'align-items-center',
+  'align-items-lg-center', 'align-items-start', 'align-middle', 'badge', 'bg-dark', 'bg-light',
+  'bg-primary', 'bg-secondary', 'bg-success', 'bg-white', 'blockquote', 'border', 'border-0',
+  'border-2', 'border-4', 'border-primary', 'border-start', 'btn', 'btn-dark', 'btn-lg',
+  'btn-light', 'btn-outline-light', 'btn-outline-primary', 'btn-outline-secondary', 'btn-primary',
+  'btn-secondary', 'btn-sm', 'btn-success', 'card', 'card-body', 'card-footer', 'card-img-top',
+  'card-text', 'card-title', 'col', 'col-12', 'col-6', 'col-lg-10', 'col-lg-12', 'col-lg-4',
+  'col-lg-5', 'col-lg-6', 'col-lg-7', 'col-lg-8', 'col-md-12', 'col-md-4', 'col-md-6', 'col-md-8',
+  'col-xl-9', 'collapse', 'collapsed', 'container', 'd-block', 'd-flex', 'd-lg-flex', 'display-5',
+  'flex-column', 'flex-lg-row', 'flex-wrap', 'fs-6', 'fst-italic', 'fw-bold', 'fw-semibold', 'g-3',
+  'g-4', 'gap-2', 'gap-3', 'h-100', 'h2', 'h3', 'h4', 'h5', 'h6', 'img-fluid',
+  'justify-content-between', 'justify-content-center', 'justify-content-lg-between', 'lead',
+  'lh-sm', 'link-primary', 'list-group', 'list-group-flush', 'list-group-item',
+  'list-group-item-action', 'list-unstyled', 'm-0', 'mb-0', 'mb-1', 'mb-2', 'mb-3', 'mb-4', 'mb-5',
+  'mb-lg-0', 'mb-md-5', 'me-1', 'me-2', 'me-3', 'ms-2', 'mt-1', 'mt-2', 'mt-3', 'mt-4', 'mt-5',
+  'mt-lg-0', 'mx-auto', 'my-3', 'my-4', 'my-5', 'my-md-5', 'order-1', 'order-2', 'order-lg-1',
+  'order-lg-2', 'overflow-hidden', 'p-3', 'p-4', 'p-lg-5', 'ps-3', 'py-3', 'py-4', 'py-5',
+  'rounded', 'rounded-3', 'rounded-4', 'rounded-pill', 'row', 'row-cols-1', 'row-cols-lg-2',
+  'row-cols-lg-3', 'row-cols-md-2', 'row-cols-sm-2', 'row-cols-xl-3', 'shadow-sm', 'show', 'small',
+  'table', 'table-bordered', 'table-light', 'table-responsive', 'table-sm', 'table-striped',
+  'text-bg-dark', 'text-center', 'text-dark', 'text-decoration-none', 'text-muted',
+  'text-secondary', 'text-uppercase', 'text-white', 'text-white-50', 'w-100'
+];

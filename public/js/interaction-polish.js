@@ -333,8 +333,7 @@
     return context.measureText(token).width;
   }
 
-  function protectHyphensForElement(text, element) {
-    var availableWidth = getAvailableTextWidth(element);
+  function protectHyphensForElement(text, element, availableWidth) {
     hyphenatedTokenPattern.lastIndex = 0;
 
     return text.replace(hyphenatedTokenPattern, function(token) {
@@ -356,10 +355,20 @@
       return node && node.parentElement && node.isConnected !== false;
     });
 
-    hyphenProtectionNodes.forEach(function(node) {
+    // Erst alles messen, dann schreiben. Abwechselndes Messen und Schreiben zwingt den
+    // Browser bei jedem Textknoten zu einer neuen Layout-Berechnung (Forced Reflow).
+    var widthByElement = new Map();
+    var updates = hyphenProtectionNodes.map(function(node) {
       var originalText = node.__kwdOriginalHyphenText || node.nodeValue || '';
       var measureElement = getTextMeasureElement(node);
-      node.nodeValue = protectHyphensForElement(originalText, measureElement);
+      if (!widthByElement.has(measureElement)) {
+        widthByElement.set(measureElement, getAvailableTextWidth(measureElement));
+      }
+      return [node, protectHyphensForElement(originalText, measureElement, widthByElement.get(measureElement))];
+    });
+
+    updates.forEach(function(update) {
+      if (update[0].nodeValue !== update[1]) update[0].nodeValue = update[1];
     });
   }
 
@@ -435,15 +444,17 @@
         }, 420);
       }
 
-      updatePersistentSliderIndicator();
-      onPageLoaded(updatePersistentSliderIndicator);
-      window.addEventListener('resize', updatePersistentSliderIndicator, { passive: true });
-      window.addEventListener('orientationchange', updatePersistentSliderIndicator, { passive: true });
-
+      // Der ResizeObserver meldet die erste Größe von selbst, sobald das Layout ohnehin
+      // berechnet ist. Ein sofortiger Aufruf hier würde eine Layout-Berechnung erzwingen.
       if (window.ResizeObserver) {
         var sliderResizeObserver = new ResizeObserver(updatePersistentSliderIndicator);
         sliderResizeObserver.observe(slider);
+      } else {
+        updatePersistentSliderIndicator();
       }
+      onPageLoaded(updatePersistentSliderIndicator);
+      window.addEventListener('resize', updatePersistentSliderIndicator, { passive: true });
+      window.addEventListener('orientationchange', updatePersistentSliderIndicator, { passive: true });
 
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(updatePersistentSliderIndicator).catch(function() {});

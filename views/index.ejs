@@ -143,6 +143,14 @@ const homeHeroBridgeHighlights = (typeof heroBridgeHighlights !== 'undefined' &&
   ? heroBridgeHighlights
   : [];
 const homeMarketingImages = (typeof marketingImages !== 'undefined' && marketingImages) ? marketingImages : {};
+// srcset/sizes aus data/responsiveImages.js, damit Handys kleinere Bilddateien laden.
+const homeSrcsetFor = (typeof srcsetFor === 'function') ? srcsetFor : () => '';
+const responsiveAttrs = (src, sizes) => {
+  const srcset = homeSrcsetFor(src);
+  return srcset ? ` srcset="${srcset}" sizes="${sizes}"` : '';
+};
+const homeProblemSrc = homeMarketingImages.homeProblem?.src || '/images/home-fit-beratung.webp';
+const homeSolutionSrc = homeMarketingImages.homeSolution?.src || '/images/webdesign-berlin-individuelles-webdesign.webp';
 const homePackageImages = {
   start: homeMarketingImages.packageStart,
   business: homeMarketingImages.packageBusiness,
@@ -193,15 +201,15 @@ const homePackageImages = {
               <p class="home-hero-trust-note home-hero-reveal home-hero-reveal--trust animate-on-scroll"><%= copy.heroTrustNote %></p>
               <% } %>
             </div>
-            <div class="home-hero-showcase home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="<%= isEn ? 'Real client websites: TM Sauber & Mehr and Zur alten Backstube' : 'Echte Kundenprojekte: TM Sauber & Mehr und Zur alten Backstube' %>">
+            <div class="home-hero-showcase home-hero-reveal home-hero-reveal--visual animate-on-scroll" aria-label="<%= isEn ? 'Real client websites: TM Sauber & Mehr, Kurdish Film Festival Berlin and Zur alten Backstube' : 'Echte Kundenprojekte: TM Sauber & Mehr, Kurdisches Filmfestival Berlin und Zur alten Backstube' %>">
               <figure class="home-hero-showcase__main">
-                <img src="<%= homeMarketingImages.homeHero?.src || '/images/home-hero-sauber-desktop.webp' %>" alt="<%= isEn ? 'Homepage of the TM Sauber & Mehr website, a commercial cleaning company in Berlin' : (homeMarketingImages.homeHero?.alt || 'Startseite der Website von TM Sauber & Mehr, einer Gebäudereinigung in Berlin') %>" width="1152" height="720" fetchpriority="high" loading="eager" decoding="async">
+                <img src="<%= homeMarketingImages.homeHero?.src || '/images/home-hero-sauber-desktop.webp' %>"<%- responsiveAttrs(homeMarketingImages.homeHero?.src || '/images/home-hero-sauber-desktop.webp', '(max-width: 768px) 88vw, (max-width: 1020px) 620px, 570px') %> alt="<%= isEn ? 'Homepage of the TM Sauber & Mehr website, a commercial cleaning company in Berlin' : (homeMarketingImages.homeHero?.alt || 'Startseite der Website von TM Sauber & Mehr, einer Gebäudereinigung in Berlin') %>" width="1152" height="720" fetchpriority="high" loading="eager" decoding="async">
               </figure>
               <figure class="home-hero-showcase__detail">
-                <img src="/images/home-hero-sauber-kontakt.webp" alt="<%= isEn ? 'Contact page of TM Sauber & Mehr with call and WhatsApp buttons' : 'Kontaktseite von TM Sauber & Mehr mit Anruf- und WhatsApp-Button' %>" width="1040" height="491" fetchpriority="low" loading="lazy" decoding="async">
+                <img src="/images/home-hero-filmfestival-video-880.webp"<%- responsiveAttrs('/images/home-hero-filmfestival-video-880.webp', '(max-width: 768px) 56vw, 440px') %> alt="<%= isEn ? 'Video page of the Kurdish Film Festival Berlin website with film player, film details and ticket button' : 'Videoseite der Website des Kurdischen Filmfestivals Berlin mit Filmplayer, Filmdaten und Ticket-Button' %>" width="880" height="440" fetchpriority="low" loading="lazy" decoding="async">
               </figure>
               <figure class="home-hero-showcase__phone">
-                <img src="/images/home-hero-backstube-mobile.webp" alt="<%= isEn ? 'Mobile view of the Zur alten Backstube café website' : 'Handy-Ansicht der Website vom Café Zur alten Backstube' %>" width="574" height="1344" fetchpriority="low" loading="lazy" decoding="async">
+                <img src="/images/home-hero-backstube-mobile.webp"<%- responsiveAttrs('/images/home-hero-backstube-mobile.webp', '(max-width: 600px) 28vw, (max-width: 768px) 20vw, 160px') %> alt="<%= isEn ? 'Mobile view of the Zur alten Backstube café website' : 'Handy-Ansicht der Website vom Café Zur alten Backstube' %>" width="574" height="1344" fetchpriority="low" loading="lazy" decoding="async">
               </figure>
             </div>
           </div>
@@ -260,7 +268,7 @@ const homePackageImages = {
               <% } %>
             </p>
             <figure class="home-reference-band animate-on-scroll">
-              <img src="<%= homeMarketingImages.homeProblem?.src || '/images/home-fit-beratung.webp' %>" alt="<%= isEn ? 'Personal website consultation for a small local business' : (homeMarketingImages.homeProblem?.alt || 'Entscheidungshilfe für ein Website-Projekt') %>" width="1280" height="720" loading="lazy" decoding="async">
+              <img src="<%= homeProblemSrc %>"<%- responsiveAttrs(homeProblemSrc, '(max-width: 1199px) calc(100vw - 34px), 1140px') %> alt="<%= isEn ? 'Personal website consultation for a small local business' : (homeMarketingImages.homeProblem?.alt || 'Entscheidungshilfe für ein Website-Projekt') %>" width="1280" height="720" loading="lazy" decoding="async">
               <figcaption>
                 <h3><%= isEn ? 'A website that explains your offer quickly' : 'Ein Auftritt, der dein Angebot schnell verständlich macht' %></h3>
                 <p>
@@ -310,7 +318,7 @@ const homePackageImages = {
             <div class="home-card-grid">
               <article class="home-card home-service-card animate-on-scroll">
                 <figure class="home-card-media">
-                  <img src="<%= homeMarketingImages.homeSolution?.src || '/images/webdesign-berlin-individuelles-webdesign.webp' %>" alt="<%= isEn ? 'Custom web design example' : (homeMarketingImages.homeSolution?.alt || 'Beispiel für individuelles Webdesign') %>" width="540" height="338" loading="lazy" decoding="async">
+                  <img src="<%= homeSolutionSrc %>"<%- responsiveAttrs(homeSolutionSrc, '(max-width: 768px) calc(100vw - 34px), 540px') %> alt="<%= isEn ? 'Custom web design example' : (homeMarketingImages.homeSolution?.alt || 'Beispiel für individuelles Webdesign') %>" width="540" height="338" loading="lazy" decoding="async">
                 </figure>
                 <div class="home-card-body">
                   <h3><%= isEn ? 'Website strategy and structure' : 'Website-Strategie und Struktur' %></h3>
@@ -356,6 +364,7 @@ const homePackageImages = {
 
     <!-- 4b) Echte Projekte -->
     <% const homeProjectList = (typeof homeProjects !== 'undefined' && Array.isArray(homeProjects)) ? homeProjects : []; %>
+    <% const projectImageAttrs = (typeof responsiveAttrs === 'function') ? responsiveAttrs : () => ''; %>
     <% if (homeProjectList.length) { %>
     <section class="section" id="projekte" aria-labelledby="home-projects-title">
       <div class="container">
@@ -368,7 +377,7 @@ const homePackageImages = {
               <% homeProjectList.forEach((project) => { %>
               <article class="home-project-card animate-on-scroll">
                 <a class="home-project-card__media" href="<%= project.href %>" tabindex="-1" aria-hidden="true">
-                  <img src="<%= project.image %>" alt="" width="<%= project.imageWidth %>" height="<%= project.imageHeight %>" loading="lazy" decoding="async">
+                  <img src="<%= project.image %>"<%- projectImageAttrs(project.image, '(max-width: 768px) calc(100vw - 34px), 380px') %> alt="" width="<%= project.imageWidth %>" height="<%= project.imageHeight %>" loading="lazy" decoding="async">
                 </a>
                 <div class="home-project-card__body">
                   <p class="home-project-card__industry"><%= project.industry %></p>

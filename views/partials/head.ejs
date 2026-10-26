@@ -94,24 +94,24 @@
   <% } %>
 
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
-  <%# Gleiche URL wie in solid.min.css (url(fa-solid-900.woff2?v=<Inhalts-Hash>)), sonst lädt der Browser die Schrift doppelt.
-     Der Hash sorgt dafür, dass Browser nach einem Schrift-Update die neue Datei laden statt der ein Jahr gecachten alten. %>
-  <link rel="preload" href="<%= versionedAsset('assets/css/fa-solid-900.woff2') %>" as="font" type="font/woff2" crossorigin />
+  <%# Icons: nur die verwendeten Font-Awesome-Icons (scripts/buildIconSubset.mjs), 19 statt 113 KB Schrift.
+     Gleiche URL wie in icons.min.css (url(fa-solid-900-subset.woff2?v=<Inhalts-Hash>)), sonst lädt der Browser die Schrift doppelt. %>
+  <link rel="preload" href="<%= versionedAsset('assets/css/fa-solid-900-subset.woff2') %>" as="font" type="font/woff2" crossorigin />
 
-  <link rel="preload" href="<%= versionedAsset('assets/css/fontawesome.min.css') %>" as="style" onload="this.rel='stylesheet'" />
+  <link rel="preload" href="<%= versionedAsset('assets/css/icons.min.css') %>" as="style" onload="this.rel='stylesheet'" />
   <noscript>
-    <link rel="stylesheet" href="<%= versionedAsset('assets/css/fontawesome.min.css') %>" />
-  </noscript>
-
-  <link rel="preload" href="<%= versionedAsset('assets/css/solid.min.css') %>" as="style" onload="this.rel='stylesheet'" />
-  <noscript>
-    <link rel="stylesheet" href="<%= versionedAsset('assets/css/solid.min.css') %>" />
+    <link rel="stylesheet" href="<%= versionedAsset('assets/css/icons.min.css') %>" />
   </noscript>
 
   <link rel="preload" href="<%= versionedAsset('fonts/inter-v19-latin-regular.woff2') %>" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="<%= versionedAsset('fonts/poppins-v23-latin-700.woff2') %>" as="font" type="font/woff2" crossorigin />
 
+  <%# Öffentliche Seiten: Bootstrap nur mit den genutzten Regeln (scripts/buildBootstrapSubset.mjs). Adminbereich: komplett. %>
+  <% if (typeof currentPathname === 'string' && /^\/admin(\/|$)/.test(currentPathname)) { %>
   <link rel="stylesheet" href="<%= versionedAsset('css/bootstrap.min.css') %>" />
+  <% } else { %>
+  <link rel="stylesheet" href="<%= cssAsset('css/bootstrap-site.css') %>" />
+  <% } %>
 
   <link rel="stylesheet" href="<%= cssAsset('css/main.css') %>" />
 

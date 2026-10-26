@@ -92,6 +92,13 @@
       "hash": "8ed355d2912b",
       "bytes": 947
     },
+    "css/bootstrap-site.css": {
+      "source": "css/bootstrap-site.css",
+      "output": "css/bootstrap-site.min.css",
+      "href": "/css/bootstrap-site.min.css?v=84651d1b2d86",
+      "hash": "84651d1b2d86",
+      "bytes": 57179
+    },
     "css/combined.css": {
       "source": "css/combined.css",
       "output": "css/combined.min.css",
@@ -109,9 +116,9 @@
     "css/main.css": {
       "source": "css/main.css",
       "output": "css/main.min.css",
-      "href": "/css/main.min.css?v=23290238fde1",
-      "hash": "23290238fde1",
-      "bytes": 29285
+      "href": "/css/main.min.css?v=b8966804adcc",
+      "hash": "b8966804adcc",
+      "bytes": 29388
     },
     "demo/cq-compare/styles.css": {
       "source": "demo/cq-compare/styles.css",
@@ -130,9 +137,9 @@
     "extra.css": {
       "source": "extra.css",
       "output": "extra.min.css",
-      "href": "/extra.min.css?v=d9530a6ee8fe",
-      "hash": "d9530a6ee8fe",
-      "bytes": 36058
+      "href": "/extra.min.css?v=7dea76614141",
+      "hash": "7dea76614141",
+      "bytes": 36084
     },
     "faq.css": {
       "source": "faq.css",
@@ -172,9 +179,9 @@
     "home.css": {
       "source": "home.css",
       "output": "home.min.css",
-      "href": "/home.min.css?v=ec7a6acd0c81",
-      "hash": "ec7a6acd0c81",
-      "bytes": 52818
+      "href": "/home.min.css?v=bab2c58997eb",
+      "hash": "bab2c58997eb",
+      "bytes": 52811
     },
     "interaction-polish.css": {
       "source": "interaction-polish.css",

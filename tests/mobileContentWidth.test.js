@@ -6,12 +6,12 @@ import { createHash } from 'node:crypto';
 const read = (file) => readFile(new URL(`../${file}`, import.meta.url));
 
 test('die Icon-Schrift trägt ihren Inhalts-Hash, damit Browser nach Updates neu laden', async () => {
-  const font = await read('public/assets/css/fa-solid-900.woff2');
+  const font = await read('public/assets/css/fa-solid-900-subset.woff2');
   const hash = createHash('sha256').update(font).digest('hex').slice(0, 12);
-  const solid = (await read('public/assets/css/solid.min.css')).toString();
-  assert.match(solid, new RegExp(`src:url\\(fa-solid-900\\.woff2\\?v=${hash}\\)`));
+  const icons = (await read('public/assets/css/icons.min.css')).toString();
+  assert.match(icons, new RegExp(`src:url\\(fa-solid-900-subset\\.woff2\\?v=${hash}\\)`));
   const head = (await read('views/partials/head.ejs')).toString();
-  assert.match(head, /<link rel="preload" href="<%= versionedAsset\('assets\/css\/fa-solid-900\.woff2'\) %>" as="font"/);
+  assert.match(head, /<link rel="preload" href="<%= versionedAsset\('assets\/css\/fa-solid-900-subset\.woff2'\) %>" as="font"/);
 });
 
 test('auf dem Handy haben Abschnitte denselben Seitenabstand wie der Hero', async () => {

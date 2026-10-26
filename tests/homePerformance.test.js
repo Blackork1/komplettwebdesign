@@ -23,7 +23,7 @@ const ruleBlock = (source, selector) => {
 
 test('nur das wahrscheinliche LCP-Bild lädt eager und high priority', () => {
   const mainImage = tagContaining(view, 'img', 'home-hero-sauber-desktop.webp');
-  const detailImage = tagContaining(view, 'img', 'home-hero-sauber-kontakt.webp');
+  const detailImage = tagContaining(view, 'img', 'home-hero-filmfestival-video-880.webp');
   const phoneImage = tagContaining(view, 'img', 'home-hero-backstube-mobile.webp');
 
   assert.match(mainImage, /fetchpriority="high"/);
@@ -76,7 +76,7 @@ test('Head lädt genau die drei vorgesehenen projektspezifischen Fonts vor', () 
   });
 
   assert.deepEqual(fontPaths, [
-    'assets/css/fa-solid-900.woff2',
+    'assets/css/fa-solid-900-subset.woff2',
     'fonts/inter-v19-latin-regular.woff2',
     'fonts/poppins-v23-latin-700.woff2'
   ]);

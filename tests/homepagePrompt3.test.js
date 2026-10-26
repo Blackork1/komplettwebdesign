@@ -143,7 +143,7 @@ test('homepage visual cleanup keeps footer isolated and removes internal placeho
 
   assert.match(homepage, /\.home-page \.home-hero-showcase__main/);
   assert.match(homepage, /\/images\/home-hero-sauber-desktop\.webp/);
-  assert.match(homepage, /\/images\/home-hero-sauber-kontakt\.webp/);
+  assert.match(homepage, /\/images\/home-hero-filmfestival-video-880\.webp/);
   assert.match(homepage, /\/images\/home-hero-backstube-mobile\.webp/);
   assert.match(homepage, /\.home-card-grid--centered/);
   assert.match(homepage, /\.home-pricing-card[\s\S]*?min-height/);

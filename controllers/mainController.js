@@ -10,6 +10,7 @@ import {
 } from '../util/pricingViewModel.js';
 import { buildHomeHeroBridgeHighlights } from '../data/homeHighlights.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
+import { srcsetFor } from '../data/responsiveImages.js';
 import { aboutPage } from '../data/aboutPage.js';
 import { localizedHomeProjects } from '../data/homeProjects.js';
 import { DISTRICTS } from '../models/districtModel.js';
@@ -423,6 +424,7 @@ export async function getIndex(req, res) {
       })),
       heroBridgeHighlights,
       marketingImages: MARKETING_IMAGES,
+      srcsetFor,
       lowestPackagePriceLabel: localizedLowestPackagePriceLabel,
       lng,
       copy,

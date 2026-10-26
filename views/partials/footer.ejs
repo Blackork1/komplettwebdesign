@@ -199,11 +199,14 @@
 
     // Auf dem Handy nur beim Hochscrollen zeigen, damit der Button beim Lesen keinen Text verdeckt.
     var mobile = window.matchMedia('(max-width: 768px)');
-    var lastY = window.scrollY;
+    // Erst beim ersten Scrollen messen: scrollY schon beim Laden zu lesen erzwingt
+    // eine vorzeitige Layout-Berechnung (PageSpeed: "Forced Reflow").
+    var lastY = null;
     var scrollingUp = false;
 
     function toggleBackToTop() {
       var y = window.scrollY;
+      if (lastY === null) lastY = y;
       if (Math.abs(y - lastY) > 6) {
         scrollingUp = y < lastY;
         lastY = y;
@@ -216,7 +219,33 @@
       passive: true
     });
     window.addEventListener('resize', toggleBackToTop);
-    toggleBackToTop();
+
+    function scrollToTop(event) {
+      if (event) event.preventDefault();
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, left: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
+
+    // Tippt man auf dem Handy, während die Seite noch nachschwingt, bremst der erste
+    // Kontakt nur den Schwung und der Browser schickt keinen Klick. Deshalb reagiert
+    // der Button schon beim Loslassen des Fingers.
+    var touchStart = null;
+    backToTop.addEventListener('touchstart', function(event) {
+      var touch = event.changedTouches[0];
+      touchStart = touch ? { x: touch.clientX, y: touch.clientY } : null;
+    }, { passive: true });
+    backToTop.addEventListener('touchend', function(event) {
+      var touch = event.changedTouches[0];
+      var start = touchStart;
+      touchStart = null;
+      if (!start || !touch) return;
+      if (Math.abs(touch.clientX - start.x) > 12 || Math.abs(touch.clientY - start.y) > 12) return;
+      scrollToTop(event);
+    }, { passive: false });
+    backToTop.addEventListener('touchcancel', function() {
+      touchStart = null;
+    }, { passive: true });
+    backToTop.addEventListener('click', scrollToTop);
   })();
 </script>
 <script>

@@ -12,7 +12,8 @@
     "start:content-worker": "node scripts/contentWorker.js",
     "content-agent:dry-run": "node scripts/contentAgentDryRun.js",
     "content-agent:healthcheck": "node scripts/contentWorkerHealthcheck.js",
-    "build:css": "node scripts/buildCssAssets.js",
+    "build:css": "node scripts/buildBootstrapSubset.mjs && node scripts/buildCssAssets.js",
+    "build:icons": "node scripts/buildIconSubset.mjs",
     "watch:css": "node scripts/buildCssAssets.js --watch",
     "audit:seo-recovery": "node scripts/seoRecoveryAudit.js",
     "test": "node --test tests/*.test.js"
