@@ -77,3 +77,9 @@ test('Paket-Überschrift passt auf schmale Handys', () => {
   const css = read('public/package-detail.css');
   assert.match(css, /@media \(max-width: 560px\) \{\s*\.packages-page\.package-detail-page \.package-detail-hero\.unified-hero \.hero-title \{\s*font-size: clamp\(1\.9rem, 9vw, 2\.75rem\) !important;/);
 });
+
+test('Blog- und Ratgeberinhalte verbreitern die Seite auf dem Handy nicht', () => {
+  const css = read('public/ratgeber.css');
+  assert.match(css, /\.rg-article-body \{\s*overflow-wrap: break-word;\s*\}/);
+  assert.match(css, /\.rg-article-body table \{\s*display: block;\s*max-width: 100%;\s*overflow-x: auto;/);
+});
