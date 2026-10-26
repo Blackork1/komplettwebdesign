@@ -109,9 +109,9 @@
     "css/main.css": {
       "source": "css/main.css",
       "output": "css/main.min.css",
-      "href": "/css/main.min.css?v=34910ce8416e",
-      "hash": "34910ce8416e",
-      "bytes": 29156
+      "href": "/css/main.min.css?v=23290238fde1",
+      "hash": "23290238fde1",
+      "bytes": 29285
     },
     "demo/cq-compare/styles.css": {
       "source": "demo/cq-compare/styles.css",
@@ -130,9 +130,9 @@
     "extra.css": {
       "source": "extra.css",
       "output": "extra.min.css",
-      "href": "/extra.min.css?v=11ca196d5c99",
-      "hash": "11ca196d5c99",
-      "bytes": 36027
+      "href": "/extra.min.css?v=d9530a6ee8fe",
+      "hash": "d9530a6ee8fe",
+      "bytes": 36058
     },
     "faq.css": {
       "source": "faq.css",
@@ -151,9 +151,9 @@
     "footer.css": {
       "source": "footer.css",
       "output": "footer.min.css",
-      "href": "/footer.min.css?v=743240166177",
-      "hash": "743240166177",
-      "bytes": 9227
+      "href": "/footer.min.css?v=d4f407f17c2d",
+      "hash": "d4f407f17c2d",
+      "bytes": 9257
     },
     "handwerker.css": {
       "source": "handwerker.css",
@@ -172,9 +172,9 @@
     "home.css": {
       "source": "home.css",
       "output": "home.min.css",
-      "href": "/home.min.css?v=5a63fbc64508",
-      "hash": "5a63fbc64508",
-      "bytes": 52734
+      "href": "/home.min.css?v=ec7a6acd0c81",
+      "hash": "ec7a6acd0c81",
+      "bytes": 52818
     },
     "interaction-polish.css": {
       "source": "interaction-polish.css",

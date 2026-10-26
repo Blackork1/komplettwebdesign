@@ -77,7 +77,8 @@
   flex-direction: column;
 }
 
-.site-footer .newsletter h4 {
+.site-footer .newsletter .newsletter-title {
+  margin-top: 0;
   margin-bottom: 1rem;
   font-size: 1.2rem;
   font-weight: 600;
@@ -227,10 +228,11 @@
   pointer-events: none;
 }
 
+/* Aktiver Menüpunkt: dunkleres Orange, damit der Kontrast auf Weiß mindestens 4,5:1 erreicht. */
 .heroLinks > a.is-active,
 .main-nav .dropdown.is-active > .dropdown-toggle > a,
 .main-nav .dropdown-menu a.is-active {
-  color: #e94a1b !important;
+  color: #c93c0c !important;
 }
 
 :where(.seo-landing__link-card, .maintenance-link-card, .add-ons-link-card, .local-seo-link-card, .running-costs-links a) {
@@ -377,7 +379,7 @@
 .site-footer .footer-nav h3 { font-size: 1rem; line-height: 1.4; margin: 0; letter-spacing: -.015em; overflow-wrap: break-word; }
 .site-footer .footer-nav a { font-size: .92rem; line-height: 1.5; overflow-wrap: break-word; }
 .site-footer .newsletter { width: 100%; text-align: left; }
-.site-footer .newsletter h4 { font-size: 1rem; line-height: 1.5; margin-top: 0; }
+.site-footer .newsletter .newsletter-title { font-size: 1rem; line-height: 1.5; margin-top: 0; }
 .site-footer .newsletter-form input[type="email"] { min-width: 0; padding-left: 0; min-height: 44px; }
 .site-footer .newsletter-form button { min-width: 44px; min-height: 44px; justify-content: center; }
 .site-footer .newsletter-consent { line-height: 1.6; }

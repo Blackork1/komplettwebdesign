@@ -15,11 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
     progressFill.style.setProperty('--progress-ratio', percent);
   }
 
-  // 3) Icons entlang der Progress-Line pixelgenau positionieren
+  // 3) Icons entlang der Progress-Line pixelgenau positionieren.
+  //    Symbole, die näher als MIN_ICON_GAP am vorherigen sitzen, werden ausgeblendet:
+  //    Tippflächen dürfen sich nicht überlappen (Barrierefreiheit, mindestens 24 px).
+  const MIN_ICON_GAP = 28;
   function positionIcons() {
     const progressLine = document.querySelector('.progress-line');
     const containerH   = progressLine.clientHeight;
     const scrollLength = document.documentElement.scrollHeight - window.innerHeight;
+    let lastVisibleTop = -Infinity;
 
     sections.forEach(sec => {
       const link = document.querySelector(`.icon-link[href="#${sec.id}"]`);
@@ -28,6 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
       let ratio = scrollLength > 0 ? sec.offsetTop / scrollLength : 0;
       ratio = Math.min(Math.max(ratio, 0), 1);
       link.style.setProperty('--progress-icon-top', `${ratio * 100}%`);
+      const topPx = ratio * containerH;
+      const crowded = topPx - lastVisibleTop < MIN_ICON_GAP;
+      link.classList.toggle('is-crowded', crowded);
+      if (!crowded) lastVisibleTop = topPx;
     });
   }
 

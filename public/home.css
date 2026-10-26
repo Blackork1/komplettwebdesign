@@ -1,6 +1,10 @@
 /* Aus views/index.ejs ausgelagerte Startseiten-Styles. */
+/* Links im Fließtext: Kontrast mindestens 4,5:1 und unterstrichen, damit sie nicht nur an der Farbe erkennbar sind. */
 .linkColor {
-    color: #d75b36;
+    color: #b93618;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
   }
 
   .primaryColor {

@@ -1453,6 +1453,9 @@ p.step-description {
   font-size: 1rem;
   line-height: 1;
   color: var(--color-black);
+  /* Mindestgröße für Tippflächen (24 × 24 px) */
+  min-height: 24px;
+  min-width: 24px;
   padding: 0;
   display: inline-flex;
   align-items: center;

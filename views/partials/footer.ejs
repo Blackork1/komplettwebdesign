@@ -18,7 +18,7 @@
           </div>
 
           <div class="newsletter">
-            <h4><%= isEn ? 'Subscribe to newsletter' : 'Zum Newsletter anmelden' %></h4>
+            <h2 class="newsletter-title"><%= isEn ? 'Subscribe to newsletter' : 'Zum Newsletter anmelden' %></h2>
             <form action="/newsletter/signup" method="POST" class="newsletter-form" data-recaptcha="v3" data-recaptcha-action="newsletter_signup">
               <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
               <input type="hidden" name="token">

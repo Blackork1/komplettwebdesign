@@ -301,6 +301,18 @@ p {
   fill: currentColor;
 }
 
+/* Tippflächen mindestens 24 × 24 px; zu dicht stehende Symbole blendet progressSlider.js aus. */
+.icon-link {
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  min-width: 24px;
+}
+
+.icon-link.is-crowded {
+  display: none !important;
+}
+
 /* 5) Aktives Icon vergrößern & orange einfärben */
 .icon-link.active {
   transform: translateY(-50%) scale(1.5);
