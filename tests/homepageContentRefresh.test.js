@@ -30,7 +30,7 @@ test('der Hero zeigt echte Kundenprojekte statt eines Beispiel-Entwurfs', () => 
   assert.doesNotMatch(template, /klarblick/i);
   assert.doesNotMatch(controller, /klarblick/i);
   assert.equal(MARKETING_IMAGES.homeHero.src, '/images/home-hero-sauber-desktop.webp');
-  for (const image of ['home-hero-sauber-desktop.webp', 'home-hero-filmfestival-video-880.webp', 'home-hero-backstube-mobile.webp']) {
+  for (const image of ['home-hero-sauber-desktop.webp', 'home-hero-filmfestival-mediathek-880.webp', 'home-hero-backstube-mobile.webp']) {
     const file = publicFile(`/images/${image}`);
     assert.equal(existsSync(file), true, `${image} fehlt`);
     assert.ok(statSync(file).size < 120_000, `${image} ist zu groß`);

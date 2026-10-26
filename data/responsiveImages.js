@@ -5,9 +5,9 @@ export const RESPONSIVE_IMAGES = Object.freeze({
     [720, '/images/home-hero-sauber-desktop-720.webp'],
     [1152, '/images/home-hero-sauber-desktop.webp']
   ],
-  '/images/home-hero-filmfestival-video-880.webp': [
-    [480, '/images/home-hero-filmfestival-video-480.webp'],
-    [880, '/images/home-hero-filmfestival-video-880.webp']
+  '/images/home-hero-filmfestival-mediathek-880.webp': [
+    [480, '/images/home-hero-filmfestival-mediathek-480.webp'],
+    [880, '/images/home-hero-filmfestival-mediathek-880.webp']
   ],
   '/images/home-hero-backstube-mobile.webp': [
     [240, '/images/home-hero-backstube-mobile-240.webp'],

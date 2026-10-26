@@ -21,13 +21,17 @@ const ruleBlock = (source, selector) => {
   return source.slice(open + 1, close);
 };
 
-test('nur das wahrscheinliche LCP-Bild lädt eager und high priority', () => {
+test('Hero-Hauptbild lädt sofort, hohe Priorität nur auf dem Desktop per Preload', () => {
   const mainImage = tagContaining(view, 'img', 'home-hero-sauber-desktop.webp');
-  const detailImage = tagContaining(view, 'img', 'home-hero-filmfestival-video-880.webp');
+  const detailImage = tagContaining(view, 'img', 'home-hero-filmfestival-mediathek-880.webp');
   const phoneImage = tagContaining(view, 'img', 'home-hero-backstube-mobile.webp');
 
-  assert.match(mainImage, /fetchpriority="high"/);
+  // Auf dem Handy liegt das Bild unter dem ersten Bildschirm; hohe Priorität würde dort
+  // nur Bandbreite vom sichtbaren Text abziehen (PageSpeed: LCP).
+  assert.match(mainImage, /fetchpriority="low"/);
   assert.match(mainImage, /loading="eager"/);
+  const controller = readFileSync(new URL('../controllers/mainController.js', import.meta.url), 'utf8');
+  assert.match(controller, /<link rel="preload" as="image" href="\/images\/home-hero-sauber-desktop\.webp" imagesrcset="\$\{srcsetFor\('\/images\/home-hero-sauber-desktop\.webp'\)\}" imagesizes="\(max-width: 1020px\) 620px, 570px" media="\(min-width: 769px\)" fetchpriority="high">/);
   assert.match(detailImage, /fetchpriority="low"/);
   assert.match(detailImage, /loading="lazy"/);
   assert.match(phoneImage, /fetchpriority="low"/);
@@ -67,7 +71,7 @@ test('LCP-Inhalt ist vor Animations-JavaScript sichtbar', () => {
   );
 });
 
-test('Head lädt genau die drei vorgesehenen projektspezifischen Fonts vor', () => {
+test('Head lädt nur die Icon-Schrift vor (Inter/Poppins nutzen die meisten Seiten gar nicht)', () => {
   const preloads = (head.match(/<link rel="preload"[^\n]+as="font"[^\n]*/g) || []);
   const fontPaths = preloads.map((link) => {
     const match = link.match(/(?:assets\/css|fonts)\/[^')]+\.woff2/);
@@ -75,9 +79,5 @@ test('Head lädt genau die drei vorgesehenen projektspezifischen Fonts vor', () 
     return match[0];
   });
 
-  assert.deepEqual(fontPaths, [
-    'assets/css/fa-solid-900-subset.woff2',
-    'fonts/inter-v19-latin-regular.woff2',
-    'fonts/poppins-v23-latin-700.woff2'
-  ]);
+  assert.deepEqual(fontPaths, ['assets/css/fa-solid-900-subset.woff2']);
 });

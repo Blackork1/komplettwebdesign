@@ -103,8 +103,8 @@
     <link rel="stylesheet" href="<%= versionedAsset('assets/css/icons.min.css') %>" />
   </noscript>
 
-  <link rel="preload" href="<%= versionedAsset('fonts/inter-v19-latin-regular.woff2') %>" as="font" type="font/woff2" crossorigin />
-  <link rel="preload" href="<%= versionedAsset('fonts/poppins-v23-latin-700.woff2') %>" as="font" type="font/woff2" crossorigin />
+  <%# Kein Preload für Inter/Poppins: Die meisten Seiten binden diese Schriften gar nicht per @font-face ein,
+     der Preload kostete dort nur Bandbreite (Chrome: "preloaded but not used"). %>
 
   <%# Öffentliche Seiten: Bootstrap nur mit den genutzten Regeln (scripts/buildBootstrapSubset.mjs). Adminbereich: komplett. %>
   <% if (typeof currentPathname === 'string' && /^\/admin(\/|$)/.test(currentPathname)) { %>

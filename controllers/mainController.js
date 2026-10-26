@@ -394,6 +394,7 @@ export async function getIndex(req, res) {
       description: copy.seoDescription,
       keywords: copy.seoKeywords,
       seoExtra: `
+  <link rel="preload" as="image" href="/images/home-hero-sauber-desktop.webp" imagesrcset="${srcsetFor('/images/home-hero-sauber-desktop.webp')}" imagesizes="(max-width: 1020px) 620px, 570px" media="(min-width: 769px)" fetchpriority="high">
   <meta property="og:title" content="${copy.ogTitle}">
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:description" content="${copy.ogDescription}">

@@ -46,23 +46,40 @@ test('Bootstrap-Auszug ist aktuell und enthält die genutzten Grundbausteine', (
   assert.ok(actual.length < read('public/css/bootstrap.min.css').length * 0.4);
 });
 
+test('alle Klassen, die der Content-Agent nutzen darf, bleiben im Bootstrap-Auszug', async () => {
+  const { ALLOWED_ARTICLE_CLASSES } = await import('../services/contentAgent/articleHtmlContract.js');
+  const { bootstrapClassNames } = await import('../helpers/bootstrapSubset.js');
+  const full = bootstrapClassNames(read('public/css/bootstrap.min.css'));
+  const subset = bootstrapClassNames(read('public/css/bootstrap-site.css'));
+  const missing = ALLOWED_ARTICLE_CLASSES.filter((name) => full.has(name) && !subset.has(name));
+  assert.deepEqual(missing, []);
+});
+
+test('Regeln für Icons und Klassen stehen zentral für alle KI-Assistenten', () => {
+  const agents = read('AGENTS.md');
+  assert.match(agents, /data\/fontAwesomeDbIcons\.js/);
+  assert.match(agents, /npm run build:icons/);
+  assert.match(agents, /data\/contentCssClasses\.js/);
+  assert.match(read('CLAUDE.md'), /@AGENTS\.md/);
+});
+
 test('große Startseitenbilder haben kleinere Varianten für Handys', () => {
   for (const [src, variants] of Object.entries(RESPONSIVE_IMAGES)) {
     assert.ok(variants.some(([, file]) => file === src), `${src} fehlt in der eigenen Liste`);
     for (const [, file] of variants) assert.ok(existsSync(new URL(`../public${file}`, import.meta.url)), `${file} fehlt`);
   }
   const view = read('views/index.ejs');
-  assert.match(view, /home-hero-filmfestival-video-880\.webp"<%- responsiveAttrs\('\/images\/home-hero-filmfestival-video-880\.webp'/);
+  assert.match(view, /home-hero-filmfestival-mediathek-880\.webp"<%- responsiveAttrs\('\/images\/home-hero-filmfestival-mediathek-880\.webp'/);
   assert.match(view, /<img src="<%= homeMarketingImages\.homeHero\?\.src \|\| '\/images\/home-hero-sauber-desktop\.webp' %>"<%- responsiveAttrs\(homeMarketingImages\.homeHero\?\.src \|\| '\/images\/home-hero-sauber-desktop\.webp', '\(max-width: 768px\) 88vw/);
   assert.equal(srcsetFor('/images/home-hero-sauber-desktop.webp'), '/images/home-hero-sauber-desktop-720.webp 720w, /images/home-hero-sauber-desktop.webp 1152w');
   assert.match(read('views/partials/header.ejs'), /srcset="\/images\/LogoTransparent-140\.webp 140w, \/images\/LogoTransparent-210\.webp 210w, \/images\/LogoTransparent\.webp 480w" sizes="70px"/);
   assert.match(read('public/home.css'), /url\("\/images\/heroBg-cta\.webp"\)/);
 });
 
-test('Tablet im Startseiten-Hero zeigt die Videoseite des Kurdischen Filmfestivals', () => {
+test('Tablet im Startseiten-Hero zeigt die Mediathek-Übersicht des Kurdischen Filmfestivals', () => {
   const view = read('views/index.ejs');
   assert.doesNotMatch(view, /home-hero-sauber-kontakt\.webp/);
-  assert.match(view, /<figure class="home-hero-showcase__detail">\s*<img src="\/images\/home-hero-filmfestival-video-880\.webp"[\s\S]*?alt="[^"]*Kurdischen Filmfestivals Berlin mit Filmplayer/);
+  assert.match(view, /<figure class="home-hero-showcase__detail">\s*<img src="\/images\/home-hero-filmfestival-mediathek-880\.webp"[\s\S]*?alt="[^"]*Mediathek der Website des Kurdischen Filmfestivals Berlin mit Filmübersicht/);
 });
 
 test('Skripte erzwingen beim Laden keine Layout-Berechnung', () => {
