@@ -16,7 +16,7 @@
   --rg-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   color: var(--rg-text);
   background: var(--rg-bg);
-  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Inter", "Inter Fallback", "Helvetica Neue", Arial, sans-serif;
   padding-bottom: clamp(3rem, 8vw, 6rem);
 }
 
@@ -178,7 +178,7 @@
 }
 
 .rg-hero-copy h1 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: clamp(2rem, 5.4vw, 4rem);
   line-height: 1.06;
   margin: 0.8rem 0 1rem;
@@ -237,7 +237,7 @@
 }
 
 .rg-hero-panel h2 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: clamp(1.35rem, 2vw, 1.7rem);
   margin: 0.72rem 0 0.5rem;
 }
@@ -287,7 +287,7 @@
 }
 
 .rg-cluster-copy h2 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: clamp(1.45rem, 2.4vw, 2rem);
   margin: 0.62rem 0;
 }
@@ -370,7 +370,7 @@
 }
 
 .rg-section-head h2 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: clamp(1.6rem, 2.5vw, 2.2rem);
   margin: 0.6rem 0 1rem;
 }
@@ -685,7 +685,7 @@
 
 .rg-detail-hero h1 {
   margin: 0.55rem 0;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: clamp(2rem, 4.8vw, 3.7rem);
   line-height: 1.06;
   color: var(--rg-accent);
@@ -743,7 +743,7 @@
 .rg-article-body h2,
 .rg-article-body h3,
 .rg-article-body h4 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   line-height: 1.22;
   margin-top: 1.65em;
   margin-bottom: 0.58em;
@@ -816,7 +816,7 @@
 .rg-inline-cta h2,
 .rg-faq-block h2 {
   margin: 0.5rem 0 0.65rem;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: clamp(1.45rem, 2.6vw, 1.95rem);
 }
 

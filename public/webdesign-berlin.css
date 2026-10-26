@@ -54,7 +54,7 @@
 .webdesign-berlin h2,
 .webdesign-berlin h3 {
   color: var(--wd-ink);
-  font-family: Poppins, Inter, system-ui, sans-serif;
+  font-family: Poppins, "Poppins Fallback", Inter, "Inter Fallback", system-ui, sans-serif;
   letter-spacing: 0;
   margin: 0;
 }
@@ -495,7 +495,7 @@
   content: "✓";
   display: inline-block;
   flex: 0 0 auto;
-  font-family: Poppins, Inter, system-ui, sans-serif;
+  font-family: Poppins, "Poppins Fallback", Inter, "Inter Fallback", system-ui, sans-serif;
   font-weight: 900;
   height: auto;
   left: auto;
@@ -765,7 +765,7 @@
   color: var(--wd-accent);
   display: inline-flex;
   flex: 0 0 34px;
-  font-family: Poppins, Inter, system-ui, sans-serif;
+  font-family: Poppins, "Poppins Fallback", Inter, "Inter Fallback", system-ui, sans-serif;
   font-size: 0.84rem;
   font-weight: 850;
   height: 34px;
@@ -834,7 +834,7 @@
 .webdesign-berlin .wd-media-card strong {
   color: var(--wd-ink);
   display: block;
-  font-family: Poppins, Inter, system-ui, sans-serif;
+  font-family: Poppins, "Poppins Fallback", Inter, "Inter Fallback", system-ui, sans-serif;
   font-size: 1.05rem;
   line-height: 1.25;
   padding: 16px 18px 18px;
@@ -1132,7 +1132,7 @@
 .webdesign-berlin .wd-package__price {
   color: #bd3615;
   display: block;
-  font-family: Poppins, Inter, system-ui, sans-serif;
+  font-family: Poppins, "Poppins Fallback", Inter, "Inter Fallback", system-ui, sans-serif;
   font-size: clamp(1.85rem, 2.8vw, 2.55rem);
   font-weight: 800;
   line-height: 1.05;

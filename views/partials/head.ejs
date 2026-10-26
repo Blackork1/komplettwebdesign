@@ -93,6 +93,64 @@
   </script>
   <% } %>
 
+  <%# Schriften Inter/Poppins (verkleinert, siehe AGENTS.md). Auf einer bereits sichtbaren Seite wird die Schrift
+     nie gewechselt (das ließe Text umbrechen und die Seite springen):
+     - Erster Besuch: die Seite bleibt bei den abgestimmten Ersatzschriften aus css/main.css; nach dem Laden
+       holt der Browser die Schriften im Hintergrund in den Cache (bremst weder Text noch LCP).
+     - Danach (nächste Seite, spätere Besuche): Schriften gelten von Anfang an (font-display: optional,
+       aus dem Cache; sind sie ausnahmsweise nicht rechtzeitig da, bleibt die Ersatzschrift ohne Wechsel). %>
+  <% const webfontList = [
+    ['Inter', 400, versionedAsset('fonts/inter-400.woff2')],
+    ['Inter', 600, versionedAsset('fonts/inter-600.woff2')],
+    ['Poppins', 400, versionedAsset('fonts/poppins-400.woff2')],
+    ['Poppins', 700, versionedAsset('fonts/poppins-700.woff2')]
+  ];
+  const webfontRange = 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2190-2199,U+2212,U+2215';
+  const webfontFaces = (display) => webfontList.map(([family, weight, url]) => `@font-face{font-family:"${family}";font-style:normal;font-weight:${weight};font-display:${display};src:url(${url}) format("woff2");unicode-range:${webfontRange}}`).join(''); %>
+  <style id="kwd-webfonts" media="print"><%- webfontFaces('optional') %></style>
+  <noscript><style><%- webfontFaces('swap') %></style></noscript>
+  <script>
+    (function () {
+      var style = document.getElementById('kwd-webfonts');
+      var key = 'kwdWebfonts';
+      var fonts = <%- JSON.stringify(webfontList) %>;
+      var known = false;
+      try { known = localStorage.getItem(key) === '1'; } catch (e) {}
+      if (known && style) {
+        style.media = 'all';
+        return;
+      }
+      if (!window.FontFace) return;
+      // Erst wenn die Seite geladen UND der größte Inhalt (LCP) gezeichnet ist.
+      var loaded = false;
+      var painted = true;
+      var started = false;
+      function warmCache() {
+        if (!loaded || !painted || started) return;
+        started = true;
+        setTimeout(function () {
+          // Nur in den Cache laden, nicht auf dieser Seite anwenden.
+          Promise.all(fonts.map(function (font) {
+            return new FontFace(font[0], 'url(' + font[2] + ')', { weight: String(font[1]) }).load();
+          })).then(function () {
+            try { localStorage.setItem(key, '1'); } catch (e) {}
+          }).catch(function () {});
+        }, 0);
+      }
+      try {
+        if (PerformanceObserver.supportedEntryTypes.indexOf('largest-contentful-paint') !== -1) {
+          painted = false;
+          new PerformanceObserver(function (list, observer) {
+            observer.disconnect();
+            painted = true;
+            warmCache();
+          }).observe({ type: 'largest-contentful-paint', buffered: true });
+        }
+      } catch (e) { painted = true; }
+      window.addEventListener('load', function () { loaded = true; warmCache(); }, { once: true });
+    })();
+  </script>
+
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
   <%# Icons: nur die verwendeten Font-Awesome-Icons (scripts/buildIconSubset.mjs), 19 statt 113 KB Schrift.
      Gleiche URL wie in icons.min.css (url(fa-solid-900-subset.woff2?v=<Inhalts-Hash>)), sonst lädt der Browser die Schrift doppelt. %>

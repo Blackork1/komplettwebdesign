@@ -1,6 +1,49 @@
 /* ----------------------------------------
-   0) Google Fonts
+   0) Schriften
+   Inter und Poppins selbst lädt views/partials/head.ejs (nach dem ersten Bildaufbau).
+   Bis dahin zeigt der Browser diese Ersatzschriften: Arial bzw. Roboto, auf die Maße
+   von Inter/Poppins abgestimmt. So springt beim Wechsel kein Text (kein Layout-Shift).
+   Werte berechnet aus den Schriftdateien (Laufweite deutscher Text, hhea-Metriken).
 ---------------------------------------- */
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial"), local("ArialMT"), local("Roboto");
+  font-weight: 100 500;
+  size-adjust: 106.38%;
+  ascent-override: 91.07%;
+  descent-override: 22.68%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Roboto Bold"), local("Roboto-Bold");
+  font-weight: 600 900;
+  size-adjust: 101.49%;
+  ascent-override: 95.46%;
+  descent-override: 23.77%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Poppins Fallback";
+  src: local("Arial"), local("ArialMT"), local("Roboto");
+  font-weight: 100 500;
+  size-adjust: 111.15%;
+  ascent-override: 94.47%;
+  descent-override: 31.49%;
+  line-gap-override: 9%;
+}
+
+@font-face {
+  font-family: "Poppins Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Roboto Bold"), local("Roboto-Bold");
+  font-weight: 600 900;
+  size-adjust: 107.49%;
+  ascent-override: 97.68%;
+  descent-override: 32.56%;
+  line-gap-override: 9.3%;
+}
 /* ----------------------------------------
    1) CSS-Variablen
 ---------------------------------------- */
@@ -16,8 +59,8 @@
   --color-light-text: #5b5b5b;
 
   /* Typografie */
-  --font-heading: "Poppins", sans-serif;
-  --font-body: "Inter", sans-serif;
+  --font-heading: "Poppins", "Poppins Fallback", sans-serif;
+  --font-body: "Inter", "Inter Fallback", sans-serif;
 
   /* Buttons */
   --radius: 8px;

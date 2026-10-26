@@ -14,7 +14,7 @@
     radial-gradient(rgba(231, 182, 166, 0.16) 2px, transparent 2px),
     var(--district-paper);
   background-size: 80px 80px;
-  font-family: "Inter", "Poppins", sans-serif;
+  font-family: "Inter", "Inter Fallback", "Poppins", "Poppins Fallback", sans-serif;
   overflow: hidden;
 }
 
@@ -106,7 +106,7 @@
   border-radius: var(--radius, 8px);
   background: var(--district-surface);
   color: var(--district-ink);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 1.3rem;
   font-weight: 800;
   line-height: 1.18;
@@ -251,7 +251,7 @@
 .district-hero h1,
 .district-section h2,
 .district-final h2 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.02;
@@ -332,7 +332,7 @@
 }
 
 .district-hero__stamp strong {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 1.45rem;
   line-height: 1.1;
 }
@@ -379,7 +379,7 @@
 
 .district-metrics strong {
   display: block;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 1.6rem;
   line-height: 1.1;
 }
@@ -517,7 +517,7 @@
 .district-package h3,
 .district-audience-grid h3 {
   margin: 12px 0 10px;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
   line-height: 1.14;
   color: var(--district-ink);
@@ -568,7 +568,7 @@
   border-radius: var(--radius, 8px);
   background: var(--district-surface);
   color: var(--district-ink);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 1.35rem;
   font-weight: 800;
   box-shadow: var(--shadow, 0 2px 6px rgba(0, 0, 0, 0.1));
@@ -737,7 +737,7 @@
 .district-process strong {
   display: block;
   color: var(--district-accent);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 1.1rem;
 }
 
@@ -761,7 +761,7 @@
 
 .district-tester-band h2 {
   margin: 0;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 2.3rem;
   line-height: 1.18;
 }
@@ -795,7 +795,7 @@
 }
 
 .district-guide-grid strong {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 1.1rem;
   line-height: 1.2;
 }
@@ -818,7 +818,7 @@
 .district-faq summary {
   cursor: pointer;
   padding: 22px;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
 }
 
@@ -1012,7 +1012,7 @@
     radial-gradient(rgba(231, 182, 166, 0.16) 2px, transparent 2px),
     var(--wd-paper);
   background-size: 80px 80px;
-  font-family: "Inter", "Poppins", sans-serif;
+  font-family: "Inter", "Inter Fallback", "Poppins", "Poppins Fallback", sans-serif;
   padding: 0;
   overflow: hidden;
 }
@@ -1108,7 +1108,7 @@
 .webdesign-berlin-page .wd-section h2,
 .webdesign-berlin-page .wd-contact h2,
 .webdesign-berlin-page .wd-video h2 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.12;
@@ -1333,7 +1333,7 @@
 .webdesign-berlin-page .wd-case h3 {
   margin: 0 0 12px;
   color: var(--wd-ink);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
 }
 
@@ -1443,7 +1443,7 @@
 .webdesign-berlin-page .wd-faq h3 {
   margin: 0 0 10px;
   color: var(--wd-ink);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
   line-height: 1.18;
 }
@@ -1513,7 +1513,7 @@
 .webdesign-berlin-page .wd-package-card__price {
   display: block;
   color: var(--wd-accent);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 2.15rem;
   font-weight: 800;
 }
@@ -1554,7 +1554,7 @@
 .webdesign-berlin-page .wd-process__step-index {
   display: block;
   color: var(--wd-accent);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 1.1rem;
   font-weight: 800;
 }
@@ -1563,7 +1563,7 @@
   display: block;
   margin-top: 10px;
   color: var(--wd-ink);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
 }
 
@@ -1610,7 +1610,7 @@
   border-radius: var(--radius, 8px);
   background: var(--wd-surface);
   color: var(--wd-ink);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 1.1rem;
   font-weight: 800;
   line-height: 1.18;
@@ -1674,7 +1674,7 @@
   cursor: pointer;
   padding: 22px;
   list-style: none;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
 }
 
@@ -1744,7 +1744,7 @@
 
 .webdesign-berlin-page .wd-resource-card a {
   color: var(--wd-ink);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 800;
   line-height: 1.2;
   text-decoration: none;
@@ -1996,7 +1996,7 @@
   border-radius: 50%;
   background: var(--wd-accent);
   color: #fff;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 0.82rem;
   font-weight: 800;
   line-height: 1;

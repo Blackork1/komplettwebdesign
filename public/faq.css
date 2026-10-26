@@ -1,27 +1,24 @@
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/inter-v19-latin-regular.woff2') format('woff2'); }
-@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/inter-v19-latin-600.woff2') format('woff2'); }
-@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/poppins-v23-latin-700.woff2') format('woff2'); }
 
-body.faq-page { background: #fff; color: #0b2a46; font-family: var(--font-body, 'Inter', sans-serif); }
+body.faq-page { background: #fff; color: #0b2a46; font-family: var(--font-body, 'Inter', "Inter Fallback", sans-serif); }
 .faq-main { --faq-navy: #0b2a46; --faq-orange: #c93c0c; --faq-muted: #526173; --faq-rule: #d5dfe7; background: #fff; color: var(--faq-navy); }
 .faq-shell { width: min(1040px, calc(100% - 80px)); margin-inline: auto; }
 .faq-main :is(h1,h2,h3,p,a,summary) { min-width: 0; overflow-wrap: break-word; }
 .faq-main :is(p,li) { font-weight: 400; }
 .faq-main :is(a,summary):focus-visible { outline: 3px solid var(--faq-orange); outline-offset: 5px; border-radius: 2px; }
 .faq-intro { padding-top: 56px; }
-.faq-intro h1 { color: var(--faq-navy); font: 700 clamp(2.15rem, 5vw, 4rem)/1.09 var(--font-heading, 'Poppins', sans-serif); letter-spacing: -.045em; margin: 0 0 20px; }
+.faq-intro h1 { color: var(--faq-navy); font: 700 clamp(2.15rem, 5vw, 4rem)/1.09 var(--font-heading, 'Poppins', "Poppins Fallback", sans-serif); letter-spacing: -.045em; margin: 0 0 20px; }
 .faq-intro h1 span { color: var(--faq-orange); }
 .faq-intro p { color: var(--faq-muted); font-size: 1rem; line-height: 1.75; margin: 0; }
 .faq-topics { display: flex; flex-wrap: wrap; gap: 4px 34px; margin-top: 36px; border-bottom: 1px solid var(--faq-rule); }
 .faq-topics a { display: inline-flex; align-items: center; min-height: 52px; padding: 12px 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--faq-navy); font-size: .95rem; font-weight: 600; line-height: 1.5; text-decoration: none; transition: color .16s ease, border-color .16s ease; }
 .faq-topics a:hover,.faq-topics a[aria-current='page'] { color: var(--faq-orange); border-bottom-color: var(--faq-orange); }
 .faq-content { padding-top: 32px; }
-.faq-content > h2 { color: var(--faq-navy); font: 700 1.6rem/1.3 var(--font-heading, 'Poppins', sans-serif); letter-spacing: -.03em; margin: 0 0 12px; }
+.faq-content > h2 { color: var(--faq-navy); font: 700 1.6rem/1.3 var(--font-heading, 'Poppins', "Poppins Fallback", sans-serif); letter-spacing: -.03em; margin: 0 0 12px; }
 .faq-item { border-bottom: 1px solid var(--faq-rule); }
 .faq-question { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 72px; padding: 21px 0; cursor: pointer; list-style: none; }
 .faq-question::-webkit-details-marker { display: none; }
 .faq-question::marker { content: ''; }
-.faq-question h3 { margin: 0; color: var(--faq-navy); font: 600 1.06rem/1.55 var(--font-body, 'Inter', sans-serif); letter-spacing: -.015em; }
+.faq-question h3 { margin: 0; color: var(--faq-navy); font: 600 1.06rem/1.55 var(--font-body, 'Inter', "Inter Fallback", sans-serif); letter-spacing: -.015em; }
 .faq-question:hover h3 { color: var(--faq-orange); }
 .faq-question svg { width: 22px; height: 22px; flex: 0 0 22px; fill: none; stroke: var(--faq-orange); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .faq-icon-open,.faq-item[open] .faq-icon-plus { display: none; }
@@ -33,7 +30,7 @@ body.faq-page { background: #fff; color: #0b2a46; font-family: var(--font-body, 
 .faq-answer a:hover { color: var(--faq-orange); }
 .faq-item[open] .faq-answer { animation: faq-answer-in .18s ease-out; }
 .faq-next-step { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding-block: 32px 44px; margin-top: 36px; border-top: 1px solid var(--faq-rule); }
-.faq-next-step h2 { color: var(--faq-navy); font: 700 1.6rem/1.3 var(--font-heading, 'Poppins', sans-serif); letter-spacing: -.03em; margin: 0 0 4px; }
+.faq-next-step h2 { color: var(--faq-navy); font: 700 1.6rem/1.3 var(--font-heading, 'Poppins', "Poppins Fallback", sans-serif); letter-spacing: -.03em; margin: 0 0 4px; }
 .faq-next-step p { color: var(--faq-muted); font-size: .95rem; line-height: 1.6; margin: 0; }
 .faq-next-actions { display: flex; align-items: center; gap: 24px; flex-shrink: 0; }
 .faq-contact-button { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 14px 24px; border: 1px solid var(--faq-orange); border-radius: 4px; background: var(--faq-orange); color: #fff; font-size: .95rem; font-weight: 600; line-height: 1.5; text-decoration: none; transition: background .16s ease, border-color .16s ease; }

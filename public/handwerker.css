@@ -8,7 +8,7 @@
   --shadow:0 4px 14px rgba(0,0,0,.12);
   --radius:16px;
   --maxw:1140px;
-  --ff:"Inter",system-ui,sans-serif;
+  --ff:"Inter", "Inter Fallback",system-ui,sans-serif;
   --fz:17px;
 }
 html{scroll-behavior:smooth}

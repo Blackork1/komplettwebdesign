@@ -235,7 +235,7 @@
   --wd-page-inline: clamp(1.5rem, 5vw, 3rem);
   background: linear-gradient(180deg, var(--wd-sand) 0%, #ffffff 60%);
   color: var(--wd-ink);
-  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Inter", "Inter Fallback", "Helvetica Neue", Arial, sans-serif;
 }
 
 #content {
@@ -328,7 +328,7 @@
 }
 
 .webdesign-berlin-page .wd-hero h1 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 3.2rem;
   line-height: 1.05;
   margin: 0;
@@ -469,7 +469,7 @@
 }
 
 .webdesign-berlin-page .wd-section h2 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: 2.25rem;
   margin: 0;
   color: var(--wd-ink);

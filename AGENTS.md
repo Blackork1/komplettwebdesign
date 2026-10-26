@@ -45,6 +45,21 @@ Beide werden **nicht** automatisch beim Deploy erzeugt.
   und `<i>`-Icons entfernt der Sanitizer. Wer diese Liste erweitert, braucht nichts weiter
   zu tun, außer `npm run build:css`.
 
+### Schriften (Inter, Poppins)
+
+- Die Webschriften sind **nur** in `views/partials/head.ejs` definiert (`#kwd-webfonts`), als verkleinerte
+  Dateien in `public/fonts/inter-400|600.woff2` und `poppins-400|700.woff2`. Keine eigenen `@font-face`
+  für Inter/Poppins in Seiten-CSS anlegen und keine `<link rel="preload">` für diese Schriften.
+- Ablauf: Beim ersten Besuch bleibt die Seite bei abgestimmten Ersatzschriften und lädt die
+  Webschriften nach dem Laden in den Cache. Ab der nächsten Seite gelten sie von Anfang an.
+  So bremsen sie PageSpeed nicht und auf einer sichtbaren Seite springt kein Text.
+- **Jede neue Schriftangabe mit Inter oder Poppins braucht dahinter die Ersatzschrift**, z. B.
+  `font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;`.
+  `helpers/fontFallbacks.js` ergänzt das automatisch, `tests/webfonts.test.js` prüft es.
+  Die Ersatzschriften selbst stehen oben in `public/css/main.css`.
+- Andere Schriftstärken als 400/600 (Inter) und 400/700 (Poppins) gibt es nicht als Datei;
+  500 wird als 400, 700/800 als 600 (Inter) dargestellt.
+
 ### Bilder
 
 - Bilder als WebP. Große Bilder (breiter als rund 800 px) bekommen kleinere Varianten,

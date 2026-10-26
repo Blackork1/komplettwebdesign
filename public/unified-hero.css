@@ -177,7 +177,7 @@
   max-width: min(100%, 780px) !important;
   margin: 0;
   color: var(--kwd-hero-ink) !important;
-  font-family: "Poppins", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: clamp(2rem, 4.25vw, 4.25rem) !important;
   font-weight: 800;
   line-height: 1.08 !important;
@@ -696,7 +696,7 @@
 
 #about-hero.unified-hero .about-portrait-card__copy strong {
   color: var(--kwd-hero-ink);
-  font-family: "Poppins", "Inter", system-ui, sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", system-ui, sans-serif;
   font-size: 1.05rem;
 }
 

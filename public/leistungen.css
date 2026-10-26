@@ -1006,7 +1006,7 @@
   --wd-accent-strong: #b93618;
   --wd-border: rgba(11, 42, 70, 0.14);
 
-  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Inter", "Inter Fallback", "Helvetica Neue", Arial, sans-serif;
   line-height: 1.7;
   color: var(--wd-ink);
   background: linear-gradient(180deg, var(--wd-sand) 0%, #ffffff 60%);

@@ -90,7 +90,7 @@
 .blog-page .comment-section-head h2 {
   margin: 0;
   color: var(--rg-text);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-size: clamp(1.35rem, 2.1vw, 2rem);
   line-height: 1.18;
   letter-spacing: 0;

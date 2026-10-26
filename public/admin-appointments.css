@@ -33,7 +33,7 @@
   gap: 0.5rem;
 }
 .cal-header .month-label{
-  font-family: var(--font-heading,"Poppins",sans-serif);
+  font-family: var(--font-heading,"Poppins", "Poppins Fallback",sans-serif);
   font-weight:600; color: var(--primary); margin:0;
 }
 .cal-header .nav{

@@ -214,7 +214,7 @@
   line-height: 1.05;
   font-weight: 800;
   color: var(--packages-accent);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
 }
 
 .package-detail-page .hero-price .price-amount__suffix {
@@ -804,7 +804,7 @@ html.package-slot-overlay-open {
 .package-slot-dialog h4 {
   margin: 0;
   color: var(--packages-ink);
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
 }
 
 .package-slot-dialog h3 {
@@ -1256,7 +1256,7 @@ html.package-slot-overlay-open {
 }
 
 .package-detail-page .outcome-card h3 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   color: var(--packages-ink);
   margin: 0;
   font-size: 1.15rem;
@@ -1299,7 +1299,7 @@ html.package-slot-overlay-open {
   margin: 0 0 0.75rem;
   font-size: clamp(1.6rem, 2.6vw, 2.1rem);
   color: #ffffff;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   line-height: 1.25;
 }
 
@@ -1371,14 +1371,14 @@ html.package-slot-overlay-open {
 }
 
 .package-detail-page .timeline-index {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 700;
   font-size: 1.25rem;
   color: var(--packages-accent);
 }
 
 .package-detail-page .timeline-content h3 {
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   color: var(--packages-ink);
   margin: 0 0 0.35rem;
   font-size: 1.1rem;
@@ -1435,7 +1435,7 @@ html.package-slot-overlay-open {
 
 .package-detail-page .faq-detail-item summary {
   cursor: pointer;
-  font-family: "Poppins", "Inter", sans-serif;
+  font-family: "Poppins", "Poppins Fallback", "Inter", "Inter Fallback", sans-serif;
   font-weight: 600;
   color: var(--packages-ink);
   list-style: none;
@@ -1575,6 +1575,13 @@ html.package-slot-overlay-open {
 .packages-page.package-detail-page .package-detail-hero.unified-hero .hero-title {
   font-size: clamp(2.75rem, 4vw, 4.2rem) !important;
   max-width: 640px;
+}
+
+/* Handy: lange Wörter wie „Sonderfunktionen“ passen sonst nicht in die Zeile (Seite wird breiter). */
+@media (max-width: 560px) {
+  .packages-page.package-detail-page .package-detail-hero.unified-hero .hero-title {
+    font-size: clamp(1.9rem, 9vw, 2.75rem) !important;
+  }
 }
 
 @media (max-width: 700px) {

@@ -4,16 +4,16 @@
     "about.css": {
       "source": "about.css",
       "output": "about.min.css",
-      "href": "/about.min.css?v=7a54bf7c6ca1",
-      "hash": "7a54bf7c6ca1",
-      "bytes": 18127
+      "href": "/about.min.css?v=6a9756cecf61",
+      "hash": "6a9756cecf61",
+      "bytes": 17702
     },
     "admin-appointments.css": {
       "source": "admin-appointments.css",
       "output": "admin-appointments.min.css",
-      "href": "/admin-appointments.min.css?v=60bfd4343209",
-      "hash": "60bfd4343209",
-      "bytes": 2105
+      "href": "/admin-appointments.min.css?v=4fdef5525866",
+      "hash": "4fdef5525866",
+      "bytes": 2124
     },
     "admin-logs.css": {
       "source": "admin-logs.css",
@@ -46,9 +46,9 @@
     "blog.css": {
       "source": "blog.css",
       "output": "blog.min.css",
-      "href": "/blog.min.css?v=763f83a4397c",
-      "hash": "763f83a4397c",
-      "bytes": 6904
+      "href": "/blog.min.css?v=9b27e5704ce4",
+      "hash": "9b27e5704ce4",
+      "bytes": 6936
     },
     "booking-widget.css": {
       "source": "booking-widget.css",
@@ -60,23 +60,23 @@
     "booking.css": {
       "source": "booking.css",
       "output": "booking.min.css",
-      "href": "/booking.min.css?v=8ac5c01b5bd3",
-      "hash": "8ac5c01b5bd3",
-      "bytes": 4661
+      "href": "/booking.min.css?v=eba61beeb487",
+      "hash": "eba61beeb487",
+      "bytes": 4236
     },
     "branchen.css": {
       "source": "branchen.css",
       "output": "branchen.min.css",
-      "href": "/branchen.min.css?v=5ef1ffdd76d6",
-      "hash": "5ef1ffdd76d6",
-      "bytes": 34105
+      "href": "/branchen.min.css?v=96b19c07f351",
+      "hash": "96b19c07f351",
+      "bytes": 34220
     },
     "carousel.css": {
       "source": "carousel.css",
       "output": "carousel.min.css",
-      "href": "/carousel.min.css?v=2367ee875e09",
-      "hash": "2367ee875e09",
-      "bytes": 4528
+      "href": "/carousel.min.css?v=629a889274d7",
+      "hash": "629a889274d7",
+      "bytes": 4543
     },
     "contact-bubble.css": {
       "source": "contact-bubble.css",
@@ -102,9 +102,9 @@
     "css/combined.css": {
       "source": "css/combined.css",
       "output": "css/combined.min.css",
-      "href": "/css/combined.min.css?v=c028a0a6b8ca",
-      "hash": "c028a0a6b8ca",
-      "bytes": 33816
+      "href": "/css/combined.min.css?v=88ff8eb0c739",
+      "hash": "88ff8eb0c739",
+      "bytes": 33869
     },
     "css/critical.css": {
       "source": "css/critical.css",
@@ -116,44 +116,37 @@
     "css/main.css": {
       "source": "css/main.css",
       "output": "css/main.min.css",
-      "href": "/css/main.min.css?v=b8966804adcc",
-      "hash": "b8966804adcc",
-      "bytes": 29388
+      "href": "/css/main.min.css?v=da1e482f02e6",
+      "hash": "da1e482f02e6",
+      "bytes": 30294
     },
     "demo/cq-compare/styles.css": {
       "source": "demo/cq-compare/styles.css",
       "output": "demo/cq-compare/styles.min.css",
-      "href": "/demo/cq-compare/styles.min.css?v=0082c76be9d6",
-      "hash": "0082c76be9d6",
-      "bytes": 2579
+      "href": "/demo/cq-compare/styles.min.css?v=4c5709293c14",
+      "hash": "4c5709293c14",
+      "bytes": 2594
     },
     "district-berlin.css": {
       "source": "district-berlin.css",
       "output": "district-berlin.min.css",
-      "href": "/district-berlin.min.css?v=c019fb542887",
-      "hash": "c019fb542887",
-      "bytes": 44121
+      "href": "/district-berlin.min.css?v=45f185c3bb83",
+      "hash": "45f185c3bb83",
+      "bytes": 44820
     },
     "extra.css": {
       "source": "extra.css",
       "output": "extra.min.css",
-      "href": "/extra.min.css?v=7dea76614141",
-      "hash": "7dea76614141",
-      "bytes": 36084
+      "href": "/extra.min.css?v=ace5b772752a",
+      "hash": "ace5b772752a",
+      "bytes": 36163
     },
     "faq.css": {
       "source": "faq.css",
       "output": "faq.min.css",
-      "href": "/faq.min.css?v=71d2708713ce",
-      "hash": "71d2708713ce",
-      "bytes": 5078
-    },
-    "fonts/fonts.css": {
-      "source": "fonts/fonts.css",
-      "output": "fonts/fonts.min.css",
-      "href": "/fonts/fonts.min.css?v=7a725cead4ad",
-      "hash": "7a725cead4ad",
-      "bytes": 555
+      "href": "/faq.min.css?v=ec8051f4e10d",
+      "hash": "ec8051f4e10d",
+      "bytes": 4744
     },
     "footer.css": {
       "source": "footer.css",
@@ -165,9 +158,9 @@
     "handwerker.css": {
       "source": "handwerker.css",
       "output": "handwerker.min.css",
-      "href": "/handwerker.min.css?v=e8e3b0fb5a67",
-      "hash": "e8e3b0fb5a67",
-      "bytes": 4368
+      "href": "/handwerker.min.css?v=27e7192533da",
+      "hash": "27e7192533da",
+      "bytes": 4385
     },
     "heroMainpageStyle.css": {
       "source": "heroMainpageStyle.css",
@@ -179,9 +172,9 @@
     "home.css": {
       "source": "home.css",
       "output": "home.min.css",
-      "href": "/home.min.css?v=bab2c58997eb",
-      "hash": "bab2c58997eb",
-      "bytes": 52811
+      "href": "/home.min.css?v=6b008edeae02",
+      "hash": "6b008edeae02",
+      "bytes": 52843
     },
     "interaction-polish.css": {
       "source": "interaction-polish.css",
@@ -200,9 +193,9 @@
     "kontakt.css": {
       "source": "kontakt.css",
       "output": "kontakt.min.css",
-      "href": "/kontakt.min.css?v=4561400a6c73",
-      "hash": "4561400a6c73",
-      "bytes": 23324
+      "href": "/kontakt.min.css?v=d4e32590ad52",
+      "hash": "d4e32590ad52",
+      "bytes": 22899
     },
     "legal-notices.css": {
       "source": "legal-notices.css",
@@ -214,9 +207,9 @@
     "leistungen.css": {
       "source": "leistungen.css",
       "output": "leistungen.min.css",
-      "href": "/leistungen.min.css?v=5cc9ded32ce5",
-      "hash": "5cc9ded32ce5",
-      "bytes": 79646
+      "href": "/leistungen.min.css?v=12b847f5aaa7",
+      "hash": "12b847f5aaa7",
+      "bytes": 79661
     },
     "mobile-gutter.css": {
       "source": "mobile-gutter.css",
@@ -228,16 +221,16 @@
     "package-detail.css": {
       "source": "package-detail.css",
       "output": "package-detail.min.css",
-      "href": "/package-detail.min.css?v=da6fda1667af",
-      "hash": "da6fda1667af",
-      "bytes": 29941
+      "href": "/package-detail.min.css?v=af9ba0163a38",
+      "hash": "af9ba0163a38",
+      "bytes": 30318
     },
     "package-list.css": {
       "source": "package-list.css",
       "output": "package-list.min.css",
-      "href": "/package-list.min.css?v=167657b16aef",
-      "hash": "167657b16aef",
-      "bytes": 26348
+      "href": "/package-list.min.css?v=18fe4acc2bf8",
+      "hash": "18fe4acc2bf8",
+      "bytes": 26779
     },
     "pricing.css": {
       "source": "pricing.css",
@@ -249,9 +242,9 @@
     "ratgeber.css": {
       "source": "ratgeber.css",
       "output": "ratgeber.min.css",
-      "href": "/ratgeber.min.css?v=25a4e7ced409",
-      "hash": "25a4e7ced409",
-      "bytes": 16842
+      "href": "/ratgeber.min.css?v=02140481b459",
+      "hash": "02140481b459",
+      "bytes": 17081
     },
     "references.css": {
       "source": "references.css",
@@ -277,16 +270,16 @@
     "styles.css": {
       "source": "styles.css",
       "output": "styles.min.css",
-      "href": "/styles.min.css?v=550d144ceabd",
-      "hash": "550d144ceabd",
-      "bytes": 16409
+      "href": "/styles.min.css?v=91322ada8558",
+      "hash": "91322ada8558",
+      "bytes": 16445
     },
     "swipeandcook-invite.css": {
       "source": "swipeandcook-invite.css",
       "output": "swipeandcook-invite.min.css",
-      "href": "/swipeandcook-invite.min.css?v=6a066b29b429",
-      "hash": "6a066b29b429",
-      "bytes": 3214
+      "href": "/swipeandcook-invite.min.css?v=ec3be521b8ff",
+      "hash": "ec3be521b8ff",
+      "bytes": 3229
     },
     "swipeandcook-privacy.css": {
       "source": "swipeandcook-privacy.css",
@@ -298,16 +291,16 @@
     "unified-hero.css": {
       "source": "unified-hero.css",
       "output": "unified-hero.min.css",
-      "href": "/unified-hero.min.css?v=0a93df221761",
-      "hash": "0a93df221761",
-      "bytes": 23284
+      "href": "/unified-hero.min.css?v=d0768abd3492",
+      "hash": "d0768abd3492",
+      "bytes": 23348
     },
     "webdesign-berlin.css": {
       "source": "webdesign-berlin.css",
       "output": "webdesign-berlin.min.css",
-      "href": "/webdesign-berlin.min.css?v=a0894e5b7499",
-      "hash": "a0894e5b7499",
-      "bytes": 36670
+      "href": "/webdesign-berlin.min.css?v=12c9001ddb73",
+      "hash": "12c9001ddb73",
+      "bytes": 36830
     },
     "website-tester.css": {
       "source": "website-tester.css",
