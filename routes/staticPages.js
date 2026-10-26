@@ -8,6 +8,7 @@ import { maintenancePage } from '../data/maintenancePage.js';
 import { runningCostsPage } from '../data/runningCostsPage.js';
 import { withServiceHeroImage } from '../data/serviceHeroImages.js';
 import pricingService from '../services/pricingService.js';
+import { SEO_RECOVERY_REDIRECTS } from '../data/seoIntentRegistry.js';
 import {
   loadSwipeAndCookLegalPage
 } from '../services/swipeAndCookLegalContentService.js';
@@ -407,19 +408,9 @@ router.get('/website-kosten-berlin', (_req, res) => {
 //   });
 // });
 
-router.get('/webdesign-blumenladen/kosten', (req, res) => {
-  res.render('static/kosten/webdesign-blumenladen', { 
-    title: 'Blumenladen-Website: Kosten & 4-Wochen-Zeitplan (Sortiment, Lieferung, Saison)',
-    description: 'Preisrahmen, Ablauf und Tipps zu Sortiment, Lieferanfrage & saisonalen Specials – für lokale Blumenläden in Berlin.'
-  });
-});
-
-router.get('/webdesign-cafe/kosten', (req, res) => {
-  res.render('static/kosten/webdesign-cafe', { 
-    title: 'Café-Website: Kosten & 4-Wochen-Zeitplan (Speisekarte, Reservierung)',
-    description: 'Preisrahmen, 4-Wochen-Plan und Tipps zu Speisekarte, Reservierung & Bildern.'
-  });
-});
+// Kosten und Ablauf stehen seit 26.10.2026 auf den Branchenseiten selbst (Abschnitt „Preise“).
+router.get('/webdesign-blumenladen/kosten', (_req, res) => res.redirect(301, SEO_RECOVERY_REDIRECTS['/webdesign-blumenladen/kosten']));
+router.get('/webdesign-cafe/kosten', (_req, res) => res.redirect(301, SEO_RECOVERY_REDIRECTS['/webdesign-cafe/kosten']));
 
 // router.get('/ratgeber/website-kosten-zeitplan', (req, res) => {
 //   res.render('static/kosten/website-kosten-zeitplan', { 

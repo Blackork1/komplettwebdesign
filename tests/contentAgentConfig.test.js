@@ -259,7 +259,7 @@ test('mark profile and links expose stable approved context', () => {
     '/branchen/webdesign-blumenladen',
     '/website-tester'
   ].forEach(url => assert.ok(approved.includes(url), url));
-  assert.ok(approved.includes('/ratgeber/website-relaunch-berlin'));
+  assert.ok(approved.includes('/blog/website-relaunch-berlin-checkliste'));
   assert.ok(approved.includes('/pakete/business'));
   assert.equal(new Set(approved).size, approved.length);
 });

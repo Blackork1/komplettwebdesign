@@ -5,7 +5,6 @@ import ejs from 'ejs';
 
 import { NICHE_PAGES, buildNichePageViewModel, getNichePage } from '../services/nichePageViewModel.js';
 import { buildPricingViewModel } from '../util/pricingViewModel.js';
-import { getIndustryReference } from '../controllers/industriesController.js';
 import { PRIORITY_INDUSTRY_SLUGS, shouldIncludeIndustryInSitemap } from '../helpers/seoPagePolicy.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -44,7 +43,7 @@ async function render(slug) {
 test('Reinigung und Blumenladen haben eigene Seiten unter der bisherigen Adresse', () => {
   assert.equal(getNichePage('reinigung')?.page.path, '/branchen/webdesign-reinigung');
   assert.equal(getNichePage('webdesign-blumenladen')?.page.path, '/branchen/webdesign-blumenladen');
-  assert.equal(getNichePage('cafe'), null);
+  assert.equal(getNichePage('kita'), null);
   assert.equal(getNichePage('constructor'), null);
   const controller = read('controllers/industriesController.js');
   assert.ok(controller.indexOf('getNichePage(slug)') < controller.indexOf('await getIndustryBySlug(slug)'), 'eigene Seite vor der Datenbank-Vorlage');
@@ -89,7 +88,8 @@ test('Zahlen auf den Seiten nennen immer ihre Quelle', () => {
     for (const section of page.sections.filter((item) => item.type === 'why')) {
       for (const stat of section.stats) assert.ok(stat.source?.trim(), `${page.slug}: ${stat.value}`);
     }
-    assert.ok(page.sources.length >= 1);
+    const hasNumbers = page.sections.some((item) => item.type === 'why' && item.stats?.length);
+    if (hasNumbers) assert.ok(page.sources.length >= 1, `${page.slug}: Zahlen ohne Quellenangabe`);
     for (const source of page.sources) assert.match(source.href, /^https:\/\//);
   }
 });
@@ -115,12 +115,12 @@ test('Fitness, Makler und Restaurant haben eigene Seiten und stehen bei Google',
   for (const term of ['Speisekarte', 'Reservierung', 'Zur alten Backstube']) assert.ok(restaurant.text.includes(term), term);
 });
 
-test('Café-Seite zeigt das echte Projekt', () => {
-  const reference = getIndustryReference('cafe');
-  assert.equal(reference.name, 'Zur alten Backstube');
-  assert.equal(reference.href, '/referenzen/zur-alten-backstube');
-  assert.equal(getIndustryReference('reinigung'), null);
-  assert.match(read('views/industries/show.ejs'), /industryReference\.quote/);
+test('Café-Seite hat eigenen Inhalt mit dem echten Projekt Zur alten Backstube', async () => {
+  assert.ok(getNichePage('cafe'));
+  const cafe = await render('cafe');
+  assert.match(cafe.model.title, /^Café-Website erstellen lassen/);
+  for (const term of ['Zur alten Backstube', 'Karte als Text', 'Reservierung', 'Torte']) assert.ok(cafe.text.includes(term), term);
+  assert.doesNotMatch(read('views/industries/show.ejs'), /industryReference/, 'Vorlage braucht keinen Referenz-Block mehr');
 });
 
 test('Sitemap nimmt für die eigenen Seiten das Datum der Inhalte', () => {

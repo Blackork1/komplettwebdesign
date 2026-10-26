@@ -14,7 +14,7 @@ export const CONTENT_AGENT_LINKS = Object.freeze([
   { url: '/leistungen/laufende-kosten-website', type: 'service', label: 'Laufende Website-Kosten' },
   { url: '/leistungen/website-wartung', type: 'service', label: 'Website-Wartung und Support' },
   { url: '/blog/website-kosten-2025-einfach-erklaert', type: 'guide', label: 'Was kostet eine Website? Ratgeber' },
-  { url: '/ratgeber/website-relaunch-berlin', type: 'guide', label: 'Wann sich ein Website-Relaunch lohnt' },
+  { url: '/blog/website-relaunch-berlin-checkliste', type: 'guide', label: 'Website-Relaunch planen: Checkliste' },
   { url: '/ratgeber/baukasten-vs-professionelle-website', type: 'guide', label: 'Baukasten und professionelle Website vergleichen' },
   { url: '/ablauf', type: 'guide', label: 'Ablauf eines Website-Projekts' },
   { url: '/handwerker', type: 'industry', label: 'Website für Handwerker in Berlin' },

@@ -29,7 +29,7 @@ export const BLOG_REDIRECTS = Object.freeze({
   'landingpages-webshop-webdesign-berlin': '/leistungen/landingpage-erstellen-lassen',
   'immobilienmakler-website-erstelle': '/branchen/webdesign-immobilienmakler',
   'website-audit-relaunch-kmu-berlin-brandenburg': '/leistungen/website-audit',
-  'wordpress-2025-deutschland-staerken-grenzen-empfehlungen': '/ratgeber/professionellen-website-vs-baukasten',
+  'wordpress-2025-deutschland-staerken-grenzen-empfehlungen': '/ratgeber/baukasten-vs-professionelle-website',
   // Sammelartikel Relaunch
   'website-relaunch-inhalte-nicht-loeschen-2026': '/blog/website-relaunch-berlin-checkliste',
   'website-relaunch-seo-ohne-sichtbarkeitsverlust-planen': '/blog/website-relaunch-berlin-checkliste',

@@ -182,6 +182,43 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     requiredLinks: [],
     redirectTo: '/ablauf'
   }),
+  // Doppelte Seiten zusammengeführt (26.10.2026).
+  freezeTarget({
+    path: '/ratgeber/professionellen-website-vs-baukasten',
+    intentId: 'baukasten-vs-professionelle-website',
+    state: 'redirect',
+    priority: 'C',
+    primaryQuery: 'baukasten oder professionelle website',
+    requiredLinks: [],
+    redirectTo: '/ratgeber/baukasten-vs-professionelle-website'
+  }),
+  freezeTarget({
+    path: '/ratgeber/website-relaunch-berlin',
+    intentId: 'website-relaunch-checkliste',
+    state: 'redirect',
+    priority: 'C',
+    primaryQuery: 'website relaunch berlin checkliste',
+    requiredLinks: [],
+    redirectTo: '/blog/website-relaunch-berlin-checkliste'
+  }),
+  freezeTarget({
+    path: '/webdesign-blumenladen/kosten',
+    intentId: 'webdesign-blumenladen',
+    state: 'redirect',
+    priority: 'C',
+    primaryQuery: 'blumenladen website kosten',
+    requiredLinks: [],
+    redirectTo: '/branchen/webdesign-blumenladen'
+  }),
+  freezeTarget({
+    path: '/webdesign-cafe/kosten',
+    intentId: 'webdesign-cafe',
+    state: 'redirect',
+    priority: 'C',
+    primaryQuery: 'café website kosten',
+    requiredLinks: [],
+    redirectTo: '/branchen/webdesign-cafe'
+  }),
   // Die Branchenseite Restaurant hat seit 25.10.2026 eigenen Inhalt.
   freezeTarget({
     path: '/ratgeber/website-fuer-restaurants-cafes-berlin',

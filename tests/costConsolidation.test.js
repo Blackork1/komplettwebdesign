@@ -11,7 +11,15 @@ const GUIDE_REDIRECTS = {
   '/ratgeber/kosten-einfache-website': '/blog/website-kosten-2025-einfach-erklaert',
   '/ratgeber/website-kosten-zeitplan': '/blog/website-kosten-2025-einfach-erklaert',
   '/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten': '/ablauf',
-  '/ratgeber/website-fuer-restaurants-cafes-berlin': '/branchen/webdesign-restaurant'
+  '/ratgeber/website-fuer-restaurants-cafes-berlin': '/branchen/webdesign-restaurant',
+  // 26.10.2026: letzte Doppelungen
+  '/ratgeber/professionellen-website-vs-baukasten': '/ratgeber/baukasten-vs-professionelle-website',
+  '/ratgeber/website-relaunch-berlin': '/blog/website-relaunch-berlin-checkliste'
+};
+
+const PAGE_REDIRECTS = {
+  '/webdesign-blumenladen/kosten': '/branchen/webdesign-blumenladen',
+  '/webdesign-cafe/kosten': '/branchen/webdesign-cafe'
 };
 
 test('doppelte Ratgeber leiten auf die Seite mit derselben Suchabsicht', async () => {
@@ -28,6 +36,16 @@ test('doppelte Ratgeber leiten auf die Seite mit derselben Suchabsicht', async (
   }
 });
 
+test('kleine Kostenseiten leiten auf die Branchenseiten und stehen nicht mehr in der Sitemap', () => {
+  const routes = readFileSync(new URL('../routes/staticPages.js', import.meta.url), 'utf8');
+  const policy = readFileSync(new URL('../helpers/seoPagePolicy.js', import.meta.url), 'utf8');
+  for (const [from, to] of Object.entries(PAGE_REDIRECTS)) {
+    assert.equal(SEO_RECOVERY_REDIRECTS[from], to, from);
+    assert.match(routes, new RegExp(`router\\.get\\('${from.replace(/\//g, '\\/')}', \\(_req, res\\) => res\\.redirect\\(301`));
+    assert.doesNotMatch(policy, new RegExp(`path: '${from}'`));
+  }
+});
+
 test('fest eingebaute Links zeigen direkt auf die neuen Ziele', () => {
   const root = new URL('../', import.meta.url);
   const files = [];
@@ -35,13 +53,13 @@ test('fest eingebaute Links zeigen direkt auf die neuen Ziele', () => {
     for (const name of readdirSync(new URL(dir, root))) {
       const rel = `${dir}${name}`;
       if (statSync(new URL(rel, root)).isDirectory()) walk(`${rel}/`);
-      else if (/\.(js|ejs)$/.test(name) && rel !== 'data/seoIntentRegistry.js' && !rel.startsWith('views/static/')) files.push(rel);
+      else if (/\.(js|ejs)$/.test(name) && rel !== 'data/seoIntentRegistry.js' && !rel.startsWith('views/static/') && rel !== 'util/legacyPublicCopy.js') files.push(rel);
     }
   };
   ['views/', 'data/', 'controllers/', 'helpers/', 'services/'].forEach(walk);
   for (const file of files) {
     const text = readFileSync(new URL(file, root), 'utf8');
-    for (const from of Object.keys(GUIDE_REDIRECTS)) {
+    for (const from of [...Object.keys(GUIDE_REDIRECTS), ...Object.keys(PAGE_REDIRECTS)]) {
       assert.ok(!text.includes(`${from}"`) && !text.includes(`${from}'`), `${file} verlinkt ${from}`);
     }
   }

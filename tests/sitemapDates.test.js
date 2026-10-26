@@ -9,14 +9,14 @@ test('sitemap only publishes known modification dates and indexable canonical UR
   const originalPackages = pricingService.getVisiblePackages;
   pool.query = async sql => ({ rows: /FROM posts/.test(sql) ? [
     { slug: 'known', updated_at: '2026-01-02T12:00:00Z' }, { slug: 'unknown', updated_at: null }, { slug: 'invalid', updated_at: 'invalid' }
-  ] : /FROM pages/.test(sql) ? [{ slug: 'de', updated_at: null }, { slug: 'booking', updated_at: null }, { slug: 'handwerker', updated_at: null }] : /FROM ratgeber/.test(sql) ? [{ slug: 'website-relaunch-berlin', updated_at: '2026-05-01T12:00:00Z' }, { slug: 'website-kosten-berlin', updated_at: '2026-05-01T12:00:00Z' }] : [] });
+  ] : /FROM pages/.test(sql) ? [{ slug: 'de', updated_at: null }, { slug: 'booking', updated_at: null }, { slug: 'handwerker', updated_at: null }] : /FROM ratgeber/.test(sql) ? [{ slug: 'baukasten-vs-professionelle-website', updated_at: '2026-05-01T12:00:00Z' }, { slug: 'website-kosten-berlin', updated_at: '2026-05-01T12:00:00Z' }] : [] });
   pricingService.getVisiblePackages = async () => [{ packageKey: 'start', allowDetailPage: true, canonicalPath: '/pakete/start', updatedAt: '2026-01-03T12:00:00Z' }];
   let body;
   try {
     await sitemapXml({ headers: {}, protocol: 'https', get: () => 'www.komplettwebdesign.de' }, { set() {}, status() { return this; }, send(xml) { body = xml; } }, e => { throw e; });
   } finally { pool.query = originalQuery; pricingService.getVisiblePackages = originalPackages; }
   const entries = [...body.matchAll(/<url>([\s\S]*?)<\/url>/g)].map(m => m[1]);
-  assert.match(entries.find(x => x.includes('/ratgeber/website-relaunch-berlin</loc>')), /<lastmod>2026-05-01T12:00:00\.000Z<\/lastmod>/);
+  assert.match(entries.find(x => x.includes('/ratgeber/baukasten-vs-professionelle-website</loc>')), /<lastmod>2026-05-01T12:00:00\.000Z<\/lastmod>/);
   assert.ok(!entries.some(x => x.includes('/ratgeber/website-kosten-berlin</loc>')), 'weitergeleitete Ratgeber stehen nicht in der Sitemap');
   const known = entries.find(x => x.includes('/blog/known</loc>'));
   assert.match(known, /<lastmod>2026-01-02T12:00:00\.000Z<\/lastmod>/);

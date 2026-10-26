@@ -26,8 +26,6 @@ export const INDEXABLE_STATIC_ROUTES = [
   { path: '/datenschutz', changefreq: 'yearly', priority: 0.2 },
   { path: '/hinweise-rechtstexte-seo-datenschutz', changefreq: 'yearly', priority: 0.2 },
   { path: '/impressum', changefreq: 'yearly', priority: 0.2 },
-  { path: '/webdesign-cafe/kosten', changefreq: 'yearly', priority: 0.4 },
-  { path: '/webdesign-blumenladen/kosten', changefreq: 'yearly', priority: 0.4 },
   { path: '/leistungen', changefreq: 'monthly', priority: 0.8 },
   { path: '/leistungen/website-relaunch', changefreq: 'monthly', priority: 0.9 },
   { path: '/leistungen/website-audit', changefreq: 'monthly', priority: 0.82 },

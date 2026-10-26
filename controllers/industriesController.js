@@ -7,7 +7,6 @@ import { buildIndustrySchemas } from '../helpers/industrySchema.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { resolveSeoTitle } from '../data/seoMetaOverrides.js';
 import { MARKETING_IMAGES } from '../data/marketingImages.js';
-import { HOME_PROJECTS } from '../data/homeProjects.js';
 import { buildNichePageViewModel, getNichePage } from '../services/nichePageViewModel.js';
 
 const INDUSTRY_CONTEXT_LINKS = Object.freeze({
@@ -123,31 +122,6 @@ const INDUSTRY_PRIMARY_CTAS = Object.freeze({
     supportingText: 'Vergleiche die Website-Pakete und ordne sie dem Umfang deines Blumenladens zu.'
   })
 });
-
-// Echte Kundenprojekte auf der passenden Branchenseite (Texte aus data/homeProjects.js).
-const INDUSTRY_REFERENCE_PROJECTS = Object.freeze({
-  cafe: 'zur-alten-backstube'
-});
-
-export function getIndustryReference(slug) {
-  const key = String(slug || '').toLowerCase().replace(/^webdesign-/, '');
-  const projectSlug = Object.hasOwn(INDUSTRY_REFERENCE_PROJECTS, key) ? INDUSTRY_REFERENCE_PROJECTS[key] : null;
-  const project = projectSlug ? HOME_PROJECTS.find((item) => item.slug === projectSlug) : null;
-  if (!project) return null;
-  return {
-    name: project.name,
-    href: project.href,
-    image: project.image,
-    imageWidth: project.imageWidth,
-    imageHeight: project.imageHeight,
-    alt: project.de.alt,
-    industry: project.de.industry,
-    before: project.de.before,
-    after: project.de.after,
-    quote: project.de.quote,
-    quoteAuthor: project.de.quoteAuthor
-  };
-}
 
 /* --- Hilfsfunktionen --- */
 function resolveBaseUrl(req) {
@@ -318,7 +292,7 @@ export async function listIndustries(req, res) {
 /* --- Detailseite (/branchen/:slug) – bleibt wie gehabt, nur mit /branchen-Canon --- */
 export async function showIndustryPage(req, res) {
   const slug = req.params.slug;
-  // Reinigung, Blumenladen, Fitness, Immobilienmakler und Restaurant haben eigene Seiten im Code.
+  // Reinigung, Blumenladen, Fitness, Immobilienmakler, Restaurant und Café haben eigene Seiten im Code.
   const nichePage = getNichePage(slug);
   if (nichePage) return res.render('niche-page', buildNichePageViewModel(nichePage, res.locals));
   try {
@@ -345,7 +319,6 @@ export async function showIndustryPage(req, res) {
       ogImage: industry.og_image_url || industry.hero_image_url,
       industry,
       industryContextLinks: getIndustryContextLinks(industry.slug),
-      industryReference: getIndustryReference(industry.slug),
       industryCommercialGuide: getIndustryCommercialGuide(industry.slug),
       industryPrimaryCta: getIndustryPrimaryCta(industry.slug),
       industryPricingCta: getIndustryPrimaryCta(industry.slug, { placement: 'pricing' }),

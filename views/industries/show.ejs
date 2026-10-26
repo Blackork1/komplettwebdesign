@@ -207,29 +207,6 @@ const positions = ["pos--far-left","pos--left","pos--center","pos--right","pos--
 
       </section>
 
-      <% if (typeof industryReference === 'object' && industryReference) { %>
-      <section id="Praxisbeispiel" class="industry-reference" aria-labelledby="industry-reference-title">
-        <div class="industry-reference__inner">
-          <div class="industry-reference__copy">
-            <p class="industry-reference__eyebrow">Praxisbeispiel aus Berlin</p>
-            <h2 id="industry-reference-title"><%= industryReference.name %>: <%= industryReference.industry %></h2>
-            <p><strong>Vorher:</strong> <%= industryReference.before %></p>
-            <p><strong>Nachher:</strong> <%= industryReference.after %></p>
-            <% if (industryReference.quote) { %>
-            <blockquote class="industry-reference__quote">
-              <p>„<%= industryReference.quote %>“</p>
-              <footer><%= industryReference.quoteAuthor %></footer>
-            </blockquote>
-            <% } %>
-            <a class="industry-reference__link" href="<%= industryReference.href %>">Projekt <%= industryReference.name %> ansehen</a>
-          </div>
-          <figure class="industry-reference__media">
-            <img src="<%= industryReference.image %>" alt="<%= industryReference.alt %>" width="<%= industryReference.imageWidth %>" height="<%= industryReference.imageHeight %>" loading="lazy" decoding="async">
-          </figure>
-        </div>
-      </section>
-      <% } %>
-
       <%- include('../partials/blocks', { blocks: industry.blocks, position: 'after_warum' }) %>
 
       <!-- ===================== UNVERZICHTBAR (2D Carousel) ===================== -->
