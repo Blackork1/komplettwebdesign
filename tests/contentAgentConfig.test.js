@@ -8,6 +8,7 @@ import {
 import {
   ArticleLeadSchema,
   ArticleOutputSchema,
+  InternalLinkSchema,
   ReviewOutputSchema,
   RiskSchema,
   SeoBriefSchema,
@@ -17,6 +18,15 @@ import {
 } from '../services/contentAgent/articleSchemas.js';
 import { CONTENT_AGENT_LINKS } from '../data/contentAgentLinks.js';
 import { CONTENT_AGENT_PROFILE } from '../data/contentAgentProfile.js';
+
+test('nicht freigegebene interne Links erhalten eine verständliche deutsche Fehlermeldung', () => {
+  const link = { url: '/unbekannter-link', label: 'Link', purpose: 'Verweis' };
+  const invalid = InternalLinkSchema.safeParse(link);
+
+  assert.equal(invalid.success, false);
+  assert.equal(invalid.error.issues[0].message, 'Der interne Link ist nicht freigegeben.');
+  assert.equal(InternalLinkSchema.safeParse({ ...link, url: '/kontakt' }).success, true);
+});
 
 const validRisk = {
   currentClaims: false,

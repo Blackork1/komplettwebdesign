@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { zodTextFormat } from 'openai/helpers/zod';
 
-import { ExistingPostOptimizationOutputSchema } from '../services/contentAgent/existingPostOptimizationSchemas.js';
+import {
+  ExistingPostOptimizationOutputSchema,
+  LegacyExistingPostOptimizationOutputSchema
+} from '../services/contentAgent/existingPostOptimizationSchemas.js';
 import { assertOpenAISchemaCompatibility } from '../services/contentAgent/openaiContentService.js';
 import {
   MAX_SAFE_HTTPS_URL_LENGTH,
@@ -126,6 +129,28 @@ test('Optimierungsschema besteht den OpenAI-Preflight ohne URI-Format', () => {
 
   assert.equal(assertOpenAISchemaCompatibility(format.schema), true);
   assert.doesNotMatch(JSON.stringify(format.schema), /"format":"uri"/);
+});
+
+test('beide Optimierungsschemas behalten OpenAI-Preflight und URL-Normalisierung', () => {
+  const full = validOptimizationOutput();
+  const { contentHtml, ...legacy } = full;
+  for (const [schema, input] of [
+    [ExistingPostOptimizationOutputSchema, full],
+    [LegacyExistingPostOptimizationOutputSchema, legacy]
+  ]) {
+    const format = zodTextFormat(schema, 'optimization_output');
+    assert.equal(assertOpenAISchemaCompatibility(format.schema), true);
+    assert.doesNotMatch(JSON.stringify(format.schema), /"format":"uri"/);
+    const parsed = schema.parse({
+      ...input,
+      changeReasons: [{ ...input.changeReasons[0], sourceUrls: ['https://EXAMPLE.com:443/pfad#teil'] }]
+    });
+    assert.deepEqual(parsed.changeReasons[0].sourceUrls, ['https://example.com/pfad#teil']);
+    assert.equal(schema.safeParse({
+      ...input,
+      changeReasons: [{ ...input.changeReasons[0], sourceUrls: ['https://user:pass@example.com/pfad'] }]
+    }).success, false);
+  }
 });
 
 test('gemeinsamer HTTPS-Normalisierer begrenzt, prüft und kanonisiert Quellen-URLs', () => {

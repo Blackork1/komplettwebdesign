@@ -10,7 +10,7 @@ COPY .nvmrc ./
 COPY scripts/verifyNodeVersion.js ./scripts/verifyNodeVersion.js
 
 # Abhängigkeiten installieren. Dev-Abhängigkeiten werden für den CSS-Build gebraucht.
-RUN node scripts/verifyNodeVersion.js && npm install
+RUN node scripts/verifyNodeVersion.js && npm ci
 
 # Rest des Codes kopieren
 COPY . .

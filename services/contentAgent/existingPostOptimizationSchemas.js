@@ -24,7 +24,7 @@ const HttpsUrlSchema = z.string()
   .max(MAX_SAFE_HTTPS_URL_LENGTH)
   .regex(HTTPS_URL_PATTERN)
   .refine((value) => normalizeSafeHttpsUrl(value) !== null)
-  .transform((value) => normalizeSafeHttpsUrl(value));
+  .overwrite((value) => normalizeSafeHttpsUrl(value));
 
 function createChangeReasonSchema(fields) {
   return z.object({

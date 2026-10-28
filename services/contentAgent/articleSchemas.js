@@ -87,7 +87,7 @@ export const OutlineItemSchema = z.object({
 
 export const InternalLinkSchema = z.object({
   url: z.enum(APPROVED_INTERNAL_LINK_URLS, {
-    errorMap: () => ({ message: 'Der interne Link ist nicht freigegeben.' })
+    error: 'Der interne Link ist nicht freigegeben.'
   }),
   label: NonEmptyString,
   purpose: NonEmptyString
