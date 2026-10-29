@@ -1985,6 +1985,14 @@
   max-width: 820px;
 }
 
+/* Handy: lange Wörter wie „Gemeinschaftspraxen“ oder „Immobilienmaklers“ passen in die Abschnittsüberschrift,
+   statt mitten im Wort umzubrechen. */
+@media (max-width: 480px) {
+  .webdesign-berlin.niche-page .wd-section h2 {
+    font-size: 1.6rem;
+  }
+}
+
 /* Mobil: Abschnitte so breit wie der Hero (16 px Seitenabstand), ohne doppelten Innenabstand. */
 @media (max-width: 860px) {
   .webdesign-berlin-page .wd-section {

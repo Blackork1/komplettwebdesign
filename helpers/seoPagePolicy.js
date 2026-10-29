@@ -51,7 +51,18 @@ export const PRIORITY_INDUSTRY_SLUGS = [
   'blumenladen',
   'immobilienmakler',
   // Seit 25.10.2026 mit eigenem Inhalt statt Vorlage (data/fitnessPage.js).
-  'fitnesscoach'
+  'fitnesscoach',
+  // Seit 29.10.2026 mit eigenem Inhalt statt Vorlage (Analysen in docs/seo/content-briefs/2026-10-29-branchen).
+  'arzt',
+  'physiotherapie',
+  'hebamme',
+  'steuerberater',
+  'autowerkstatt',
+  'friseur',
+  'beautysalon',
+  'fotograf',
+  'tattoo',
+  'wellness'
 ];
 
 export const REVIEWED_DISTRICT_SLUGS = [

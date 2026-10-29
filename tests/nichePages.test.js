@@ -86,7 +86,7 @@ test('Seiten rendern ohne offene Platzhalter, mit Preisen und vollständigen str
 test('Zahlen auf den Seiten nennen immer ihre Quelle', () => {
   for (const { page } of Object.values(NICHE_PAGES)) {
     for (const section of page.sections.filter((item) => item.type === 'why')) {
-      for (const stat of section.stats) assert.ok(stat.source?.trim(), `${page.slug}: ${stat.value}`);
+      for (const stat of section.stats || []) assert.ok(stat.source?.trim(), `${page.slug}: ${stat.value}`);
     }
     const hasNumbers = page.sections.some((item) => item.type === 'why' && item.stats?.length);
     if (hasNumbers) assert.ok(page.sources.length >= 1, `${page.slug}: Zahlen ohne Quellenangabe`);
@@ -121,6 +121,56 @@ test('Café-Seite hat eigenen Inhalt mit dem echten Projekt Zur alten Backstube'
   assert.match(cafe.model.title, /^Café-Website erstellen lassen/);
   for (const term of ['Zur alten Backstube', 'Karte als Text', 'Reservierung', 'Torte']) assert.ok(cafe.text.includes(term), term);
   assert.doesNotMatch(read('views/industries/show.ejs'), /industryReference/, 'Vorlage braucht keinen Referenz-Block mehr');
+});
+
+// Die zehn Branchen, die bis 29.10.2026 noch die Datenbank-Vorlage nutzten, mit Hauptbegriff aus der Analyse
+// (docs/seo/content-briefs/2026-10-29-branchen) und Begriffen, nach denen ihre Kundschaft sucht.
+const REWORKED_INDUSTRIES = {
+  arzt: { title: /^Arztpraxis-Website erstellen lassen/, terms: ['Sprechzeiten', 'neue Patienten', 'Rezept', '§ 5 DDG', 'GOÄ', 'Bitkom'] },
+  physiotherapie: { title: /^Physiotherapie-Website erstellen lassen/, terms: ['Hausbesuche', 'Verordnung', 'Krankengymnastik', 'Heilpraktikererlaubnis', '280 Tage'] },
+  hebamme: { title: /^Hebammen-Website erstellen lassen/, terms: ['Geburtstermin', 'Wochenbett', 'Geburtsvorbereitungskurs', '§ 24d SGB V', 'ammely'] },
+  steuerberater: { title: /^Steuerberater-Website erstellen lassen/, terms: ['freie Kapazitäten', '§ 57a', 'DATEV', 'Berufshaftpflicht', '89.549'] },
+  autowerkstatt: { title: /^Kfz-Werkstatt-Website erstellen lassen/, terms: ['Inspektion', 'HU', 'Samstag', 'Preisangabenverordnung', '10,9 Jahre'] },
+  friseur: { title: /^Friseur-Website erstellen lassen/, terms: ['ohne Termin', 'Barber', 'Preisliste', '§ 12 PAngV', '80.118'] },
+  beautysalon: { title: /^Kosmetikstudio-Website erstellen lassen/, terms: ['Nagelstudio', 'Wimpernverlängerung', 'Vorher-Nachher', 'Gutscheine'] },
+  fotograf: { title: /^Fotografen-Website erstellen lassen/, terms: ['Hochzeitsfotograf', 'Bewerbungsfotos', 'Portfolio', 'Einwilligung', 'Nutzungsrechte'] },
+  tattoo: { title: /^Tattoo-Studio-Website erstellen lassen/, terms: ['Walk-in', 'Anzahlung', 'Fineline', 'Mindestalter', 'REACH'] },
+  wellness: { title: /^Massage-Website erstellen lassen/, terms: ['Massage Gutschein', 'Day Spa', 'Heilmittelwerbegesetz', 'Masseur', 'drei Jahre'] }
+};
+
+test('Die zehn überarbeiteten Branchen haben eigene Seiten, stehen im Index und treffen die Suchbegriffe', async () => {
+  for (const [slug, expected] of Object.entries(REWORKED_INDUSTRIES)) {
+    assert.ok(getNichePage(slug), `${slug}: eigene Seite`);
+    assert.equal(getNichePage(slug).page.path, `/branchen/webdesign-${slug}`);
+    assert.ok(PRIORITY_INDUSTRY_SLUGS.includes(slug), `${slug} im Index`);
+    assert.equal(shouldIncludeIndustryInSitemap({ slug, name: slug }), true, slug);
+
+    const { model, text } = await render(slug);
+    assert.match(model.title, expected.title, slug);
+    assert.ok(model.title.length <= 60, `${slug}: Title zu lang (${model.title.length})`);
+    assert.ok(model.description.length >= 120 && model.description.length <= 160, `${slug}: Description ${model.description.length}`);
+    assert.match(model.description, /ab 799 €\.$/, slug);
+    assert.ok(model.nicheFaq.length >= 10, `${slug}: zu wenige Fragen`);
+    for (const term of expected.terms) assert.ok(text.includes(term), `${slug}: „${term}“ fehlt`);
+    assert.ok(model.nichePage.sources.length >= 3, `${slug}: zu wenige Quellen`);
+    assert.doesNotMatch(text, /\b(?:Ihnen|Ihrer|Ihrem|Ihren)\b|\b(?:können|möchten|haben|kontaktieren|erhalten) Sie\b/, `${slug}: Seite duzt durchgehend`);
+  }
+});
+
+test('Branchenübersicht zeigt Titel, Text und Foto der eigenen Seiten statt der alten Vorlage', async () => {
+  const { buildIndustryGroups } = await import('../controllers/industriesController.js');
+  const groups = buildIndustryGroups(Object.keys(REWORKED_INDUSTRIES).map((slug) => ({ slug, name: slug, title: 'Alter Titel', description: 'Alter Text' })));
+  const items = groups.flatMap((group) => group.items).filter((item) => item.href !== '/handwerker');
+  assert.equal(items.length, 10);
+  for (const item of items) {
+    assert.match(item.title, /^Website für /);
+    assert.doesNotMatch(item.description, /Alter Text|\{\{/);
+    assert.match(item.image.src, /c_fill,w_720,h_540/);
+  }
+  const groupOf = (href) => groups.find((group) => group.items.some((item) => item.href === href))?.key;
+  assert.equal(groupOf('/branchen/webdesign-hebamme'), 'appointments');
+  assert.equal(groupOf('/branchen/webdesign-autowerkstatt'), 'local-services');
+  assert.equal(groupOf('/branchen/webdesign-steuerberater'), 'consulting-real-estate');
 });
 
 test('Sitemap nimmt für die eigenen Seiten das Datum der Inhalte', () => {

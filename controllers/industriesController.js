@@ -29,13 +29,13 @@ const INDUSTRY_GROUP_DEFINITIONS = Object.freeze([
     key: 'appointments',
     title: 'Termine und Buchungen',
     description: 'Angebot, Vertrauen und den Weg zur Terminvereinbarung schnell verständlich machen.',
-    terms: Object.freeze(['fitness', 'coach', 'friseur', 'kosmetik', 'therap', 'physio', 'arzt', 'praxis', 'studio'])
+    terms: Object.freeze(['fitness', 'coach', 'friseur', 'kosmetik', 'beauty', 'therap', 'physio', 'arzt', 'praxis', 'hebamm', 'massage', 'wellness', 'tattoo', 'fotograf', 'studio'])
   }),
   Object.freeze({
     key: 'local-services',
     title: 'Lokale Dienstleistungen',
     description: 'Leistungen, Einsatzgebiet, Belege und eine kurze Anfrage für lokale Aufträge verbinden.',
-    terms: Object.freeze(['handwerk', 'reinigung', 'service', 'maler', 'elektro', 'sanit', 'bau', 'garten'])
+    terms: Object.freeze(['handwerk', 'reinigung', 'service', 'maler', 'elektro', 'sanit', 'bau', 'garten', 'werkstatt', 'kfz'])
   }),
   Object.freeze({
     key: 'hospitality-retail',
@@ -188,6 +188,15 @@ function getIndustryCardImage(industry, groupKey) {
   const normalizedSlug = String(industry.slug || '').toLowerCase().replace(/^webdesign-/, '');
   if (normalizedSlug === 'blumenladen') return MARKETING_IMAGES.industryFlorist;
   if (normalizedSlug === 'immobilienmakler') return MARKETING_IMAGES.industryRealEstate;
+  const niche = getNichePage(normalizedSlug);
+  if (niche) {
+    return Object.freeze({
+      // Für die 4:3-Karten reicht eine kleinere Variante des Hero-Fotos.
+      src: niche.page.hero.image.replace('/upload/c_fill,w_960,h_640,', '/upload/c_fill,w_720,h_540,'),
+      alt: niche.page.hero.imageAlt,
+      source: Object.freeze({ kind: 'customer-or-own', provider: 'Komplett Webdesign' })
+    });
+  }
   const src = industry.og_image_url || industry.hero_image_url;
   if (src) {
     return Object.freeze({
@@ -197,6 +206,14 @@ function getIndustryCardImage(industry, groupKey) {
     });
   }
   return INDUSTRY_GROUP_FALLBACK_IMAGES[groupKey];
+}
+
+// Meta-Beschreibung der eigenen Seite ohne den Preis-Satz am Ende (der Preis steht auf der Seite selbst).
+function nicheCardDescription(metaDescription = '') {
+  return String(metaDescription)
+    .replace(/\s*(?:Pakete\s+)?\{\{price\.\w+\}\}\.?\s*$/, '')
+    .replace(/[,\s]+$/, '')
+    .replace(/([^.!?])$/, '$1.');
 }
 
 export function buildIndustryGroups(industries = []) {
@@ -215,10 +232,13 @@ export function buildIndustryGroups(industries = []) {
 
   for (const industry of allIndustries) {
     const group = findIndustryGroup(industry);
+    const niche = industry.staticPage ? null : getNichePage(industry.slug);
     groupedItems.get(group.key).push(Object.freeze({
-      title: industry.title || `Webdesign für ${industry.name}`,
+      title: niche ? `Website für ${niche.page.breadcrumb}` : (industry.title || `Webdesign für ${industry.name}`),
       name: industry.name || industry.title,
-      description: industry.description || 'Branchenspezifische Inhalte, Bilder und Kontaktwege passend einordnen.',
+      description: niche
+        ? nicheCardDescription(niche.page.metaDescription)
+        : (industry.description || 'Branchenspezifische Inhalte, Bilder und Kontaktwege passend einordnen.'),
       href: industry.href || normalizeIndustryPath(industry.slug),
       image: getIndustryCardImage(industry, group.key)
     }));
@@ -271,7 +291,7 @@ export async function listIndustries(req, res) {
 
     res.render('industries/index', {
       title: 'Branchen – Webdesign & SEO für Berliner KMU | Komplett Webdesign',
-      description: 'Alle Branchen auf einen Blick: Hero-Bilder + Titel. Klicke durch zu deiner Branche und erfahre Preise, SEO-Tipps & Funktionen.',
+      description: 'Webdesign für Berliner Branchen: Arztpraxen, Physiotherapie, Steuerberater, Friseure, Werkstätten, Gastronomie und mehr, mit Inhalten und Preisen je Branche.',
       baseUrl,
       featured,
       others,
@@ -292,7 +312,7 @@ export async function listIndustries(req, res) {
 /* --- Detailseite (/branchen/:slug) – bleibt wie gehabt, nur mit /branchen-Canon --- */
 export async function showIndustryPage(req, res) {
   const slug = req.params.slug;
-  // Reinigung, Blumenladen, Fitness, Immobilienmakler, Restaurant und Café haben eigene Seiten im Code.
+  // Alle öffentlich gelisteten Branchen haben eigene Seiten im Code (services/nichePageViewModel.js).
   const nichePage = getNichePage(slug);
   if (nichePage) return res.render('niche-page', buildNichePageViewModel(nichePage, res.locals));
   try {
