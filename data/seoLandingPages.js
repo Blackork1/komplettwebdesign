@@ -659,294 +659,213 @@ export const SEO_LANDING_PAGES = Object.freeze([
     path: '/leistungen/landingpage-erstellen-lassen',
     primaryKeyword: 'landingpage erstellen lassen',
     parentBreadcrumb: { label: 'Leistungen', href: '/leistungen' },
-    title: 'Landingpage erstellen lassen | Individuell & klar',
-    description: 'Individuelle Landingpage erstellen lassen: klare Struktur, überzeugende Inhalte, CTA-Führung und technische Umsetzung mit Node.js/EJS.',
-    h1: 'Landingpage erstellen lassen',
+    title: 'Landingpage erstellen lassen ab 799 € | Berlin, 1–2 Wochen',
+    description: 'Landingpage erstellen lassen vom Webdesigner aus Berlin: individuelles Design, klare Anfrageführung, schnelle Ladezeit. Ab 799 €, in 1–2 Wochen online.',
+    h1: 'Landingpage erstellen lassen in Berlin',
+    breadcrumbLabel: 'Landingpage erstellen lassen',
     editorialImage: MARKETING_IMAGES.homeSolution,
     overview: {
       title: 'Landingpage auf einen Blick',
       items: [
-        { label: 'Ausgangslage', text: 'Ein konkretes Angebot, eine Kampagne oder eine Zielgruppe braucht einen fokussierten Weg ohne konkurrierende Botschaften.' },
-        { label: 'Leistungsumfang', text: 'Struktur, Bildsprache, Textführung, Vertrauenselemente, Formular und genau eine priorisierte Zielhandlung werden geplant.' },
-        { label: 'Nicht enthalten', text: 'Keine vollständige Unternehmenswebsite, keine laufende Anzeigenbetreuung, keine Conversion-Garantie und kein pauschales Tracking-Setup.' },
-        { label: 'Ablauf', text: 'Angebot und Zielgruppe klären, Inhalte sammeln, Seitenlogik entwerfen, gestalten, umsetzen, testen und freigeben.' },
-        { label: 'Ergebnis oder Beleg', text: 'Die fokussierte Zielseite konzentriert sich auf ein Conversion-Ziel, eine klare Argumentationsfolge und eine nachvollziehbare Kontaktmöglichkeit.' },
-        { label: 'Kosten und nächster Schritt', text: 'Der Preis hängt von Inhalt, Formular, Tracking und Einbindung ab. Die Anfrage klärt, ob Landingpage oder Website sinnvoller ist.' }
+        { label: 'Ausgangslage', text: 'Du willst ein Angebot, eine Aktion oder eine Kampagne gezielt bewerben, und Besucher sollen genau eine Sache tun: anfragen, anrufen oder einen Termin buchen.' },
+        { label: 'Leistungsumfang', text: 'Konzept und Seitenaufbau, individuelles Design, Umsetzung für Handy und Desktop, Formular oder Anruf-Button, SEO-Grundlage und Livegang. Texte und Tracking auf Wunsch.' },
+        { label: 'Nicht enthalten', text: 'Anzeigenschaltung und laufende Kampagnenbetreuung, Rechtstexte sowie externe Tools. Das klären wir vorab, damit Umfang und Kosten klar sind.' },
+        { label: 'Ablauf', text: 'Kurzes Gespräch, Inhalte sammeln, Entwurf und Umsetzung, Feedback und Livegang. Meist in 1–2 Wochen, sobald Texte und Bilder vorliegen.' },
+        { label: 'Ergebnis oder Beleg', text: 'Eine Seite mit einem klaren Ziel: Nutzen, Angebot, Vertrauen und Kontakt in einer logischen Reihenfolge, schnell geladen auf jedem Handy.' },
+        { label: 'Kosten und nächster Schritt', text: 'Ab 799 €, je nach Umfang bis etwa 1.499 €. Nach deiner kurzen Anfrage bekommst du ein Angebot mit klarem Preis für deinen Umfang.' }
       ],
       proof: {
-        label: 'Unterschied zur vollständigen Website verstehen',
+        label: 'Landingpage oder komplette Website?',
         href: '/',
-        text: 'Eine Landingpage bündelt die Argumentation auf ein Conversion-Ziel. Die Webdesign-Hauptseite zeigt, wann mehrere Leistungen, Seiten und Zielgruppen eine vollständige Website benötigen.'
+        text: 'Eine Landingpage bündelt alles auf ein Conversion-Ziel. Auf der Startseite siehst du, wann mehrere Leistungen und Seiten eine vollständige Website sinnvoller machen.'
       }
     },
-    intro: 'Du möchtest eine Landingpage erstellen lassen, die ein konkretes Angebot verständlich erklärt und Besucher zu einer klaren Handlung führt. Ich entwickle individuelle Zielseiten für kleine Unternehmen, Dienstleister und Kampagnen in Berlin und Brandenburg mit sauberer Struktur, serverseitig gerendertem HTML und realistischen Grenzen statt Erfolgsversprechen.',
+    intro: 'Du brauchst eine Seite für ein konkretes Angebot, eine Google-Ads-Kampagne oder eine neue Leistung? Ich erstelle dir eine individuelle Landingpage: klar aufgebaut, schnell geladen und auf genau eine Anfrage ausgerichtet. Ab 799 €, meist in 1–2 Wochen online, sobald Texte und Bilder vorliegen.',
     service: {
       name: 'Landingpage erstellen lassen',
-      serviceType: 'Individuelle Landingpage-Entwicklung',
-      areaServed: ['Berlin', 'Brandenburg']
+      serviceType: 'Landingpage-Erstellung',
+      areaServed: ['Berlin', 'Brandenburg'],
+      offer: { minPrice: 799, maxPrice: 1499 }
     },
     sections: [
       {
-        id: 'intro',
-        eyebrow: 'Einordnung',
-        heading: 'Was eine Landingpage leisten soll',
-        body: 'Eine Landingpage ist eine fokussierte Seite für ein bestimmtes Ziel: Anfrage, Buchung, Download, Beratungsgespräch oder die Erklärung eines einzelnen Angebots. Sie reduziert Ablenkung, bündelt die wichtigsten Argumente und führt Besucher über klare Abschnitte zur nächsten sinnvollen Handlung.',
-        points: [
-          'ein Angebot, eine Hauptbotschaft und eine klar erkennbare Zielhandlung',
-          'weniger Ablenkung als eine normale Website-Seite mit breiter Navigation',
-          'eigenständig nutzbar oder als gezielte Ergänzung zu einer bestehenden Website'
-        ]
-      },
-      {
         id: 'useCases',
-        eyebrow: 'Einsatzfälle',
-        heading: 'Wann eine Landingpage sinnvoll ist',
-        body: 'Eine Landingpage passt, wenn ein Angebot, eine Aktion oder eine einzelne Dienstleistung deutlich im Vordergrund stehen soll. Sie kann Kampagnen unterstützen, lokale Anfragen bündeln oder eine bestehende Website um eine stärkere Angebotsseite ergänzen.',
+        eyebrow: 'Einsatz',
+        heading: 'Wann sich eine Landingpage lohnt',
+        body: 'Eine Landingpage ist eine einzelne Seite mit genau einem Ziel. Sie lohnt sich immer dann, wenn Besucher mit einer konkreten Erwartung kommen und diese sofort erfüllt sehen sollen.',
         points: [
-          'neues Angebot, lokale Aktion, Beratung, Event, Anfragekampagne oder einzelne Dienstleistung erklären',
-          'Traffic aus Anzeigen, Newsletter, Social Media oder bestehenden Seiten gezielter führen',
-          'nicht ideal, wenn viele gleichwertige Leistungen oder eine komplette Unternehmenswebsite fehlen'
+          'Google Ads oder Social-Media-Anzeigen: Besucher landen direkt beim beworbenen Angebot statt auf der Startseite',
+          'neue Leistung, Aktion oder Veranstaltung schnell und eigenständig online bringen',
+          'lokale Angebote wie „Fensterreinigung in Pankow“ gezielt für eine Suchanfrage aufbereiten',
+          'als Ergänzung zu deiner bestehenden Website, ohne diese umbauen zu müssen'
         ]
       },
       {
-        id: 'landingpageVsWebsite',
-        eyebrow: 'Abgrenzung',
-        heading: 'Landingpage oder vollständige Website?',
-        body: 'Eine Landingpage ersetzt nicht immer eine vollständige Website, kann sie aber gezielt ergänzen. Eine Website erklärt Unternehmen, Leistungen, Referenzen, Kontakt und langfristige SEO-Struktur. Eine Landingpage konzentriert sich auf ein Angebot, eine Zielgruppe und einen nächsten Schritt.',
+        id: 'included',
+        eyebrow: 'Leistungsumfang',
+        heading: 'Das ist in deiner Landingpage enthalten',
+        body: 'Du bekommst keine Vorlage, sondern eine Seite, die für dein Angebot geplant und gestaltet wird. Ich setze sie selbst um und bin während des ganzen Projekts dein direkter Ansprechpartner.',
         points: [
-          'Landingpage: ein Fokus, ein Angebot, reduzierte Navigation und klare Anfrageführung',
-          'Website: mehrere Leistungen, Unternehmensinformationen, Referenzen und langfristige Präsenz',
-          'bei fehlendem Gesamtauftritt kann ein Website-Paket sinnvoller sein als eine einzelne Zielseite'
-        ]
-      },
-      {
-        id: 'targetGroups',
-        eyebrow: 'Zielgruppen',
-        heading: 'Für wen Landingpages besonders passen',
-        body: 'Landingpages sind sinnvoll für Dienstleister, Coaches, Beratungen, Praxen, Handwerker, lokale Unternehmen und Selbstständige mit einem klaren Angebot. Auch kleine Unternehmen können damit neue Leistungen testen oder eine bestehende Website gezielt ausbauen.',
-        points: [
-          'Beratungsgespräche, Angebotsanfragen, lokale Leistungen oder konkrete Aktionen sichtbar machen',
-          'neue Zielgruppe, neues Produkt oder neue Dienstleistung mit schlankem Umfang testen',
-          'nicht gedacht für große Shops, komplexe Funnel-Systeme oder Marketing-Automation als Standard'
+          'Konzept: Aufbau, Reihenfolge der Argumente und die eine Handlung, zu der die Seite führt',
+          'individuelles Design passend zu deinem Auftritt, für Handy und Desktop',
+          'Kontaktformular, Anruf-, WhatsApp- oder Terminbutton',
+          'SEO-Grundlage mit Seitentitel, Beschreibung und sauberer Überschriften-Struktur',
+          'schnelle Ladezeit durch optimierte Bilder und schlanken Code',
+          'Livegang auf deiner Domain oder als Unterseite deiner bestehenden Website'
         ]
       },
       {
         id: 'structure',
         eyebrow: 'Aufbau',
-        heading: 'Typische Bestandteile einer guten Landingpage',
-        body: 'Die Struktur hängt vom Angebot ab. Häufig braucht eine Landingpage aber eine klare Headline, kurze Nutzenkommunikation, Zielgruppenbezug, Angebotsbeschreibung, Vorteile, Ablauf, Vertrauenselemente, FAQ und wiederkehrende Anfragepunkte.',
+        heading: 'So ist eine Landingpage aufgebaut, die Anfragen bringt',
+        body: 'Gute Landingpages beantworten die Fragen der Besucher in genau der Reihenfolge, in der sie entstehen. Diese Bausteine plane ich für dein Angebot, nicht jede Seite braucht alle davon.',
         points: [
-          'Headline, Nutzen, Angebot, Einwände, Ablauf, FAQ und Kontaktmöglichkeit sinnvoll ordnen',
-          'visuelle Hierarchie, mobile Lesbarkeit und schnelle Orientierung priorisieren',
-          'nicht jede Landingpage braucht dieselben Abschnitte oder denselben Umfang'
-        ]
-      },
-      {
-        id: 'copyStructure',
-        eyebrow: 'Texte',
-        heading: 'Textstruktur ohne Keyword-Überladung',
-        body: 'Landingpage-Texte müssen schnell verständlich machen, für wen das Angebot passt, was enthalten ist und welcher nächste Schritt sinnvoll ist. Gelieferte Texte können strukturiert werden; umfangreiches Copywriting wird je nach Bedarf separat kalkuliert.',
-        points: [
-          'klare Botschaft, kurze Abschnitte und konkrete Vorteile statt austauschbarer Werbesprache',
-          'Einwände, Voraussetzungen und Abgrenzungen sichtbar erklären',
-          'Fachinput vom Kunden bleibt wichtig; Rechtstexte oder Rechtsprüfung sind keine Textleistung'
-        ]
-      },
-      {
-        id: 'conversionElements',
-        eyebrow: 'Anfrageführung',
-        heading: 'Elemente, die Entscheidungen erleichtern',
-        body: 'Die Landingpage wird auf eine klare Zielhandlung ausgerichtet. Dazu gehören Anfragebuttons, ein passendes Formular, echte Vertrauenselemente, verständliche Vorteile, FAQ und eine reduzierte Ablenkung. Ob und wie gut sie konvertiert, hängt von Angebot, Zielgruppe, Traffic und weiteren Faktoren ab.',
-        points: [
-          'Kontaktformular, Anfragebutton oder Terminlink passend zum Ziel einsetzen',
-          'echte Referenzen, echte Bewertungen oder reale Projektbeispiele nur verwenden, wenn sie vorhanden sind',
-          'keine Garantie für Leads, Verkäufe oder Umsatz, sondern eine sauberere Entscheidungsgrundlage'
-        ]
-      },
-      {
-        id: 'formsAndCtas',
-        eyebrow: 'Formulare',
-        heading: 'Formulare und Kontaktwege bewusst kurz halten',
-        body: 'Ein Formular kann direkt auf der Landingpage sitzen oder über einen klaren Kontaktweg angebunden werden. Die Felder sollten zum Ziel passen, nicht unnötig viele Daten abfragen und keine Passwörter oder vertraulichen Zugangsdaten verlangen.',
-        points: [
-          'Anfrageformular, E-Mail-Link, Telefonklick oder Terminlink passend zum Projektziel auswählen',
-          'Datenschutz-Hinweis und Verlinkung zur Datenschutzerklärung sauber einbinden',
-          'Buchungssystem, Zahlungsfunktion oder externe Tools sind nicht automatisch enthalten'
-        ]
-      },
-      {
-        id: 'techImplementation',
-        eyebrow: 'Technik',
-        heading: 'Individuell umgesetzt mit Node.js und EJS',
-        body: 'Die Landingpage wird individuell mit Node.js, EJS, CSS und JavaScript umgesetzt. Hauptinhalte werden serverseitig als HTML gerendert. Das schafft eine saubere Grundlage für Struktur, Ladezeit, mobile Darstellung und Suchmaschinenlesbarkeit, ohne Baukasten-Template oder Standard-Theme-Zwang.',
-        points: [
-          'serverseitig gerendertes HTML mit klarer H1/H2-Struktur',
-          'individuelles CSS, sparsames JavaScript und responsive Umsetzung',
-          'Cloudinary-Bildoptimierung nutzen, soweit Bildmaterial und Projektumfang dazu passen'
-        ]
-      },
-      {
-        id: 'tracking',
-        eyebrow: 'Messung',
-        heading: 'Tracking und Auswertung nur optional',
-        body: 'Tracking kann optional und datenschutzbewusst vorbereitet werden, wenn du Klicks, Formularstarts, Formularabsendungen, Scrolltiefe oder Kampagnenparameter auswerten möchtest. Toolauswahl, Consent und Umfang müssen vorher abgestimmt werden.',
-        points: [
-          'keine personenbezogenen Freitexte als Trackingdaten verwenden',
-          'Google Analytics oder andere Dienste nicht pauschal einbauen',
-          'Tracking zeigt Signale, ersetzt aber keine Garantie für Kampagnen- oder Anfrageergebnisse'
-        ]
-      },
-      {
-        id: 'seo',
-        eyebrow: 'SEO',
-        heading: 'SEO-orientiert oder kampagnenorientiert planen',
-        body: 'Vor der Umsetzung sollte klar sein, ob die Landingpage für Suchmaschinen, Kampagnen oder beides gedacht ist. Eine SEO-orientierte Landingpage braucht relevante Inhalte, Meta-Daten, Überschriften, interne Verlinkung und eine klare Suchintention. Eine reine Kampagnenseite muss nicht zwingend indexiert werden.',
-        points: [
-          'Meta Title, Meta Description, Canonical, H-Struktur und interne Links im vereinbarten Umfang setzen',
-          'keine Keyword-Stuffing-Seite und keine Garantie für bestimmte Suchpositionen',
-          'bei lokalen Suchzielen kann Local SEO separat mitgedacht werden'
+          'Überschrift mit klarem Nutzen: Was bekomme ich, und für wen ist das?',
+          'Angebot und Vorteile in wenigen, konkreten Punkten statt Werbefloskeln',
+          'Vertrauen: echte Bewertungen, Referenzen und Fotos von dir oder deinem Team',
+          'Ablauf und Preisrahmen, damit niemand raten muss',
+          'Antworten auf typische Einwände als kurze FAQ',
+          'ein Kontaktweg, der mehrfach auf der Seite erreichbar ist und schnell funktioniert'
         ]
       },
       {
         id: 'pricing',
-        eyebrow: 'Preisrahmen',
-        heading: 'Was eine Landingpage kosten kann',
-        body: `Der Preis hängt von Designanspruch, Textumfang, Formular, Animationen, Tracking, SEO-Ausrichtung, Bildmaterial, Integrationen, Mehrsprachigkeit und Sonderfunktionen ab. ${PACKAGE_GLOBAL_NOTES.vatNote}`,
+        eyebrow: 'Kosten',
+        heading: 'Was kostet eine Landingpage?',
+        body: `Eine Landingpage kostet bei mir ab 799 €. Der genaue Preis hängt vor allem von Textumfang, Anzahl der Abschnitte, Formular und Bildmaterial ab. ${PACKAGE_GLOBAL_NOTES.vatNote}`,
         points: [
-          addOnPricePoint('landingpage', 'Landingpage', 'ab 699–1.499 €', 'als Orientierung für eine eigenständige Zielseite mit klar abgegrenztem Umfang.'),
-          addOnPricePoint('texterstellung-erweitert', 'Umfangreichere Texterstellung', 'ab 250–900 €', 'wenn Inhalte nicht nur strukturiert, sondern neu ausgearbeitet werden müssen.'),
-          addOnPricePoint('tracking-einrichtung', 'Tracking-Einrichtung', 'ab 150–400 €', 'wenn Ereignisse und Consent-abhängige Messung vereinbart werden.'),
-          'Drittanbieter-, Tool-, Bildlizenz-, Übersetzungs- oder Consent-Kosten werden separat eingeordnet.'
-        ]
-      },
-      {
-        id: 'packageConnection',
-        eyebrow: 'Einordnung',
-        heading: 'Zusatzleistung oder eigenes Projekt',
-        body: 'Eine Landingpage kann eine Zusatzseite zu einer bestehenden Website sein, ein eigenständiges Mini-Projekt oder Teil eines Relaunches beziehungsweise Wachstum-Projekts. Mehrere Landingpages oder komplexere Kampagnenstrukturen werden als individueller Umfang geplant.',
-        points: [
-          'als Zusatzleistung, wenn eine bestehende Website sinnvoll erweitert wird',
-          'als eigenes Projekt, wenn die Zielseite unabhängig funktionieren soll',
-          'Ads, laufende Kampagnenbetreuung und Marketing-Automation sind nicht automatisch Teil der Umsetzung'
-        ]
-      },
-      {
-        id: 'notIncluded',
-        eyebrow: 'Grenzen',
-        heading: 'Was nicht automatisch enthalten ist',
-        body: 'Damit Aufwand, Verantwortung und laufende Kosten klar bleiben, werden Zusatzthemen vorab getrennt. Das verhindert Missverständnisse bei Tools, Texten, Tracking, Rechtstexten und Kampagnenbetrieb.',
-        points: [
-          'Ads-Kampagnen, laufende Kampagnenbetreuung, A/B-Tests, Marketing-Automation, Newsletter-Systeme oder CRM-Anbindung',
-          'professionelle Fotografie, Bildlizenzen, umfangreiche Texterstellung, Übersetzungen oder Content-Migration',
-          'Buchungssysteme, Zahlungsanbieter, Rechtsberatung, Rechtstexte, Hosting, Wartung oder externe Toolkosten ohne Vereinbarung'
+          addOnPricePoint('landingpage', 'Landingpage', 'ab 799–1.499 €', 'für eine eigenständige Zielseite mit Konzept, Design, Umsetzung und Livegang.'),
+          addOnPricePoint('texterstellung-erweitert', 'Texterstellung', 'ab 250–900 €', 'wenn ich die Texte für dich schreibe, statt deine Texte zu strukturieren.'),
+          addOnPricePoint('tracking-einrichtung', 'Tracking-Einrichtung', 'ab 150–400 €', 'wenn du Anfragen und Klicks datenschutzbewusst auswerten möchtest.'),
+          'Laufende Kosten: Hosting ab 5 € im Monat, falls die Seite nicht auf deiner bestehenden Website läuft.'
         ]
       },
       {
         id: 'process',
         eyebrow: 'Ablauf',
-        heading: 'So läuft ein Landingpage-Projekt ab',
-        body: 'Der Ablauf beginnt mit Anfrage, Zielklärung, Zielgruppe und Angebot. Danach werden Struktur, Anfrageführung, Inhalte, Bildmaterial und Preisrahmen abgestimmt. Anschließend folgen Design, Umsetzung, Feedback, technische Prüfung, Freigabe, Livegang und optional die datenschutzbewusste Messung.',
+        heading: 'In 1–2 Wochen online: so läuft es ab',
+        body: 'Wie schnell die Seite online ist, hängt vor allem davon ab, wann Texte, Bilder und Rückmeldungen da sind. Liegen die Inhalte vor, ist eine Landingpage meist in 1–2 Wochen live.',
         points: [
-          'Ziel, Zielgruppe, Angebot und gewünschte Handlung klären',
-          'Struktur, Texte, Bilder, Formular, Trackingwunsch und Zusatzleistungen abgrenzen',
-          'Umsetzung prüfen, Feedback einarbeiten, Freigabe einholen und danach live stellen'
+          'Kurzes Gespräch: Angebot, Zielgruppe und gewünschte Anfrage klären',
+          'Inhalte sammeln: deine Texte und Bilder, auf Wunsch schreibe ich die Texte',
+          'Entwurf und Umsetzung: Aufbau, Design und Technik aus einer Hand',
+          'Feedback einarbeiten, gemeinsam prüfen und live stellen'
+        ]
+      },
+      {
+        id: 'landingpageVsWebsite',
+        eyebrow: 'Abgrenzung',
+        heading: 'Landingpage oder komplette Website?',
+        body: 'Eine Landingpage konzentriert sich auf ein Angebot und eine Handlung. Eine Website stellt dein Unternehmen mit allen Leistungen, Referenzen und Kontaktwegen dauerhaft vor. Fehlt dir noch ein Gesamtauftritt, ist ein Website-Paket oft die bessere erste Investition.',
+        points: [
+          'Landingpage: ein Fokus, wenig Ablenkung, ideal für Anzeigen und Aktionen',
+          'Website: mehrere Leistungen, Unternehmensinfos und langfristige Sichtbarkeit bei Google',
+          'beides kombinierbar: eine Website mit zusätzlicher Landingpage für eine Kampagne'
+        ]
+      },
+      {
+        id: 'adsAndSeo',
+        eyebrow: 'Google Ads & SEO',
+        heading: 'Für Anzeigen und für die Google-Suche geeignet',
+        body: 'Für Google Ads oder Social Ads baue ich die Seite so, dass sie genau zur Anzeige passt und schnell lädt. Relevanz und Ladezeit fließen bei Google Ads in die Qualitätsbewertung ein. Soll die Seite auch ohne Anzeigen bei Google gefunden werden, plane ich Inhalte, Überschriften und interne Links für die passende Suchanfrage.',
+        points: [
+          'Anzeige, Überschrift und Angebot passen zusammen, damit Besucher nicht abspringen',
+          'Tracking kann optional eingerichtet werden, datenschutzbewusst und erst nach Zustimmung der Besucher',
+          'keine Garantie für Leads, Verkäufe oder Umsatz, aber eine saubere Grundlage, die du messen kannst'
+        ]
+      },
+      {
+        id: 'whyMe',
+        eyebrow: 'Persönlich',
+        heading: 'Warum mit mir?',
+        body: 'Ich bin Sören, Webdesigner aus Berlin-Lichtenberg. Du sprichst vom ersten Gespräch bis zum Livegang mit mir, nicht mit wechselnden Ansprechpartnern. Jede Seite setze ich individuell um, ohne Baukasten und ohne Template-Look.',
+        points: [
+          'direkter Draht per Telefon, WhatsApp oder E-Mail',
+          'echte Projekte aus Berlin, zum Beispiel für TM Sauber & Mehr und das Café Zur alten Backstube',
+          'schnelle, technisch saubere Seiten, so wie diese Website selbst'
+        ]
+      },
+      {
+        id: 'notIncluded',
+        eyebrow: 'Transparenz',
+        heading: 'Was nicht automatisch enthalten ist',
+        body: 'Damit Aufwand und Kosten klar bleiben, besprechen wir diese Punkte vorab und kalkulieren sie bei Bedarf separat.',
+        points: [
+          'Anzeigenschaltung, Budgetverwaltung und laufende Kampagnenbetreuung',
+          'professionelle Fotos, Bildlizenzen und Übersetzungen',
+          'Buchungs- oder Zahlungssysteme, CRM-Anbindungen und Kosten externer Tools',
+          'Rechtstexte: Impressum und Datenschutzerklärung binde ich ein, ihre Erstellung ist keine Rechtsberatung'
         ]
       }
     ],
     cta: {
       label: 'Landingpage anfragen',
       href: '/kontakt?projektart=landingpage',
-      text: 'Beschreibe kurz Angebot, Zielgruppe, gewünschte Zielhandlung und ob bereits Texte oder Bilder vorhanden sind. Danach klären wir Umfang, Preisrahmen und sinnvolle technische Umsetzung.'
+      text: 'Beschreibe kurz dein Angebot, deine Zielgruppe und was Besucher tun sollen. Du bekommst eine Einschätzung zu Umfang, Preis und Zeitplan.'
     },
     secondaryCta: {
-      label: 'Zusatzleistungen ansehen',
-      href: '/leistungen/zusatzleistungen-webdesign'
+      label: 'Preise ansehen',
+      href: '#pricing'
     },
     finalCta: {
       label: 'Landingpage-Projekt besprechen',
       href: '/kontakt?projektart=landingpage',
-      text: 'Wenn du ein einzelnes Angebot gezielter erklären möchtest, planen wir eine Landingpage mit klarer Struktur, realistischer Abgrenzung und optionaler Messung.',
+      text: 'Schreib mir kurz, worum es geht. Ich melde mich mit einer ehrlichen Einschätzung, ob eine Landingpage oder eine Website für dich sinnvoller ist.',
       secondaryLabel: 'Pakete ansehen',
       secondaryHref: '/pakete'
     },
     faq: [
       {
-        question: 'Was ist eine Landingpage?',
-        answer: 'Eine Landingpage ist eine fokussierte Zielseite für ein bestimmtes Angebot, eine Kampagne oder eine konkrete Suchintention. Sie führt Besucher mit weniger Ablenkung zu einer klaren nächsten Handlung.'
-      },
-      {
-        question: 'Wann lohnt sich eine Landingpage?',
-        answer: 'Sie lohnt sich, wenn ein einzelnes Angebot, eine lokale Aktion, ein Beratungsgespräch oder eine Anfragekampagne gezielt erklärt werden soll. Wenn ein vollständiger Unternehmensauftritt fehlt, ist oft eine Website sinnvoller.'
-      },
-      {
         question: 'Was kostet eine Landingpage?',
-        answer: 'Eine Landingpage liegt als Orientierung häufig bei 699–1.499 €. Der genaue Preis hängt von Design, Textumfang, Formularen, Bildern, Tracking, SEO-Ausrichtung und Sonderfunktionen ab. Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.'
+        answer: 'Eine Landingpage kostet bei mir ab 799 €, je nach Umfang bis etwa 1.499 €. Den Preis bestimmen vor allem Textumfang, Anzahl der Abschnitte, Formular und Bildmaterial. Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.'
       },
       {
-        question: 'Ist eine Landingpage eine vollständige Website?',
-        answer: 'Nein. Eine Landingpage konzentriert sich auf ein Ziel. Eine vollständige Website bildet mehrere Leistungen, Unternehmen, Referenzen, Kontakt, FAQ und langfristige Struktur umfassender ab.'
+        question: 'Wie schnell ist meine Landingpage online?',
+        answer: 'Meist in 1–2 Wochen, sobald Texte und Bilder vorliegen. Schreibe ich die Texte für dich oder sind mehrere Feedbackrunden nötig, plane ich etwas mehr Zeit ein.'
       },
       {
-        question: 'Kann eine Landingpage SEO bringen?',
-        answer: 'Eine Landingpage kann SEO-orientiert geplant werden, wenn Suchintention, Inhalte und interne Verlinkung passen. Bestimmte Suchpositionen werden nicht zugesagt.'
+        question: 'Was brauche ich für den Start?',
+        answer: 'Eine kurze Beschreibung deines Angebots, deiner Zielgruppe und der gewünschten Handlung, zum Beispiel Anruf oder Anfrage. Dazu Logo, vorhandene Texte und Bilder. Fehlt etwas davon, finden wir gemeinsam eine Lösung.'
       },
       {
-        question: 'Gibt es eine Garantie für Anfragen oder Verkäufe?',
-        answer: 'Nein. Ich kann Struktur, Technik, Texte und Anfrageführung verbessern. Ergebnisse hängen aber von Angebot, Zielgruppe, Traffic, Wettbewerb und weiteren Faktoren ab.'
+        question: 'Eignet sich die Landingpage für Google Ads?',
+        answer: 'Ja. Ich baue sie passend zu deiner Anzeige und achte auf kurze Ladezeiten. Die Anzeigenschaltung selbst, das Budget und die Kampagnenbetreuung sind nicht enthalten.'
       },
       {
-        question: 'Sind Texte enthalten?',
-        answer: 'Gelieferte Texte können eingebunden, gekürzt und strukturiert werden. Umfangreiche Texterstellung oder verkaufsorientierte Ausarbeitung wird separat kalkuliert.'
+        question: 'Kann eine Landingpage bei Google gefunden werden?',
+        answer: 'Ja, wenn sie für eine konkrete Suchanfrage geplant wird: mit passenden Inhalten, Überschriften, Seitentitel und internen Links. Bestimmte Positionen kann niemand seriös zusagen.'
       },
       {
-        question: 'Kann Tracking eingebaut werden?',
-        answer: 'Ja, wenn es gewünscht ist und Toolauswahl, Consent und Datenschutz-Hinweis geklärt sind. Freitexte oder personenbezogene Inhalte werden nicht als Trackingdaten verwendet.'
+        question: 'Landingpage oder Website: was brauche ich?',
+        answer: 'Für ein einzelnes Angebot oder eine Kampagne reicht eine Landingpage. Ist dein Unternehmen online noch gar nicht oder nur veraltet vertreten, lohnt sich meist zuerst eine Website, etwa das Start-Paket.'
       },
       {
-        question: 'Ist ein Kontaktformular enthalten?',
-        answer: 'Ein einfaches Anfrageformular kann je nach Umfang eingeplant werden. Komplexe Formularlogik, Buchungssysteme, Zahlungen oder CRM-Anbindungen werden separat geprüft.'
+        question: 'Sind die Texte enthalten?',
+        answer: 'Gelieferte Texte bringe ich in eine klare Struktur und kürze sie bei Bedarf. Soll ich die Texte komplett schreiben, kostet das je nach Umfang ab 250 €.'
       },
       {
-        question: 'Kann eine Landingpage für Google Ads genutzt werden?',
-        answer: 'Ja, sie kann für Ads-Traffic vorbereitet werden. Die Ads-Kampagne selbst, Anzeigensteuerung, Budgetverwaltung und Kampagnenerfolg sind nicht automatisch Teil der Leistung.'
+        question: 'Kann ich die Inhalte später selbst ändern?',
+        answer: 'Kleine Änderungen übernehme ich gern für dich. Auf Wunsch richte ich eine einfache Bearbeitung ein, mit der du Texte selbst anpasst.'
       },
       {
-        question: 'Sind Ads-Kampagnen enthalten?',
-        answer: 'Nein. Die Landingpage kann eine Kampagne unterstützen, aber Google Ads, Social Ads oder laufende Kampagnenbetreuung werden nicht pauschal angeboten.'
+        question: 'Gibt es eine Garantie für Anfragen?',
+        answer: 'Nein, das kann niemand seriös versprechen. Ich sorge für eine klare Seite, die schnell lädt und den Kontakt leicht macht. Wie viele Anfragen kommen, hängt auch von Angebot, Preis und Werbung ab.'
       },
       {
-        question: 'Kann ich mehrere Landingpages erstellen lassen?',
-        answer: 'Ja. Mehrere Landingpages sollten aber strategisch geplant werden, damit Inhalte nicht doppelt wirken und jede Seite eine klare Suchintention oder Kampagnenrolle hat.'
-      },
-      {
-        question: 'Wird die Landingpage mit Node.js/EJS umgesetzt?',
-        answer: 'Ja. Die Umsetzung erfolgt individuell mit Node.js, EJS, CSS und JavaScript. Hauptinhalte werden serverseitig als HTML gerendert.'
-      },
-      {
-        question: 'Kann die Landingpage später erweitert werden?',
-        answer: 'Ja. Sie kann später um weitere Abschnitte, lokale Leistungsseiten, Tracking, Formulare oder eine vollständige Website-Struktur erweitert werden, wenn der Umfang passt.'
-      },
-      {
-        question: 'Sind Rechtstexte enthalten?',
-        answer: 'Impressum, Datenschutzerklärung und Cookie-Hinweise können technisch eingebunden werden, wenn sie geliefert werden. Die Erstellung oder rechtliche Prüfung dieser Texte ist keine Rechtsberatung.'
-      },
-      {
-        question: 'Wie frage ich eine Landingpage an?',
-        answer: 'Am besten beschreibst du kurz Angebot, Zielgruppe, gewünschte Handlung, vorhandene Inhalte und ob Tracking oder ein Formular benötigt wird. Danach lässt sich der Aufwand besser einschätzen.'
+        question: 'Arbeitest du nur in Berlin?',
+        answer: 'Ich sitze in Berlin-Lichtenberg und arbeite vor allem für Unternehmen aus Berlin und Brandenburg. Gespräche sind persönlich in Berlin oder online per Video möglich.'
       }
     ],
     internalLinks: [
-      { label: 'Kontakt', href: '/kontakt?projektart=landingpage', text: 'Landingpage-Aufwand einschätzen lassen' },
-      { label: 'Zusatzleistungen', href: '/leistungen/zusatzleistungen-webdesign', text: 'Landingpages, Tracking, Texte und weitere Add-ons einordnen' },
-      { label: 'Pakete', href: '/pakete', text: 'Website-Pakete mit Landingpage-Zusatzleistung vergleichen' },
+      { label: 'Kontakt', href: '/kontakt?projektart=landingpage', text: 'Landingpage anfragen und Aufwand einschätzen lassen' },
+      { label: 'Referenzen', href: '/referenzen', text: 'Echte Projekte aus Berlin ansehen' },
+      { label: 'Pakete', href: '/pakete', text: 'Website-Pakete vergleichen, wenn mehr als eine Seite nötig ist' },
+      { label: 'Zusatzleistungen', href: '/leistungen/zusatzleistungen-webdesign', text: 'Texte, Tracking und weitere Zusatzleistungen einordnen' },
       { label: 'Webdesign Berlin', href: '/', text: 'Komplette Website statt einzelner Zielseite prüfen' },
-      { label: 'Website-Audit', href: '/leistungen/website-audit', text: 'Bestehende Website vor einer Landingpage prüfen' },
-      { label: 'Website-Tester', href: '/website-tester', text: 'Bestehende Website vor einer Zielseite prüfen' },
-      { label: 'Local SEO Berlin', href: '/leistungen/local-seo', text: 'Lokale Landingpages und Suchintentionen besser einordnen' },
+      { label: 'Website-Audit', href: '/leistungen/website-audit', text: 'Bestehende Website vor einer Landingpage prüfen lassen' },
+      { label: 'Website-Tester', href: '/website-tester', text: 'Eigene Website kostenlos selbst testen' },
+      { label: 'Local SEO Berlin', href: '/leistungen/local-seo', text: 'Lokale Landingpages für Suchanfragen in Berlin planen' },
       { label: 'Website-Relaunch Berlin', href: '/leistungen/website-relaunch', text: 'Landingpage mit einem größeren Relaunch verbinden' }
-    ],
-    todos: [
-      'Nach Phase-Finish prüfen, ob Startseite, Zusatzleistungen und Paketdetailseiten prominent auf /leistungen/landingpage-erstellen-lassen verlinken sollen.'
     ]
   },
   {

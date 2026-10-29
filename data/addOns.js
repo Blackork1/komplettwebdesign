@@ -135,7 +135,7 @@ export const addOns = Object.freeze([
     id: 'landingpage',
     name: 'Landingpage',
     category: 'Kampagnen',
-    priceLabel: 'ab 699–1.499 €',
+    priceLabel: 'ab 799–1.499 €',
     shortDescription: 'Eigene Zielseite für ein Angebot, eine Kampagne oder eine lokale Suchintention.',
     whenUseful: 'Sinnvoll für klare Angebote, Aktionen oder bezahlte Kampagnen.'
   }),

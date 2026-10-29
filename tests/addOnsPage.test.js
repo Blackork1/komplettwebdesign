@@ -70,7 +70,7 @@ test('add-ons page uses central add-on data with prompt 8b price ranges and boun
   assert.ok(addOnsPage, 'missing addOnsPage data module');
   assert.deepEqual(addOnsPage.addOns.map((item) => item.id), addOns.map((item) => item.id));
   assert.ok(addOnsPage.addOns.every((item) => item.notIncludedInPackages === true));
-  assert.equal(addOns.find((item) => item.id === 'landingpage')?.priceLabel, 'ab 699–1.499 €');
+  assert.equal(addOns.find((item) => item.id === 'landingpage')?.priceLabel, 'ab 799–1.499 €');
 
   assert.deepEqual(
     addOnsPage.addOns

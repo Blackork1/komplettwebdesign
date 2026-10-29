@@ -34,12 +34,12 @@ const HERO_PANELS = Object.freeze({
     ]
   },
   'landingpage-erstellen-lassen': {
-    title: 'Was du realistisch bekommst',
-    text: 'Eine Landingpage wird als fokussierte Seite geplant. Ich kläre, welches Ziel, welche Inhalte und welche Anfragewege für deinen Umfang sinnvoll sind.',
+    title: 'Das bekommst du',
+    text: 'Eine individuelle Landingpage mit einem klaren Ziel, persönlich geplant und umgesetzt von mir.',
     items: [
-      { icon: 'fa-bullseye', text: 'Ziel, Angebot und Anfrageweg aufeinander abstimmen.' },
-      { icon: 'fa-layer-group', text: 'Inhalte auf eine klare Entscheidung ausrichten.' },
-      { icon: 'fa-scale-balanced', text: 'Tracking, Rechtliches und Betrieb separat abgrenzen.' }
+      { icon: 'fa-palette', text: 'Individuelles Design statt Vorlage, für Handy und Desktop.' },
+      { icon: 'fa-clock', text: 'Ab 799 €, meist in 1–2 Wochen online.' },
+      { icon: 'fa-envelope-open-text', text: 'Formular, Anruf- oder WhatsApp-Button für schnelle Anfragen.' }
     ]
   },
   ablauf: {
@@ -83,7 +83,7 @@ function buildBreadcrumbs(page, baseUrl) {
   }
 
   items.push({
-    label: page.h1,
+    label: page.breadcrumbLabel || page.h1,
     href: page.path,
     current: true
   });
@@ -126,7 +126,20 @@ function buildStructuredData(page, baseUrl, canonicalUrl) {
         '@type': 'AdministrativeArea',
         name
       })),
-      description: page.description
+      description: page.description,
+      ...(page.service.offer ? {
+        offers: {
+          '@type': 'Offer',
+          url: canonicalUrl,
+          priceCurrency: 'EUR',
+          priceSpecification: {
+            '@type': 'PriceSpecification',
+            priceCurrency: 'EUR',
+            minPrice: page.service.offer.minPrice,
+            maxPrice: page.service.offer.maxPrice
+          }
+        }
+      } : {})
     } : null,
     {
       '@context': 'https://schema.org',

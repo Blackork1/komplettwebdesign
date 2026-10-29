@@ -307,39 +307,28 @@ test('landingpage phase 10c contains required sections, cautious pricing and saf
 
   assert.ok(page);
   assert.equal(page.path, '/leistungen/landingpage-erstellen-lassen');
-  assert.equal(page.title, 'Landingpage erstellen lassen | Individuell & klar');
+  // Oktober 2026: Titel und Beschreibung nennen Preis, Dauer und Berlin (Position ~95, 0 Klicks)
+  assert.equal(page.title, 'Landingpage erstellen lassen ab 799 € | Berlin, 1–2 Wochen');
+  assert.ok(page.title.length <= 60);
   assert.equal(
     page.description,
-    'Individuelle Landingpage erstellen lassen: klare Struktur, überzeugende Inhalte, CTA-Führung und technische Umsetzung mit Node.js/EJS.'
+    'Landingpage erstellen lassen vom Webdesigner aus Berlin: individuelles Design, klare Anfrageführung, schnelle Ladezeit. Ab 799 €, in 1–2 Wochen online.'
   );
-  assert.equal(page.h1, 'Landingpage erstellen lassen');
+  assert.ok(page.description.length <= 160);
+  assert.match(page.h1, /^Landingpage erstellen lassen/);
   assert.deepEqual(
     page.sections.map((section) => section.id),
-    [
-      'intro',
-      'useCases',
-      'landingpageVsWebsite',
-      'targetGroups',
-      'structure',
-      'copyStructure',
-      'conversionElements',
-      'formsAndCtas',
-      'techImplementation',
-      'tracking',
-      'seo',
-      'pricing',
-      'packageConnection',
-      'notIncluded',
-      'process'
-    ]
+    ['useCases', 'included', 'structure', 'pricing', 'process', 'landingpageVsWebsite', 'adsAndSeo', 'whyMe', 'notIncluded']
   );
+  assert.deepEqual(page.service.offer, { minPrice: 799, maxPrice: 1499 });
+  assert.doesNotMatch(JSON.stringify(page), /Node\.js|EJS/);
 
   const pageText = JSON.stringify(page);
   [
-    'Landingpage ab 699–1.499 €',
+    'Landingpage ab 799–1.499 €',
     'Alle Preise verstehen sich gemäß § 19 UStG ohne Ausweis der Umsatzsteuer.',
     'Tracking kann optional',
-    'Ob und wie gut sie konvertiert, hängt von Angebot, Zielgruppe, Traffic und weiteren Faktoren ab'
+    'meist in 1–2 Wochen'
   ].forEach((snippet) => assert.match(pageText, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))));
 
   [
