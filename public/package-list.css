@@ -947,8 +947,12 @@
     grid-template-columns: 1fr;
   }
 
+  /* Einspaltig: Safari rechnet height:100% sonst von der ganzen Karte
+     und legt das Bild unter den Text. Feste Seitenverhältnis-Höhe statt 100 %. */
   .packages-page .packages-finder-card > img {
-    min-height: 210px;
+    aspect-ratio: 3 / 2;
+    height: auto;
+    min-height: 0;
   }
 }
 
