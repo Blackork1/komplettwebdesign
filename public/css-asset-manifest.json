@@ -221,9 +221,9 @@
     "package-detail.css": {
       "source": "package-detail.css",
       "output": "package-detail.min.css",
-      "href": "/package-detail.min.css?v=af9ba0163a38",
-      "hash": "af9ba0163a38",
-      "bytes": 30318
+      "href": "/package-detail.min.css?v=d8ea41712bc3",
+      "hash": "d8ea41712bc3",
+      "bytes": 30490
     },
     "package-list.css": {
       "source": "package-list.css",

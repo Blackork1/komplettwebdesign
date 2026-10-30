@@ -217,6 +217,52 @@ const structuredDataBlocks = (typeof jsonLd !== 'undefined' && Array.isArray(jso
       </div>
     </section>
 
+    <% const intent = typeof searchIntent !== 'undefined' && searchIntent ? searchIntent : null; %>
+    <% if (intent) { %>
+    <%# Zusatzinhalte zur Suchanfrage des Pakets (data/packageSearchIntent.js) %>
+    <section class="package-detail-sections package-intent" id="<%= intent.id %>" aria-labelledby="package-intent-title">
+      <div class="container">
+        <h2 id="package-intent-title"><%= intent.title %></h2>
+        <% intent.paragraphs.forEach((paragraph) => { %>
+        <p class="scope-lead"><%= paragraph %></p>
+        <% }) %>
+        <div class="detail-grid">
+          <% intent.items.forEach((item) => { %>
+          <article class="detail-card">
+            <h3><%= item.title %></h3>
+            <div class="detail-text"><%= item.text %></div>
+          </article>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+    <% if (intent.compare) { %>
+    <section class="package-scope-boundaries package-intent-compare" aria-labelledby="package-intent-compare-title">
+      <div class="container">
+        <h2 id="package-intent-compare-title"><%= intent.compare.title %></h2>
+        <p class="scope-lead"><%= intent.compare.intro %></p>
+        <div class="scope-grid">
+          <% intent.compare.columns.forEach((column) => { %>
+          <article class="scope-card scope-card--<%= column.highlight ? 'included' : 'neutral' %>">
+            <h3><%= column.title %></h3>
+            <ul>
+              <% column.points.forEach((point) => { %>
+              <li><%= point %></li>
+              <% }) %>
+            </ul>
+          </article>
+          <% }) %>
+        </div>
+        <% if (Array.isArray(intent.links) && intent.links.length) { %>
+        <p class="scope-lead package-intent-links">
+          <% intent.links.forEach((link, index) => { %><%= index > 0 ? ' · ' : '' %><a href="<%= link.href %>"><%= link.label %></a><% }) %>
+        </p>
+        <% } %>
+      </div>
+    </section>
+    <% } %>
+    <% } %>
+
     <section class="package-overview">
       <div class="container overview-grid">
         <div class="overview-intro">

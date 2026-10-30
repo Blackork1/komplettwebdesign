@@ -11,6 +11,7 @@ import { renderBrandEmail } from '../services/emailTemplateService.js';
 import { logNewRequest, logOutgoingMail, ownerNotificationExtras, customerMessageId } from '../services/mailInbox/requestLog.js';
 import pricingService from '../services/pricingService.js';
 import { buildPackageSchemas } from '../util/seoSchemas.js';
+import { getPackageSearchIntent, mergePackageFaqs } from '../data/packageSearchIntent.js';
 
 
 
@@ -100,8 +101,8 @@ function buildPackagesListMeta({ isEn, lowestPriceLabel }) {
       keywords: 'website pricing berlin, web design packages berlin, website costs berlin, small business website berlin, komplett webdesign'
     }
     : {
-      title: `Webdesign-Preise Berlin: Website-Pakete${deLowest}`,
-      description: `Vergleiche Website-Pakete${deLowest} für kleine Unternehmen in Berlin: klare Umfänge, SEO-Grundlagen und laufende Kosten getrennt erklärt.`,
+      title: `Webdesign-Pakete & Preise Berlin: Websites${deLowest}`,
+      description: `Webdesign-Pakete für kleine Unternehmen in Berlin: Start, Business, Wachstum und Individuell mit klarem Umfang${deLowest}. Jetzt vergleichen.`,
       keywords: 'website erstellen berlin preise, webdesign pakete berlin, website paket kosten, leistungsumfang website, start business wachstum individuell, komplett webdesign'
     };
 }
@@ -156,6 +157,17 @@ async function sendPackageContactAdminCopy({ pack, name, email, locale, conversa
       ...extras.cta
     })
   });
+}
+
+// Zusatzinhalte je Paket (data/packageSearchIntent.js): eigener Abschnitt und Fragen zu den Suchanfragen.
+function applyPackageSearchIntent(pack, isEn) {
+  const searchIntent = getPackageSearchIntent(pack?.slug, { priceLabel: pack?.priceLabel, isEn });
+  if (searchIntent?.faqs?.length) pack.faqs = mergePackageFaqs(searchIntent.faqs, pack.faqs);
+  return searchIntent;
+}
+
+function intentSchemaFaqs(searchIntent) {
+  return (searchIntent?.faqs || []).map((faq) => ({ q: faq.question, a: faq.answer }));
 }
 
 function normalizeFaqsForSchema(faqs = []) {
@@ -345,6 +357,7 @@ export async function showPackage(req, res) {
       pricingService.getGlobalPricingNotes('package_detail_addons_config').catch(() => [])
     ]);
     if (!pack) return res.status(404).send(isEn ? 'Package not found' : 'Paket nicht gefunden');
+    const searchIntent = applyPackageSearchIntent(pack, isEn);
 
     try {
       slots = await getNextOpenSlots(3);
@@ -357,7 +370,7 @@ export async function showPackage(req, res) {
       const schemaFaqs = await pricingService.getPackageFaqs(pack.id, { detailOnly: true, schemaOnly: true });
       const baseUrl = resolveBaseUrl(req, res.locals.canonicalBaseUrl);
       const url = `${baseUrl}${isEn ? '/en' : ''}${pack.canonicalPath || `/pakete/${slug}`}`;
-      pack.visibleFaqs = normalizeFaqsForSchema(schemaFaqs);
+      pack.visibleFaqs = [...intentSchemaFaqs(searchIntent), ...normalizeFaqsForSchema(schemaFaqs)];
       jsonLd = buildPackageSchemas({ pack, url, baseUrl, lng });
     } catch (err) {
       console.error('❌ showPackage (schema):', err?.message || err);
@@ -391,6 +404,7 @@ export async function showPackage(req, res) {
       lng,
       isEn,
       jsonLd,
+      searchIntent,
       successMessage: null
     });
   } catch (err) {
@@ -554,7 +568,8 @@ export async function handleContact(req, res) {
       }),
       pricingService.getGlobalPricingNotes('package_detail_addons_config').catch(() => [])
     ]);
-    pack.visibleFaqs = normalizeFaqsForSchema(schemaFaqs);
+    const searchIntent = applyPackageSearchIntent(pack, isEn);
+    pack.visibleFaqs = [...intentSchemaFaqs(searchIntent), ...normalizeFaqsForSchema(schemaFaqs)];
     const detailMeta = buildPackageDetailMeta({ pack, isEn });
     const baseUrl = resolveBaseUrl(req, res.locals.canonicalBaseUrl);
     const packageCanonicalPath = pack.canonicalPath || `/pakete/${slug}`;
@@ -589,6 +604,7 @@ export async function handleContact(req, res) {
         baseUrl,
         lng
       }),
+      searchIntent,
       successMessage: isEn
         ? 'Thank you! We received your request and will get back to you soon.'
         : 'Vielen Dank! Ich habe deine Anfrage erhalten und melde mich bald.'

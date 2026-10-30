@@ -52,10 +52,44 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     state: 'active',
     priority: 'A',
     primaryQuery: 'webdesign preise berlin',
-    contentRole: 'Preis- und Paketauswahl',
+    contentRole: 'Preis- und Paketauswahl, Webdesign-Pakete im Vergleich',
     requiredLinks: ['/', '/leistungen/laufende-kosten-website'],
     primaryAction: { label: 'Passendes Paket anfragen', href: '/kontakt' },
     supportingAction: { label: 'Leistungen einordnen', href: '/leistungen' }
+  }),
+  // Paket-Detailseiten mit eigener Suchabsicht laut Search Console (30.10.2026), Inhalte in data/packageSearchIntent.js.
+  freezeTarget({
+    path: '/pakete/start',
+    intentId: 'website-starter-paket',
+    state: 'active',
+    priority: 'B',
+    primaryQuery: 'website starter paket',
+    contentRole: 'Starter-Paket: Onepager oder kleine Website mit bis zu drei Seiten',
+    requiredLinks: ['/pakete', '/pakete/business', '/leistungen/landingpage-erstellen-lassen'],
+    primaryAction: { label: 'Start-Paket anfragen', href: '/kontakt?paket=start' },
+    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
+  }),
+  freezeTarget({
+    path: '/pakete/business',
+    intentId: 'business-website',
+    state: 'active',
+    priority: 'B',
+    primaryQuery: 'business website erstellen lassen',
+    contentRole: 'Business-Website als Unternehmenswebsite für kleine Unternehmen mit vier bis sieben Seiten',
+    requiredLinks: ['/pakete', '/pakete/wachstum'],
+    primaryAction: { label: 'Business-Website planen', href: '/kontakt?paket=business' },
+    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
+  }),
+  freezeTarget({
+    path: '/pakete/wachstum',
+    intentId: 'premium-website-relaunch',
+    state: 'active',
+    priority: 'B',
+    primaryQuery: 'premium webdesign',
+    contentRole: 'Premium-Website mit acht bis zwölf Seiten, Relaunch oder Ausbau',
+    requiredLinks: ['/pakete', '/leistungen/website-relaunch'],
+    primaryAction: { label: 'Wachstum-Paket anfragen', href: '/kontakt?paket=wachstum' },
+    supportingAction: { label: 'Pakete vergleichen', href: '/pakete' }
   }),
   freezeTarget({
     path: '/webdesign-berlin/kosten-preise-pakete',

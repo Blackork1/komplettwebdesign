@@ -19,7 +19,7 @@ test('jede aktive Seite in der Registry besetzt eine eigene Hauptsuchanfrage', (
 test('„Webdesign Preise Berlin“ gehört zu /pakete, die Kostenseite erklärt Kosten', async () => {
   const packages = await read('controllers/packagesController.js');
   const services = await read('controllers/leistungenController.js');
-  assert.match(packages, /title: `Webdesign-Preise Berlin: Website-Pakete\$\{deLowest\}`/);
+  assert.match(packages, /title: `Webdesign-Pakete & Preise Berlin: Websites\$\{deLowest\}`/);
   const costBlock = services.slice(services.indexOf("'kosten-preise-pakete': {"));
   for (const field of ['metaTitle', 'metaDescription', 'h1']) {
     const value = costBlock.match(new RegExp(`${field}: '([^']+)'`))?.[1];
