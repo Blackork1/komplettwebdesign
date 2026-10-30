@@ -19,14 +19,15 @@ const runnerSource = readFileSync(
 const BUSINESS_DESCRIPTION = 'Business-Website für kleine Unternehmen in Berlin: mehrere Leistungsseiten, klare Angebotsstruktur, technische SEO-Grundlagen und persönlicher Projektablauf.';
 const INDIVIDUAL_DESCRIPTION = 'Individuelles Webdesign für Sonderfunktionen, CMS, Buchung, Mehrsprachigkeit oder größere Anforderungen. Umfang und Preis werden vorab transparent geplant.';
 
-test('Migration 016 aktualisiert idempotent nur die zwei verbindlichen Paket-Meta-Descriptions', () => {
+test('Migration 016 setzt nur fehlende Paket-Meta-Descriptions und überschreibt keine Admin-Änderung', () => {
   assert.equal(existsSync(migrationUrl), true, 'Die Paket-Meta-Migration fehlt.');
   assert.match(migrationSql, /UPDATE pricing_packages/i);
   assert.match(migrationSql, /SET\s+meta_description\s*=/i);
   assert.match(migrationSql, /package_key\s+IN\s*\(\s*'business'\s*,\s*'individuell'\s*\)/i);
   assert.match(migrationSql, new RegExp(BUSINESS_DESCRIPTION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.match(migrationSql, new RegExp(INDIVIDUAL_DESCRIPTION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  assert.match(migrationSql, /IS DISTINCT FROM/i);
+  assert.doesNotMatch(migrationSql, /IS DISTINCT FROM/i);
+  assert.match(migrationSql, /meta_description IS NULL OR btrim\(meta_description\) = ''/i);
   assert.doesNotMatch(migrationSql, /\b(?:price_amount_cents|price_currency|price_prefix|price_suffix|price_label_override|meta_title|slug|canonical_path|name|display_name|short_description|long_description)\b\s*=/i);
 });
 
@@ -47,4 +48,18 @@ test('der öffentliche Paket-Mapper reicht die migrierten DB-Meta-Descriptions u
   });
 
   assert.equal(mapped.metaDescription, BUSINESS_DESCRIPTION);
+});
+
+test('der Paket-Mapper gleicht Preise an und behält den Großbuchstaben am Satzanfang', () => {
+  const mapped = mapPublicPackage({
+    package_key: 'start',
+    meta_description: 'Kleine Website, individuell gestaltet. Ab 799 €. Preis ab 799 € netto.',
+    h1: 'Start-Paket ab 799 €',
+    price_amount_cents: 79900,
+    price_currency: 'EUR',
+    price_prefix: 'ab',
+    price_type: 'from'
+  });
+  assert.equal(mapped.metaDescription, 'Kleine Website, individuell gestaltet. Ab 799 €. Preis ab 799 € netto.');
+  assert.equal(mapped.h1, 'Start-Paket ab 799 €');
 });

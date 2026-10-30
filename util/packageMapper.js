@@ -16,7 +16,8 @@ function syncPackagePriceText(text, packageKey, priceLabel) {
 
   let output = text.replace(/\{\{\s*(?:priceLabel|package\.priceLabel)\s*\}\}/gi, priceLabel);
   for (const pattern of packagePriceTextPatterns[packageKey] || []) {
-    output = output.replace(pattern, priceLabel);
+    // „Ab 799 €.“ am Satzanfang bleibt großgeschrieben.
+    output = output.replace(pattern, (match) => (/^A/.test(match) ? priceLabel.charAt(0).toUpperCase() + priceLabel.slice(1) : priceLabel));
   }
   return output;
 }
