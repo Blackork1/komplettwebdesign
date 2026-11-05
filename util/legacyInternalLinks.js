@@ -35,8 +35,23 @@ export function resolveLegacyInternalLink(path) {
   return LINK_TARGETS.get(key) || null;
 }
 
+// Kampagnen-Parameter haben in Artikellinks nichts zu suchen. KI-Assistenten hängen z. B.
+// „?utm_source=openai“ an Quellen an; beim Ausliefern fallen solche Parameter weg.
+const TRACKING_PARAM = /^(?:utm_[a-z_]+|gclid|fbclid|msclkid)$/i;
+const HREF_WITH_QUERY = /(\bhref\s*=\s*)(["'])([^"'?#\s]*)\?([^"'#\s]*)(#[^"'\s]*)?\2/gi;
+
+export function stripTrackingParams(html) {
+  return String(html ?? '').replace(HREF_WITH_QUERY, (match, prefix, quote, base, query, hash = '') => {
+    const separator = query.includes('&amp;') ? '&amp;' : '&';
+    const params = query.split(/&amp;|&/).filter(Boolean);
+    const kept = params.filter((param) => !TRACKING_PARAM.test(param.split('=')[0]));
+    if (kept.length === params.length) return match;
+    return `${prefix}${quote}${base}${kept.length ? `?${kept.join(separator)}` : ''}${hash}${quote}`;
+  });
+}
+
 export function rewriteLegacyInternalLinks(html) {
-  const source = String(html ?? '');
+  const source = stripTrackingParams(html);
   if (!source) return source;
   return source.replace(HREF_PATTERN, (match, prefix, quote, path, query = '', hash = '') => {
     const target = resolveLegacyInternalLink(path);

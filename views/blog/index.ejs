@@ -8,6 +8,9 @@
 <%
 const renderedPosts = Array.isArray(posts) ? posts : [];
 const renderedTotalPosts = Number.isFinite(Number(totalPosts)) ? Number(totalPosts) : renderedPosts.length;
+// Monat der jüngsten Aktualisierung statt einer Werbezahl wie „100 % praxisnah“.
+const latestUpdate = renderedPosts.map(item => new Date(item.updated_at || item.created_at)).filter(date => !Number.isNaN(date.getTime())).sort((a, b) => b - a)[0];
+const lastUpdateLabel = latestUpdate ? latestUpdate.toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' }) : '–';
 const renderedPageSize = Number.isFinite(Number(pageSize)) ? Number(pageSize) : 10;
 const renderedCurrentPage = Number.isFinite(Number(currentPage)) ? Number(currentPage) : 1;
 const renderedTotalPages = Number.isFinite(Number(totalPages)) ? Number(totalPages) : 1;
@@ -50,8 +53,8 @@ const hasMorePosts = renderedCurrentPage < renderedTotalPages;
             <small>Empfohlen</small>
           </article>
           <article class="rg-kpi-card">
-            <span>100%</span>
-            <small>Praxisnah</small>
+            <span><%= lastUpdateLabel %></span>
+            <small>Zuletzt aktualisiert</small>
           </article>
         </div>
       </div>

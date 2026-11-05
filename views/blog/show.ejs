@@ -41,11 +41,18 @@
         <p class="rg-detail-lead unified-hero__lead"><%= post.excerpt || post.description %></p>
         <% } %>
 
+        <% const germanDate = iso => { const [y, m, d] = String(iso).slice(0, 10).split('-'); return `${Number(d)}.${Number(m)}.${y}`; }; %>
         <div class="rg-detail-meta blog-detail-meta">
           <span>
             <%= isPreview ? 'Entwurf erstellt am' : 'Veröffentlicht am' %>
-            <time datetime="<%= new Date(post.created_at).toISOString() %>"><%= new Date(post.created_at).toLocaleDateString('de-DE') %></time>
+            <time datetime="<%= publishedISO %>"><%= germanDate(publishedISO) %></time>
           </span>
+          <% if (!isPreview && modifiedISO && modifiedISO.slice(0, 10) > publishedISO.slice(0, 10)) { %>
+          <span>
+            Aktualisiert am
+            <time datetime="<%= modifiedISO %>"><%= germanDate(modifiedISO) %></time>
+          </span>
+          <% } %>
         </div>
 
         <div class="rg-detail-actions unified-hero__actions">
@@ -69,6 +76,16 @@
       <div class="rg-article-body" <% if (isPreview) { %>id="pruefung-gesamter-artikel"<% } %>>
         <%- renderedContent %>
       </div>
+
+      <% if (!isPreview && typeof supplementalFaq !== 'undefined' && Array.isArray(supplementalFaq) && supplementalFaq.length) { %>
+      <section class="rg-article-body blog-faq" aria-labelledby="blog-faq-title">
+        <h2 id="blog-faq-title"><%= supplementalFaqTitle %></h2>
+        <% supplementalFaq.forEach((item) => { %>
+        <h3><%= item.question %></h3>
+        <p><%= item.answer %></p>
+        <% }) %>
+      </section>
+      <% } %>
 
       <% if (!isPreview && Array.isArray(contextLinks) && contextLinks.length) { %>
         <%- include('../partials/related-links', {

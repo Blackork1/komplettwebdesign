@@ -42,6 +42,15 @@ function stripHtml(html) {
   return String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+// Ältere Artikel tragen ihren Titel als eigene H1 im Text. Die Seite zeigt den Titel bereits als H1;
+// eine gleichlautende H1 im Text fällt deshalb weg, statt als doppelte H2 stehen zu bleiben.
+const headingText = (html) => stripHtml(html).replace(/&amp;/g, '&').toLowerCase();
+
+function dropTitleHeading(html, titles = []) {
+  const known = new Set(titles.filter(Boolean).map(headingText));
+  return String(html || '').replace(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i, (match, inner) => (known.has(headingText(inner)) ? '' : match));
+}
+
 function demoteContentH1(html) {
   return String(html || '')
     .replace(/<h1(\b[^>]*)>/gi, '<h2$1>')
@@ -82,11 +91,11 @@ function renderStaticContent(content, pricing) {
   return rewriteLegacyInternalLinks(sanitizeArticleHtml(renderPricingTokens(content, pricing)));
 }
 
-function renderLegacyContent(post, { modifiedISO, pricing, publishedISO }) {
+function renderLegacyContent(post, { modifiedISO, pricing, publishedISO, titles = [post.title] }) {
   const legacyLocals = buildLegacyRenderLocals({ post, modifiedISO, publishedISO });
-  return rewriteLegacyInternalLinks(stripEmbeddedStructuredData(demoteContentH1(normalizeLegacyPublicCopy(
+  return rewriteLegacyInternalLinks(stripEmbeddedStructuredData(demoteContentH1(dropTitleHeading(normalizeLegacyPublicCopy(
     renderPricingTokens(renderDbEjs(post.content, legacyLocals), pricing), pricing
-  ))));
+  ), titles))));
 }
 
 function riskAnchorsForHtml(html) {
@@ -174,6 +183,12 @@ function prepareRiskReview(html, rawRiskReview) {
   };
 }
 
+// Relative Bildpfade („/images/…“) sind im Schema ungültig und werden absolut.
+function absoluteImageUrl(url, base) {
+  const value = String(url || '');
+  return value.startsWith('/') && !value.startsWith('//') ? `${base}${value}` : value;
+}
+
 function normalizeBaseUrl(value) {
   return String(value || process.env.BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/+$/, '');
 }
@@ -209,7 +224,7 @@ export function buildBlogPostPageModel({
   if (post.content_format === 'static_html') {
     renderedContent = ensureContentImageAlt(renderStaticContent(post.content, pricing), post.title);
   } else if (!previewMode && post.content_format === 'legacy_ejs') {
-    renderedContent = ensureContentImageAlt(renderLegacyContent(post, { modifiedISO, pricing, publishedISO }), post.title);
+    renderedContent = ensureContentImageAlt(renderLegacyContent(post, { modifiedISO, pricing, publishedISO, titles: [post.title, normalizedPost.title] }), post.title);
   } else {
     throw presentationError('CONTENT_POST_NOT_FOUND', 'Blogartikel mit unbekanntem Inhaltsformat wird nicht gerendert.');
   }
@@ -226,6 +241,15 @@ export function buildBlogPostPageModel({
   // Gespeicherte FAQ haben oft das Format {question, answer}; das Schema braucht Question/acceptedAnswer.
   const faqEntities = normalizeFaqEntities(faqArray);
   const textOnly = stripHtml(renderedContent);
+  // Das FAQ-Schema muss sichtbar sein. Fragen, die nicht schon im Artikeltext stehen, zeigt die Seite
+  // in einem eigenen Abschnitt unter dem Artikel.
+  const comparable = (value) => String(value || '').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  const contentText = comparable(textOnly);
+  const supplementalFaq = previewMode ? [] : faqEntities
+    .filter((entity) => !contentText.includes(comparable(entity.name)))
+    .map((entity) => ({ question: entity.name, answer: entity.acceptedAnswer.text }));
+  // Stehen die meisten Fragen noch nicht im Text, ist es der FAQ-Abschnitt des Artikels, sonst eine Ergänzung.
+  const supplementalFaqTitle = supplementalFaq.length * 2 > faqEntities.length ? 'Häufige Fragen' : 'Weitere Fragen';
   const excerpt = String(post.excerpt || '').trim()
     || `${textOnly.slice(0, 160)}${textOnly.length > 160 ? '…' : ''}`;
   const pageTitle = resolveSeoTitle(`/blog/${post.slug}`, post.meta_title || post.title);
@@ -257,11 +281,14 @@ export function buildBlogPostPageModel({
     {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
+      '@id': `${canonicalUrl}#article`,
       headline: pageTitle,
       description: metaDescription,
       url: canonicalUrl,
       mainEntityOfPage: canonicalUrl,
-      image: { '@type': 'ImageObject', url: post.image_url || '', width: 1200, height: 675 },
+      inLanguage: 'de-DE',
+      isPartOf: { '@id': `${base}/#website` },
+      image: { '@type': 'ImageObject', url: absoluteImageUrl(post.image_url, base), width: 1200, height: 675 },
       author: { '@id': `${base}/#person` },
       publisher: { '@id': organizationId },
       datePublished: publishedISO,
@@ -282,7 +309,7 @@ export function buildBlogPostPageModel({
   <meta property="og:url" content="${ejs.escapeXML(canonicalUrl)}">
   <meta property="og:site_name" content="Komplett Webdesign">
   <meta property="og:locale" content="de_DE">
-  <meta property="og:image" content="${ejs.escapeXML(post.image_url || '')}">
+  <meta property="og:image" content="${ejs.escapeXML(absoluteImageUrl(post.image_url, base))}">
   <meta property="og:image:alt" content="${ejs.escapeXML(post.image_alt || post.title)}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="675">
@@ -301,6 +328,8 @@ export function buildBlogPostPageModel({
     publishedISO,
     modifiedISO,
     renderedContent,
+    supplementalFaq,
+    supplementalFaqTitle,
     contextLinks,
     structuredDataBlocks,
     seoExtra,

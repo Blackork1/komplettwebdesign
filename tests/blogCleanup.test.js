@@ -17,12 +17,12 @@ import { shouldNoindexPublicPath } from '../middleware/publicSeo.js';
 import { rewriteLegacyInternalLinks } from '../util/legacyInternalLinks.js';
 import { buildBlogPostPageModel } from '../services/blogPostPresentationService.js';
 
-// Blog-Bereinigung vom 25.10.2026 (komplettwebdesign.de-audit-2026-10-25/BLOG-BEREINIGUNG.md)
+// Blog-Bereinigung vom 25.10.2026 (komplettwebdesign.de-audit-2026-10-25/BLOG-BEREINIGUNG.md),
+// ergänzt am 05.11.2026: ChatGPT-Agentenmodus auf noindex.
 const KEPT = [
   'website-kosten-2025-einfach-erklaert',
   'seo-fuer-blumenladen',
   'immobilienmakler-homepage-check',
-  'chatgpt-agentenmodus',
   'website-relaunch-berlin-checkliste',
   'lokale-seo-hacks-fuer-berlin',
   'ki-suche-webdesign-2026',
@@ -44,10 +44,10 @@ async function request(path) {
   }
 }
 
-test('19 Artikel werden zusammengeführt, 14 aus Google genommen, 10 bleiben', () => {
+test('19 Artikel werden zusammengeführt, 15 aus Google genommen, 9 bleiben', () => {
   const sources = Object.keys(BLOG_REDIRECTS);
   assert.equal(sources.length, 20, 'der Kostenartikel von 2026 leitete schon vorher weiter');
-  assert.equal(NOINDEX_BLOG_SLUGS.length, 14);
+  assert.equal(NOINDEX_BLOG_SLUGS.length, 15);
   const all = [...sources, ...NOINDEX_BLOG_SLUGS, ...KEPT];
   assert.equal(new Set(all).size, all.length, 'jeder Artikel steht in genau einer Gruppe');
   for (const slug of KEPT) {

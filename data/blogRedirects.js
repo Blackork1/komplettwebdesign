@@ -62,7 +62,9 @@ export const NOINDEX_BLOG_SLUGS = Object.freeze([
   'woche-2-webdesign-arten-im-vergleich-statisch-dynamisch-cms-onepager',
   'woche-3-wichtigste-design-elemente',
   'woche-4-responsive-webdesign',
-  'woche-5-ux-ui-design-der-unterschied-der-millionen-wert-ist'
+  'woche-5-ux-ui-design-der-unterschied-der-millionen-wert-ist',
+  // GEO-Audit 05.11.2026: veraltet, Tippfehler, gemischte Anrede, kein Webdesign-Thema.
+  'chatgpt-agentenmodus'
 ]);
 
 const redirectTargets = new Map(Object.entries(BLOG_REDIRECTS).map(([slug, target]) => [slug.toLowerCase(), target]));
