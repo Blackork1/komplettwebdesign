@@ -32,7 +32,7 @@
       <div class="about-intro__heading">
         <h2 id="about-intro-title">Du musst kein Website-Profi sein.<br> Dafür hast du mich.</h2>
         <div class="about-intro__text">
-          <p>Ich bin Sören Blocksdorf, der Mensch hinter Komplett Webdesign in Berlin. Ich mag es, wenn aus einer ersten Idee ein Webauftritt wird, der zu einem Unternehmen und den Menschen dahinter passt.</p>
+          <p>Ich bin Sören Blocksdorf, Webdesigner und Webentwickler in Berlin-Lichtenberg. Seit <%= siteFacts.workingSinceYear %> baue ich Websites, zuerst freiberuflich nebenbei, seit <%= siteFacts.foundingYear %> mit meinem eigenen Unternehmen Komplett Webdesign. Ich mag es, wenn aus einer ersten Idee ein Webauftritt wird, der zu einem Unternehmen und den Menschen dahinter passt.</p>
           <p>Du kennst deinen Betrieb. Ich bringe Struktur, Gestaltung und Technik zusammen. Ich höre zu, frage nach und erkläre dir die Entscheidungen so, dass du sie nachvollziehen kannst.</p>
           <p>Ob du neu startest oder deine bestehende Website überarbeiten möchtest: Wir schauen zuerst auf dein Angebot, deine Kunden und dein Ziel. Daraus entwickeln wir den passenden nächsten Schritt.</p>
         </div>
@@ -45,6 +45,25 @@
       <div class="about-scope">
         <p>Von <a href="/">individuellem Webdesign</a> bis zum <a href="/leistungen/website-relaunch">Website-Relaunch</a>: Der Umfang richtet sich nach deinem Vorhaben. Hosting, Domain, E-Mail und Wartung werden separat vereinbart.</p>
         <a class="about-text-link" href="/pakete">Website-Pakete und Leistungsumfang ansehen <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a>
+      </div>
+    </section>
+
+    <section id="werdegang" class="about-facts about-shell" aria-labelledby="about-facts-title" data-reveal>
+      <h2 id="about-facts-title" class="about-facts__heading">Mein Weg<span>.</span></h2>
+      <div class="about-facts__grid">
+        <ol class="about-timeline">
+          <% aboutPage.timeline.forEach(entry => { %>
+          <li><span class="about-timeline__year"><%= entry.year %></span><div><h3><%= entry.title %></h3><p><%- entry.text %></p></div></li>
+          <% }) %>
+        </ol>
+        <aside class="about-glance" aria-labelledby="about-glance-title">
+          <h3 id="about-glance-title">Auf einen Blick</h3>
+          <dl>
+            <% aboutPage.glance.forEach(item => { %>
+            <div><dt><%= item.label %></dt><dd><%= item.value || '' %><% if (item.value && item.link) { %> · <% } %><% if (item.link) { %><a href="<%= item.link.href %>" target="_blank" rel="noopener"><%= item.link.text %><span class="visually-hidden"> (öffnet in einem neuen Tab)</span></a><% } %></dd></div>
+            <% }) %>
+          </dl>
+        </aside>
       </div>
     </section>
 

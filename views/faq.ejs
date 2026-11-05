@@ -1,7 +1,4 @@
-<%
-const structuredDataBlocks = (typeof faqJsonLd === 'string' && faqJsonLd.trim()) ? [faqJsonLd] : [];
-%>
-<%- include('partials/head', { structuredDataBlocks, extraCssAssets: ['faq.css'], disableInteractionPolish: true }) %>
+<%- include('partials/head', { structuredDataBlocks: typeof structuredDataBlocks !== 'undefined' ? structuredDataBlocks : [], extraCssAssets: ['faq.css'], disableInteractionPolish: true }) %>
 <body class="faq-page">
 <%- include('partials/header') %>
 
@@ -9,29 +6,33 @@ const structuredDataBlocks = (typeof faqJsonLd === 'string' && faqJsonLd.trim())
   <div class="faq-shell">
     <header class="faq-intro">
       <h1>Deine Fragen.<br><span>Klare Antworten.</span></h1>
-      <p>Alles Wichtige zu Leistungen, Preisen und unserer Zusammenarbeit.</p>
+      <p><%- summary %></p>
+      <p class="faq-updated">Stand: <time datetime="<%= modifiedAt %>"><%= new Date(modifiedAt + 'T12:00:00Z').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) %></time> · <%= faqs.length %> Fragen, beantwortet von <a href="/about">Sören Blocksdorf</a></p>
     </header>
 
     <nav class="faq-topics" aria-label="FAQ-Themen">
       <% categories.forEach(category => { %>
-      <a href="/faq<%= Number(category.id) === 1 ? '' : '?cat=' + category.id %>"<% if (Number(category.id) === Number(selectedCategory.id)) { %> aria-current="page"<% } %>><%= category.name %></a>
+      <a href="#<%= category.slug %>"><%= category.name %></a>
       <% }) %>
     </nav>
 
-    <section class="faq-content" aria-labelledby="faq-category-title">
-      <h2 id="faq-category-title"><%= selectedCategory.name %></h2>
-      <div id="faqAccordion" class="faq-answers">
-        <% faqs.forEach((faq, index) => { %>
-        <details class="faq-item" name="website-faq"<% if (index === 0) { %> open<% } %>>
+    <% categories.forEach(category => { %>
+    <section class="faq-content" id="<%= category.slug %>" aria-labelledby="faq-title-<%= category.slug %>">
+      <h2 id="faq-title-<%= category.slug %>"><%= category.name %></h2>
+      <p class="faq-category-lead"><%= category.description %></p>
+      <div class="faq-answers">
+        <% category.faqs.forEach((faq, index) => { %>
+        <details class="faq-item" name="faq-<%= category.slug %>"<% if (index === 0) { %> open<% } %>>
           <summary class="faq-question">
             <h3><%= faq.question %></h3>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="faq-icon-plus" d="M5 12h14M12 5v14"/><path class="faq-icon-open" d="m5 9 7 7 7-7"/></svg>
           </summary>
-          <div class="faq-answer"><%- faq.answer %></div>
+          <div class="faq-answer"><p><%- faq.answer %></p></div>
         </details>
         <% }) %>
       </div>
     </section>
+    <% }) %>
 
     <section class="faq-next-step" aria-labelledby="faq-next-title">
       <div><h2 id="faq-next-title">Noch eine Frage offen?</h2><p>Schreib mir kurz, worum es geht.</p></div>

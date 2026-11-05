@@ -1,9 +1,28 @@
 import { referenceProjects } from './referenceProjects.js';
+import { SITE_FACTS, formatGoogleRating } from '../helpers/siteFacts.js';
 
 export const aboutPage = Object.freeze({
-  title: 'Über Sören | Dein persönlicher Webdesigner in Berlin',
-  description: 'Lerne Sören kennen: Webdesigner und Entwickler aus Berlin. Persönliche Zusammenarbeit, echte Projekte und ein klarer Ablauf für deine neue Website.',
-  modifiedAt: '2026-10-23',
+  title: 'Über mich: Sören Blocksdorf, Webdesigner in Berlin',
+  description: `Sören Blocksdorf, Webdesigner in Berlin-Lichtenberg: seit ${SITE_FACTS.workingSinceYear} im Webdesign, ${SITE_FACTS.foundingYear} Komplett Webdesign gegründet. Werdegang, Arbeitsweise und Projekte.`,
+  modifiedAt: '2026-11-05',
+  // Werdegang mit belegbaren Jahreszahlen (keine Projektzahl: bewusst nur die gezeigten Referenzen).
+  timeline: [
+    { year: SITE_FACTS.workingSinceYear, title: 'Erste Websites für Kunden', text: 'Ich plane, gestalte und programmiere die ersten Websites für Kunden, zunächst freiberuflich nebenbei. Von Anfang an setze ich jede Seite selbst um, vom Entwurf bis zum Livegang.' },
+    { year: SITE_FACTS.foundingYear, title: 'Gründung von Komplett Webdesign', text: 'Ich gründe Komplett Webdesign in Berlin-Lichtenberg. Seitdem biete ich Websites zu festen Paketpreisen an, dazu Wartung und Betreuung nach dem Launch, weiter als einziger Ansprechpartner.' },
+    { year: '2026', title: 'Kostenlose Website-Tester', text: 'Mit meinen <a href="/website-tester">Website-Testern</a> prüfst du selbst SEO-Grundlagen, Sichtbarkeit in KI-Suchen, Meta-Daten und defekte Links deiner Website, kostenlos direkt im Browser.' },
+    { year: '2026', title: 'Websites nach Branche', text: 'Für Handwerk, Praxen, Cafés, Reinigung und weitere <a href="/branchen">Branchen</a> habe ich recherchiert, was deren Kunden auf einer Website suchen und welche Pflichtangaben gelten.' }
+  ],
+  glance: [
+    { label: 'Name', value: 'Sören Blocksdorf' },
+    { label: 'Tätigkeit', value: 'Webdesigner und Webentwickler, Inhaber von Komplett Webdesign' },
+    { label: 'Standort', value: 'Berlin-Lichtenberg; Projekte in Berlin, Brandenburg und deutschlandweit' },
+    { label: 'Im Webdesign seit', value: SITE_FACTS.workingSinceYear },
+    { label: 'Unternehmen gegründet', value: SITE_FACTS.foundingYear },
+    { label: 'Schwerpunkte', value: 'Websites für kleine Unternehmen, Website-Relaunch, technische SEO und Local SEO, kurze Ladezeiten' },
+    { label: 'Technik', value: 'Node.js, EJS, CSS und JavaScript, serverseitig gerendertes HTML' },
+    { label: 'Bewertung', value: formatGoogleRating('de').replace(/^★+\s*/, ''), link: { href: SITE_FACTS.googleProfileUrl, text: 'Google-Profil' } },
+    { label: 'Profil', link: { href: SITE_FACTS.founderProfiles[0], text: 'LinkedIn' } }
+  ],
   featuredProject: referenceProjects.find(project => project.slug === 'zur-alten-backstube'),
   showcases: [
     {

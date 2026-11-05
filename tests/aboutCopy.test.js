@@ -72,7 +72,7 @@ test('about metadata and graph identify the canonical person and organization co
   assert.equal(about.url, 'https://www.komplettwebdesign.de/about');
   assert.equal(about.mainEntity['@id'], 'https://www.komplettwebdesign.de/#person');
   assert.equal(about.about['@id'], 'https://www.komplettwebdesign.de/#organization');
-  assert.equal(about.dateModified, '2026-10-23');
+  assert.equal(about.dateModified, '2026-11-05');
   const breadcrumbs = model.structuredDataBlocks.find(node => node['@type'] === 'BreadcrumbList');
   assert.deepEqual(breadcrumbs.itemListElement.map(item => item.item), [
     'https://www.komplettwebdesign.de/', 'https://www.komplettwebdesign.de/about'
@@ -94,4 +94,21 @@ test('about examples show the requested 2026 festival edition, video pages and t
   assert.ok(sauber.find('img[src$="kontakt.webp"]').length);
   assert.ok(sauber.find('a[href="https://www.sauber-mehr.de/kontakt"]').length);
   assert.match(sauber.text(), /Schritt für Schritt/);
+});
+
+test('about page states the verifiable career facts once: since 2021, founded 2025, profiles linked', async () => {
+  const { $ } = await renderAbout();
+  const intro = $('.about-intro__text').text().replace(/\s+/g, ' ');
+  assert.match(intro, /Seit 2021 baue ich Websites, zuerst freiberuflich nebenbei, seit 2025 mit meinem eigenen Unternehmen Komplett Webdesign/);
+  const timeline = $('#werdegang .about-timeline li').toArray().map(item => $(item).find('.about-timeline__year').text().trim());
+  assert.deepEqual(timeline, ['2021', '2025', '2026', '2026']);
+  const glance = Object.fromEntries($('#werdegang .about-glance dl > div').toArray().map(row => [$(row).find('dt').text().trim(), $(row).find('dd').text().replace(/\s+/g, ' ').trim()]));
+  assert.equal(glance['Im Webdesign seit'], '2021');
+  assert.equal(glance['Unternehmen gegründet'], '2025');
+  assert.match(glance.Bewertung, /^5,0\/5 · 4 Google-Rezensionen · Google-Profil/);
+  assert.ok($('#werdegang a[href="https://www.linkedin.com/in/komplettwebdesign"]').length);
+  assert.ok($('#werdegang a[href="https://www.google.com/maps?cid=8211853018206635760"]').length);
+  assert.ok($('#werdegang a[href="/website-tester"]').length);
+  // Keine erfundene Projektzahl: belegt sind nur die gezeigten Referenzen.
+  assert.doesNotMatch($('main').text(), /\b\d+\+? (Websites|Projekte) (umgesetzt|realisiert)/);
 });

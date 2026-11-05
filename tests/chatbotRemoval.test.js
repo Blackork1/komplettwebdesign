@@ -33,17 +33,19 @@ for (const lng of ['de', 'en']) {
 }
 
 test('FAQ page keeps its answers and accordion while removing the chat form and request script', async () => {
-  const category = { id: 1, name: 'Allgemein', icon: '/images/icons/general.svg', description: 'Grundlagen' };
+  const faq = { question: 'Wie frage ich eine Website an?', answer: 'Über die Kontaktseite.' };
+  const category = { id: 1, slug: 'allgemein', name: 'Allgemein', description: 'Grundlagen', faqs: [faq] };
   const html = await ejs.renderFile(fileURLToPath(new URL('../views/faq.ejs', import.meta.url)), {
     ...locals,
     lng: 'de',
     categories: [category],
-    selectedCategory: category,
-    faqs: [{ question: 'Wie frage ich eine Website an?', answer: '<p>Über die Kontaktseite.</p>' }]
+    faqs: [faq],
+    summary: 'Kurz zusammengefasst.',
+    modifiedAt: '2026-11-05'
   });
   const $ = load(html);
   assertNoChat($);
-  assert.equal($('#faqAccordion summary').text().trim(), 'Wie frage ich eine Website an?');
-  assert.equal($('#faqAccordion .faq-answer p').text(), 'Über die Kontaktseite.');
+  assert.equal($('#allgemein .faq-item summary').text().trim(), 'Wie frage ich eine Website an?');
+  assert.equal($('#allgemein .faq-answer p').text(), 'Über die Kontaktseite.');
   assert.doesNotMatch($('script:not([src])').text(), /\/faq\/query|\/chat\/(?:message|history)/);
 });

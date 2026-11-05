@@ -41,15 +41,18 @@ test('FAQ controller uses the current central package price in visible answers a
   const originalQuery = pool.query;
   pool.query = async () => { throw new Error('Legacy FAQ database unavailable'); };
   try {
-    await renderFaqPage({ query: { cat: '2' } }, response, () => assert.fail('price category must exist'));
+    await renderFaqPage({ query: {} }, response, () => assert.fail('FAQ page must render'));
   } finally {
     pool.query = originalQuery;
   }
-  assert.ok(page, 'price category must render');
-  const answer = page.faqs[0].answer;
+  assert.ok(page, 'FAQ page must render');
+  const index = page.faqs.findIndex(faq => faq.question === 'Was kostet eine Website bei dir?');
+  const answer = page.faqs[index].answer;
   assert.match(answer, /bei 1\.237 €/);
-  assert.doesNotMatch(answer, /\{\{|799\s*€|499\s*€/);
-  assert.equal(JSON.parse(page.faqJsonLd).mainEntity[0].acceptedAnswer.text, answer);
+  // Ohne einzelne Paketpreise keine Variante mit leeren Preisen („Start , Business , …“).
+  assert.doesNotMatch(answer, /\{\{|799\s*€|499\s*€|Start\s*,/);
+  const faqPage = page.structuredDataBlocks.find(block => block['@type'] === 'FAQPage');
+  assert.equal(faqPage.mainEntity[index].acceptedAnswer.text, answer);
 });
 
 test('Generic CMS slug controller renders pricing tokens in pages and components', () => {
