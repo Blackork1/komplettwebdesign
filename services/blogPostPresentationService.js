@@ -11,6 +11,7 @@ import { getSeoRecoveryTarget } from '../data/seoIntentRegistry.js';
 import { resolveHeadline, resolveSeoDescription, resolveSeoTitle } from '../data/seoMetaOverrides.js';
 import { rewriteLegacyInternalLinks } from '../util/legacyInternalLinks.js';
 import { isNoindexBlogSlug } from '../data/blogRedirects.js';
+import { normalizeFaqEntities } from '../util/seoSchemas.js';
 
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
 const RESERVED_PREVIEW_IDS = Object.freeze([
@@ -222,6 +223,8 @@ export function buildBlogPostPageModel({
   }
 
   const faqArray = normalizeFaq(post.faq_json);
+  // Gespeicherte FAQ haben oft das Format {question, answer}; das Schema braucht Question/acceptedAnswer.
+  const faqEntities = normalizeFaqEntities(faqArray);
   const textOnly = stripHtml(renderedContent);
   const excerpt = String(post.excerpt || '').trim()
     || `${textOnly.slice(0, 160)}${textOnly.length > 160 ? '…' : ''}`;
@@ -264,8 +267,8 @@ export function buildBlogPostPageModel({
       datePublished: publishedISO,
       dateModified: modifiedISO
     },
-    ...(faqArray.length > 0
-      ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqArray }]
+    ...(faqEntities.length > 0
+      ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqEntities }]
       : [])
   ];
   const robotsMeta = previewMode ? '  <meta name="robots" content="noindex,nofollow">\n' : '';

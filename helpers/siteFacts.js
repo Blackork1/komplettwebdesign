@@ -15,8 +15,12 @@ const sitePackages = packages.map((pkg) => ({
 
 export const SITE_FACTS = {
   brandName: 'Komplett Webdesign',
-  legalName: 'Komplett Webdesign',
+  // Einzelunternehmen; Schreibweise wie im Impressum.
+  legalName: 'Komplett Webdesign, Inhaber Sören Blocksdorf',
   founderName: 'Sören Blocksdorf',
+  // Firma seit 2025; im Webdesign tätig seit 2021 (vorher nicht mit eigener Firma).
+  foundingYear: '2025',
+  workingSinceYear: '2021',
   baseUrlFallback: 'https://www.komplettwebdesign.de',
   email: 'kontakt@komplettwebdesign.de',
   phone: '+4915511245048',
@@ -40,13 +44,17 @@ export const SITE_FACTS = {
   // Bezirke mit eigener Seite unter /webdesign-berlin/:slug
   servedDistricts: ['Friedrichshain', 'Kreuzberg', 'Prenzlauer Berg', 'Charlottenburg', 'Lichtenberg', 'Mitte'],
   socialProfiles: [
-    'https://www.linkedin.com/in/komplettwebdesign',
-    'https://instagram.com/komplettwebdesign',
+    'https://www.instagram.com/komplettwebdesign/',
     'https://www.facebook.com/profile.php?id=61579580713573',
     'https://www.youtube.com/@komplettwebdesign',
     'https://www.tiktok.com/@komplett.webdesign'
   ],
-  googleProfileUrl: 'https://maps.app.goo.gl/vzJLbCvqWBdiK5RC7?g_st=ic',
+  // Persönliche Profile von Sören Blocksdorf (gehören an die Person, nicht an das Unternehmen).
+  founderProfiles: [
+    'https://www.linkedin.com/in/komplettwebdesign'
+  ],
+  // Stabile Adresse des Google-Unternehmensprofils (CID aus dem früheren Teilen-Link maps.app.goo.gl/vzJLbCvqWBdiK5RC7).
+  googleProfileUrl: 'https://www.google.com/maps?cid=8211853018206635760',
   googleReviewUrl: 'https://g.page/r/CfAG7dHPXPZxEAE/review',
   googleRating: {
     ratingValue: 5.0,

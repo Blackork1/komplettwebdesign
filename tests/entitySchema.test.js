@@ -10,10 +10,19 @@ test('organization and person share canonical identities and confirmed NAP', asy
   assert.equal(org.telephone, '+4915511245048');
   assert.equal(org.address.postalCode, '10367');
   assert.equal(org.address.addressLocality, 'Berlin');
-  assert.ok(org.sameAs.includes('https://maps.app.goo.gl/vzJLbCvqWBdiK5RC7?g_st=ic'));
+  assert.ok(org.sameAs.includes('https://www.google.com/maps?cid=8211853018206635760'));
   assert.ok(org.hasMap);
+  assert.equal(org.foundingDate, '2025');
+  assert.equal(org.legalName, 'Komplett Webdesign, Inhaber Sören Blocksdorf');
+  assert.match(org.description, /Berlin-Lichtenberg/);
+  assert.equal(org.hasOfferCatalog['@id'], 'https://www.komplettwebdesign.de/pakete#katalog');
+  // Das persönliche LinkedIn-Profil gehört an die Person, nicht an das Unternehmen.
+  assert.ok(!org.sameAs.some((url) => url.includes('linkedin.com/in/')));
   assert.equal(person['@id'], 'https://www.komplettwebdesign.de/#person');
   assert.equal(person.worksFor['@id'], org['@id']);
+  assert.deepEqual(person.sameAs, ['https://www.linkedin.com/in/komplettwebdesign']);
+  assert.match(person.description, /seit 2021 im Webdesign tätig/);
+  assert.match(person.description, /Gründete 2025/);
 });
 
 test('blog author is the named person and publisher is the organization', async () => {

@@ -5,7 +5,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { packages } from '../data/packages.js';
 import { buildPackageSchemas } from '../util/seoSchemas.js';
 
-test('package detail schemas use canonical service names and cautious FAQ copy without product offers', () => {
+test('package detail schemas use canonical service names, a minimum-price offer without fixed price or product, and cautious FAQ copy', () => {
   const startPackage = {
     ...packages.find((pkg) => pkg.slug === 'start'),
     visibleFaqs: [
@@ -30,10 +30,14 @@ test('package detail schemas use canonical service names and cautious FAQ copy w
   const faq = schemas.find((schema) => schema['@type'] === 'FAQPage');
 
   assert.equal(service.name, 'Start-Paket');
-  assert.deepEqual(service.provider['@type'], ['Organization', 'ProfessionalService']);
-  assert.equal(service.provider.url, 'https://www.komplettwebdesign.de/');
+  assert.equal(service['@id'], 'https://www.komplettwebdesign.de/pakete/start#service');
+  assert.deepEqual(service.provider, { '@id': 'https://www.komplettwebdesign.de/#organization' });
+  assert.equal(service.offers['@type'], 'Offer');
+  assert.equal(service.offers.priceSpecification.minPrice, 799);
+  assert.equal(service.offers.priceCurrency, 'EUR');
+  assert.equal('price' in service.offers, false, 'Ab-Preis nicht als Festpreis');
   assert.equal(schemas.some((schema) => schema['@type'] === 'Product'), false);
-  assert.doesNotMatch(JSON.stringify(schemas), /"@type":"Offer"|"@type":"Product"|priceValidUntil|AggregateRating/);
+  assert.doesNotMatch(JSON.stringify(schemas), /"@type":"Product"|priceValidUntil|AggregateRating/);
 
   const faqText = JSON.stringify(faq.mainEntity);
   assert.match(faqText, /keine Rechtsberatung/);
@@ -118,7 +122,10 @@ test('package overview schema avoids stale product images and aggregate offer cl
   assert.doesNotMatch(template, /paket-(?:basis|premium)\.webp/);
   assert.doesNotMatch(template, /"@type":\s*"AggregateOffer"/);
   assert.doesNotMatch(template, /"@type":\s*"Product"/);
-  assert.match(template, /"@type":\s*"ItemList"/);
+  // OfferCatalog ist eine ItemList mit Angeboten; Preise nur als Mindestpreis, nie als Festpreis.
+  assert.match(template, /"@type":\s*"OfferCatalog"/);
+  assert.match(template, /"minPrice":\s*cents \/ 100/);
+  assert.doesNotMatch(template, /"price":/);
   assert.match(template, /\/pakete\/start/);
   assert.match(template, /\/pakete\/business/);
   assert.match(template, /\/pakete\/wachstum/);

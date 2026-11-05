@@ -74,7 +74,7 @@ test('das lokale Schema enthält Koordinaten, Öffnungszeiten wie im Google-Prof
   assert.equal(schema.geo['@type'], 'GeoCoordinates');
   assert.ok(Math.abs(schema.geo.latitude - 52.52) < 0.01 && Math.abs(schema.geo.longitude - 13.48) < 0.01);
   assert.equal(schema.priceRange, 'ab 799 €');
-  assert.match(schema.hasMap, /maps\.app\.goo\.gl/);
+  assert.equal(schema.hasMap, 'https://www.google.com/maps?cid=8211853018206635760');
   const hours = schema.openingHoursSpecification.map((slot) => `${slot.dayOfWeek.map((d) => d.replace('https://schema.org/', '')).join('+')} ${slot.opens}-${slot.closes}`);
   assert.deepEqual(hours, ['Tuesday+Thursday 16:00-21:00', 'Saturday+Sunday 10:00-18:00']);
   const areas = schema.areaServed.map((area) => area.name);

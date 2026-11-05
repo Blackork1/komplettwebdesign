@@ -19,12 +19,22 @@
     return pkg && pkg.allowDetailPage !== false && (pkg.canonicalPath || pkg.slug);
   }
 
-  const schemaPackages = visiblePackages.map((pkg, index) => ({
-    "@type": "ListItem",
-    "position": index + 1,
-    ...(canShowPackageDetail(pkg) ? { "url": `${siteBaseUrl}${pkg.canonicalPath || `/pakete/${pkg.slug}`}` } : {}),
-    "name": isEn ? `${pkg.name} package` : `${pkg.name}-Paket`
-  }));
+  // Angebotskatalog: je Paket ein Angebot mit Mindestpreis aus der Preisverwaltung, verknüpft mit dem
+  // Service der Detailseite (util/seoSchemas.js). Kein Festpreis, kein Product.
+  const schemaPackages = visiblePackages.map((pkg) => {
+    const detailUrl = canShowPackageDetail(pkg) ? `${siteBaseUrl}${pkg.canonicalPath || `/pakete/${pkg.slug}`}` : '';
+    const cents = Number(pkg.priceAmountCents);
+    return {
+      "@type": "Offer",
+      "name": isEn ? `${pkg.name} package` : `${pkg.name}-Paket`,
+      ...(detailUrl ? { "url": detailUrl, "itemOffered": { "@id": `${detailUrl}#service` } } : {}),
+      ...(Number.isFinite(cents) && cents > 0 ? {
+        "priceCurrency": pkg.priceCurrency || 'EUR',
+        "priceSpecification": { "@type": "PriceSpecification", "priceCurrency": pkg.priceCurrency || 'EUR', "minPrice": cents / 100 }
+      } : {}),
+      ...(!isEn && pkg.priceLabel ? { "description": `Einmaliger Projektpreis ${pkg.priceLabel}.` } : {})
+    };
+  });
   const structuredDataBlocks = [
     {
       "@context": "https://schema.org",
@@ -45,7 +55,9 @@
     },
     {
       "@context": "https://schema.org",
-      "@type": "ItemList",
+      "@type": "OfferCatalog",
+      "@id": `${siteBaseUrl}/pakete#katalog`,
+      "name": isEn ? "Website packages by Komplett Webdesign" : "Website-Pakete von Komplett Webdesign",
       "url": `${siteBaseUrl}/pakete`,
       "itemListElement": schemaPackages
     },
