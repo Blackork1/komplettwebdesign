@@ -112,3 +112,60 @@ test('Artikelseite: BlogPosting mit @id, Sprache, Website-Bezug und absoluter Bi
   assert.ok(model.modifiedISO.startsWith('2026-11-05'));
   assert.ok(model.publishedISO.startsWith('2026-03-21'));
 });
+
+function fakeDb(rows, { changeBetweenReads = false } = {}) {
+  const log = [];
+  let reads = 0;
+  const client = {
+    async query(sql, params = []) {
+      log.push(sql.trim().split(/\s+/).slice(0, 2).join(' '));
+      if (/^SELECT \* FROM posts WHERE slug/.test(sql)) return { rows: rows.map((row) => ({ ...row })) };
+      if (/^SELECT \* FROM posts WHERE id/.test(sql)) {
+        reads += 1;
+        const row = rows.find((item) => item.id === params[0]);
+        return { rows: [changeBetweenReads && reads === 2 ? { ...row, content: `${row.content} geändert` } : row] };
+      }
+      if (/^UPDATE posts/.test(sql)) return { rowCount: 1 };
+      return {};
+    },
+    release() {}
+  };
+  return { db: { connect: async () => client }, log };
+}
+
+// Gespeicherte Texte mit allen Stellen, die die Korrekturen erwarten.
+const originalText = (slug) => BLOG_QUALITY_CORRECTIONS[slug].replacements.map(([from]) => `<p>${from}</p>`).join('\n');
+const storedPosts = () => [
+  { id: 1, slug: 'seo-fuer-blumenladen', content: originalText('seo-fuer-blumenladen'), faq_json: [] },
+  { id: 2, slug: 'mehr-anfragen-website-kontaktfehler-kmu-2026', content: originalText('mehr-anfragen-website-kontaktfehler-kmu-2026'), faq_json: [] }
+];
+
+test('Skript: Vorschau schreibt nichts, Anwenden nutzt je Artikel eine eigene Transaktion', async () => {
+  const { applyBlogQualityCorrections } = await import('../scripts/applyBlogQualityCorrections.js');
+  const { mkdtemp } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const preview = fakeDb(storedPosts());
+  const dry = await applyBlogQualityCorrections(preview.db, { apply: false });
+  assert.equal(dry.changes.length, 2);
+  assert.ok(!preview.log.some((entry) => /^(UPDATE|BEGIN)/.test(entry)));
+
+  const backupDirectory = await mkdtemp(join(tmpdir(), 'blog-quality-'));
+  const run = fakeDb(storedPosts());
+  const applied = await applyBlogQualityCorrections(run.db, { apply: true, backupDirectory, pauseMs: 0 });
+  assert.ok(applied.backupPath.startsWith(backupDirectory));
+  assert.deepEqual(run.log.filter((entry) => /^(BEGIN|UPDATE|COMMIT)/.test(entry)), ['BEGIN', 'UPDATE posts', 'COMMIT', 'BEGIN', 'UPDATE posts', 'COMMIT']);
+});
+
+test('Skript: ein zwischenzeitlich geänderter Artikel bricht ab, ohne ihn zu überschreiben', async () => {
+  const { applyBlogQualityCorrections } = await import('../scripts/applyBlogQualityCorrections.js');
+  const { mkdtemp } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const run = fakeDb(storedPosts(), { changeBetweenReads: true });
+  await assert.rejects(
+    applyBlogQualityCorrections(run.db, { apply: true, backupDirectory: await mkdtemp(join(tmpdir(), 'blog-quality-')), pauseMs: 0 }),
+    (error) => error.code === 'CORRECTION_CONFLICT'
+  );
+  assert.deepEqual(run.log.filter((entry) => /^(BEGIN|UPDATE|COMMIT|ROLLBACK)/.test(entry)), ['BEGIN', 'UPDATE posts', 'COMMIT', 'BEGIN', 'ROLLBACK']);
+});
