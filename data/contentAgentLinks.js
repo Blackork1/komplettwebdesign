@@ -1,4 +1,6 @@
-export const CONTENT_AGENT_LINKS = Object.freeze([
+import { INDUSTRY_DIRECTORY } from './industryDirectory.js';
+
+const CORE_CONTENT_AGENT_LINKS = [
   { url: '/kontakt', type: 'contact', label: 'Beratung anfragen' },
   { url: '/pakete', type: 'pricing', label: 'Website-Pakete und Preise' },
   { url: '/', type: 'service', label: 'Website erstellen lassen in Berlin' },
@@ -21,4 +23,13 @@ export const CONTENT_AGENT_LINKS = Object.freeze([
   { url: '/webdesign-berlin/lichtenberg', type: 'service', label: 'Webdesign für Betriebe in Lichtenberg' },
   { url: '/referenzen', type: 'reference', label: 'Umgesetzte Website-Projekte' },
   { url: '/website-tester', type: 'tool', label: 'Website kostenlos prüfen' }
-].map((link) => Object.freeze(link)));
+];
+
+// Alle Branchenseiten als empfohlene Linkziele, damit Artikel mit Branchenbezug sie verlinken.
+const INDUSTRY_CONTENT_AGENT_LINKS = Object.values(INDUSTRY_DIRECTORY)
+  .filter(({ href }) => !CORE_CONTENT_AGENT_LINKS.some((link) => link.url === href))
+  .map(({ href, label }) => ({ url: href, type: 'industry', label }));
+
+export const CONTENT_AGENT_LINKS = Object.freeze(
+  [...CORE_CONTENT_AGENT_LINKS, ...INDUSTRY_CONTENT_AGENT_LINKS].map((link) => Object.freeze(link))
+);

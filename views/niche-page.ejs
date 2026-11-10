@@ -3,6 +3,7 @@
   // Abschnitte in der Reihenfolge von page.sections. Optik wie /handwerker.
   const pg = nichePage;
   const faqList = Array.isArray(nicheFaq) ? nicheFaq : [];
+  const related = Array.isArray(typeof relatedIndustries !== 'undefined' ? relatedIndustries : null) ? relatedIndustries : [];
   const cards = Array.isArray(typeof packageCards !== 'undefined' ? packageCards : null) ? packageCards : [];
   const heroSize = Array.isArray(pg.hero.imageSize) ? pg.hero.imageSize : [960, 640];
   const updatedIso = typeof contentUpdatedIso !== 'undefined' ? contentUpdatedIso : '';
@@ -316,6 +317,26 @@
     </section>
     <% } %>
     <% }) %>
+
+    <% if (related.length) { %>
+    <section id="verwandte-branchen" class="wd-section" aria-labelledby="niche-related-title">
+      <div class="wd-container">
+        <div class="wd-section-head">
+          <span class="wd-chip">Weitere Branchen</span>
+          <h2 id="niche-related-title">Websites für verwandte Branchen</h2>
+        </div>
+        <div class="wd-grid wd-grid--three niche-page__related">
+          <% related.forEach((item) => { %>
+          <article class="wd-card">
+            <h3><a class="wd-card-title-link" href="<%= item.href %>"><%= item.label %></a></h3>
+            <p><%= item.teaser %></p>
+          </article>
+          <% }) %>
+        </div>
+        <p class="handwerk-page__center-note"><a href="/branchen">Alle Branchen im Überblick</a></p>
+      </div>
+    </section>
+    <% } %>
 
     <section id="kontakt" class="wd-section wd-section--soft" aria-labelledby="niche-cta-title">
       <div class="wd-container">

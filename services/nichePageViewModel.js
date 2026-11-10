@@ -5,6 +5,7 @@
 import { interpolatePricingTokens } from '../util/pricingViewModel.js';
 import { buildNichePageSchemas } from '../helpers/pageSchema.js';
 import { SITE_FACTS, formatGoogleRating } from '../helpers/siteFacts.js';
+import { relatedIndustriesFor } from '../data/industryDirectory.js';
 import { REINIGUNG_PAGE, REINIGUNG_FAQ, REINIGUNG_CONTENT_UPDATED_ISO } from '../data/reinigungPage.js';
 import { BLUMENLADEN_PAGE, BLUMENLADEN_FAQ, BLUMENLADEN_CONTENT_UPDATED_ISO } from '../data/blumenladenPage.js';
 import { FITNESS_PAGE, FITNESS_FAQ, FITNESS_CONTENT_UPDATED_ISO } from '../data/fitnessPage.js';
@@ -81,6 +82,7 @@ export function buildNichePageViewModel(niche, locals = {}) {
     packageCards,
     nichePage,
     nicheFaq,
+    relatedIndustries: relatedIndustriesFor(nichePage.slug),
     googleRating: { label: formatGoogleRating('de'), href: SITE_FACTS.googleProfileUrl },
     phone: SITE_FACTS.phone,
     phoneDisplay: SITE_FACTS.phoneDisplay,

@@ -1,6 +1,7 @@
 import { getAddOnById } from './addOns.js';
 import { PACKAGE_GLOBAL_NOTES, packages } from './packages.js';
 import { MARKETING_IMAGES } from './marketingImages.js';
+import { INDUSTRY_DIRECTORY } from './industryDirectory.js';
 
 const addOnIds = ['local-seo-basis', 'google-business-profil', 'seo-leistungsseite'];
 const localSeoAddOns = addOnIds.map((id) => getAddOnById(id)).filter(Boolean);
@@ -142,7 +143,11 @@ export const localSeoPage = Object.freeze({
       'reine Online-Produkte ohne Standortbezug',
       'Projekte, die feste Google-Positionen erwarten',
       'stark umkämpfte Märkte ohne Bereitschaft zu laufender Weiterentwicklung'
-    ]
+    ],
+    industriesTitle: 'Local SEO nach Branche',
+    industriesLead:
+      'Wonach Kundinnen und Kunden in deiner Branche in der Nähe suchen und was die Website dafür zeigen sollte, steht auf der jeweiligen Branchenseite.',
+    industries: Object.values(INDUSTRY_DIRECTORY).map(({ name, href }) => ({ name, href }))
   },
   meaning: {
     title: 'Was Local SEO bei Komplett Webdesign bedeutet',

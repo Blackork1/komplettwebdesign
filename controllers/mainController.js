@@ -15,6 +15,7 @@ import { aboutPage } from '../data/aboutPage.js';
 import { localizedHomeProjects } from '../data/homeProjects.js';
 import { DISTRICTS } from '../models/districtModel.js';
 import { DISTRICT_PAGES } from '../data/districtPages.js';
+import { homeMoreIndustries } from '../data/industryDirectory.js';
 
 const GOOGLE_PROFILE_URL = SITE_FACTS.googleProfileUrl;
 const GOOGLE_REVIEW_URL = SITE_FACTS.googleReviewUrl;
@@ -424,6 +425,11 @@ export async function getIndex(req, res) {
         teaser: lng === 'en' ? '' : (DISTRICT_PAGES[district.slug]?.hubTeaser || '')
       })),
       heroBridgeHighlights,
+      // Branchenseiten ohne eigene Karte, damit jede von der Startseite aus verlinkt ist.
+      homeMoreIndustries: homeMoreIndustries().map((industry) => ({
+        href: industry.href,
+        name: lng === 'en' ? industry.nameEn : industry.name
+      })),
       marketingImages: MARKETING_IMAGES,
       srcsetFor,
       lowestPackagePriceLabel: localizedLowestPackagePriceLabel,

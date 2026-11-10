@@ -479,14 +479,17 @@ const homePackageImages = {
         title: 'Six industries. Six different paths to an enquiry.',
         lead: 'Every industry needs different content, images and contact paths. Choose the entry point closest to your offer.',
         overview: 'Compare all industry solutions',
-        scrollHint: 'Swipe to explore all industries'
+        scrollHint: 'Swipe to explore all industries',
+        more: 'More industries'
       } : {
         kicker: 'Branchenlösungen',
         title: 'Sechs Branchen. Sechs unterschiedliche Wege zur Anfrage.',
         lead: 'Jede Branche braucht andere Inhalte, Bilder und Kontaktwege. Wähle den Einstieg, der deinem Angebot am nächsten kommt.',
         overview: 'Alle Branchenlösungen vergleichen',
-        scrollHint: 'Wischen, um alle Branchen zu entdecken'
+        scrollHint: 'Wischen, um alle Branchen zu entdecken',
+        more: 'Weitere Branchen'
       };
+      const homeMoreIndustryLinks = typeof homeMoreIndustries !== 'undefined' && Array.isArray(homeMoreIndustries) ? homeMoreIndustries : [];
 
       // Nur Branchen mit eigener, geprüfter Seite (siehe PRIORITY_INDUSTRY_SLUGS in helpers/seoPagePolicy.js).
       const homeIndustryStories = [
@@ -608,6 +611,17 @@ const homePackageImages = {
             <p class="home-industry-scroll-hint">
               <span aria-hidden="true">↔</span> <%= homeIndustryCopy.scrollHint %>
             </p>
+
+            <% if (homeMoreIndustryLinks.length) { %>
+            <nav class="home-industry-more" aria-labelledby="home-industry-more-title">
+              <p class="home-industry-more__title" id="home-industry-more-title"><%= homeIndustryCopy.more %></p>
+              <ul class="home-industry-more__list">
+                <% homeMoreIndustryLinks.forEach((industry) => { %>
+                <li><a href="<%= industry.href %>"><%= industry.name %></a></li>
+                <% }) %>
+              </ul>
+            </nav>
+            <% } %>
 
             <div class="home-industry-actions">
               <a class="btn btn-secondary home-industry-overview-link" href="/branchen">

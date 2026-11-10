@@ -164,6 +164,17 @@
             </ul>
           </article>
         </div>
+        <% if (Array.isArray(page.targetGroups.industries) && page.targetGroups.industries.length) { %>
+        <article class="local-seo-note local-seo-note--spaced animate-on-scroll">
+          <h3><%= page.targetGroups.industriesTitle %></h3>
+          <p><%= page.targetGroups.industriesLead %></p>
+          <ul class="local-seo-industry-links">
+            <% page.targetGroups.industries.forEach(function(industry) { %>
+            <li><a href="<%= industry.href %>"><%= industry.name %></a></li>
+            <% }) %>
+          </ul>
+        </article>
+        <% } %>
       </div>
     </section>
 

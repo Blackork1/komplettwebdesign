@@ -178,3 +178,47 @@ test('Sitemap nimmt für die eigenen Seiten das Datum der Inhalte', () => {
   assert.match(sitemap, /lastmod: toIso\(industryModified\(r\)\)/);
   assert.match(sitemap, /getNichePage\(r\.slug\)/);
 });
+
+test('Jede Branchenseite verlinkt drei verwandte Branchen und wird selbst von einer anderen verlinkt', async () => {
+  const { INDUSTRY_DIRECTORY, RELATED_INDUSTRIES } = await import('../data/industryDirectory.js');
+  const nicheKeys = Object.keys(NICHE_PAGES);
+  assert.deepEqual(Object.keys(RELATED_INDUSTRIES).sort(), [...nicheKeys].sort(), 'jede eigene Branchenseite hat Nachbarn');
+  for (const key of [...nicheKeys, 'handwerker']) {
+    assert.ok(INDUSTRY_DIRECTORY[key], `${key} steht im Verzeichnis`);
+    assert.ok(PRIORITY_INDUSTRY_SLUGS.includes(key), `${key} ist indexierbar`);
+  }
+  for (const [key, related] of Object.entries(RELATED_INDUSTRIES)) {
+    assert.equal(related.length, 3, key);
+    assert.equal(new Set(related).size, 3, `${key}: keine doppelten Nachbarn`);
+    assert.ok(!related.includes(key), `${key}: verlinkt sich nicht selbst`);
+    for (const target of related) assert.ok(INDUSTRY_DIRECTORY[target], `${key} → ${target}`);
+  }
+  for (const key of nicheKeys) {
+    const inbound = Object.entries(RELATED_INDUSTRIES).filter(([, related]) => related.includes(key)).length;
+    assert.ok(inbound >= 1, `${key}: mindestens eine andere Branchenseite verlinkt`);
+  }
+  const { main } = await render('steuerberater');
+  assert.match(main, /<section id="verwandte-branchen"/);
+  for (const href of ['/branchen/webdesign-immobilienmakler', '/branchen/webdesign-arzt', '/branchen/webdesign-physiotherapie']) {
+    assert.ok(main.includes(`href="${href}"`), href);
+  }
+});
+
+test('Startseite und Local-SEO-Seite verlinken jede Branchenseite', async () => {
+  const { INDUSTRY_DIRECTORY, HOME_FEATURED_INDUSTRIES, homeMoreIndustries } = await import('../data/industryDirectory.js');
+  const home = read('views/index.ejs');
+  const featured = HOME_FEATURED_INDUSTRIES.map((key) => INDUSTRY_DIRECTORY[key].href);
+  for (const href of featured) assert.ok(home.includes(`href: '${href}'`), `Karte für ${href}`);
+  const more = homeMoreIndustries().map((item) => item.href);
+  assert.deepEqual([...featured, ...more].sort(), Object.values(INDUSTRY_DIRECTORY).map((item) => item.href).sort());
+  assert.match(home, /homeMoreIndustryLinks\.forEach/);
+  assert.match(read('controllers/mainController.js'), /homeMoreIndustries: homeMoreIndustries\(\)/);
+
+  const { localSeoPage } = await import('../data/localSeoPage.js');
+  assert.deepEqual(localSeoPage.targetGroups.industries.map((item) => item.href), Object.values(INDUSTRY_DIRECTORY).map((item) => item.href));
+
+  const { CONTENT_AGENT_LINKS } = await import('../data/contentAgentLinks.js');
+  for (const { href } of Object.values(INDUSTRY_DIRECTORY)) {
+    assert.ok(CONTENT_AGENT_LINKS.some((link) => link.url === href), `Content-Agent kennt ${href}`);
+  }
+});
