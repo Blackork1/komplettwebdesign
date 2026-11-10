@@ -20,7 +20,8 @@ export const INDUSTRY_DIRECTORY = Object.freeze({
   beautysalon: Object.freeze({ name: 'Kosmetikstudio', nameEn: 'Beauty salons', label: 'Website für Kosmetikstudios', href: '/branchen/webdesign-beautysalon', teaser: 'Behandlungen mit Preisen, Online-Termin und Gutscheine für Kosmetik-, Nagel- und Wimpernstudios.' }),
   fotograf: Object.freeze({ name: 'Fotografie', nameEn: 'Photographers', label: 'Website für Fotografen', href: '/branchen/webdesign-fotograf', teaser: 'Portfolio nach Genre, Pakete und schnell ladende Galerien.' }),
   tattoo: Object.freeze({ name: 'Tattoo-Studio', nameEn: 'Tattoo studios', label: 'Website für Tattoo-Studios', href: '/branchen/webdesign-tattoo', teaser: 'Artists mit Portfolio, Anfrage mit Motiv und Größe, Walk-in-Tage.' }),
-  wellness: Object.freeze({ name: 'Massage & Wellness', nameEn: 'Massage & wellness', label: 'Website für Massage und Wellness', href: '/branchen/webdesign-wellness', teaser: 'Massagen mit Preisen, Online-Buchung und Gutscheinverkauf.' })
+  wellness: Object.freeze({ name: 'Massage & Wellness', nameEn: 'Massage & wellness', label: 'Website für Massage und Wellness', href: '/branchen/webdesign-wellness', teaser: 'Massagen mit Preisen, Online-Buchung und Gutscheinverkauf.' }),
+  kita: Object.freeze({ name: 'Kita & Tagespflege', nameEn: 'Daycare & childminders', label: 'Website für Kitas und Tagesmütter', href: '/branchen/webdesign-kita', teaser: 'Konzept, Tagesablauf, Platzanfrage und Stellenanzeigen für Kitas, Kinderläden und Kindertagespflege.' })
 });
 
 // Drei Nachbarn je Branche: ähnliche Kundschaft, ähnlicher Anfrageweg oder gemeinsame Rechtsthemen.
@@ -28,7 +29,7 @@ export const INDUSTRY_DIRECTORY = Object.freeze({
 export const RELATED_INDUSTRIES = Object.freeze({
   arzt: Object.freeze(['physiotherapie', 'hebamme', 'steuerberater']),
   physiotherapie: Object.freeze(['arzt', 'hebamme', 'wellness']),
-  hebamme: Object.freeze(['arzt', 'physiotherapie', 'fotograf']),
+  hebamme: Object.freeze(['arzt', 'physiotherapie', 'kita']),
   steuerberater: Object.freeze(['immobilienmakler', 'arzt', 'physiotherapie']),
   autowerkstatt: Object.freeze(['handwerker', 'reinigung', 'friseur']),
   friseur: Object.freeze(['beautysalon', 'tattoo', 'wellness']),
@@ -41,7 +42,8 @@ export const RELATED_INDUSTRIES = Object.freeze({
   reinigung: Object.freeze(['handwerker', 'immobilienmakler', 'autowerkstatt']),
   restaurant: Object.freeze(['cafe', 'blumenladen', 'fotograf']),
   cafe: Object.freeze(['restaurant', 'blumenladen', 'friseur']),
-  blumenladen: Object.freeze(['cafe', 'restaurant', 'fotograf'])
+  blumenladen: Object.freeze(['cafe', 'restaurant', 'fotograf']),
+  kita: Object.freeze(['hebamme', 'fotograf', 'arzt'])
 });
 
 // Branchen mit eigener Karte auf der Startseite; alle übrigen stehen dort als „Weitere Branchen“.

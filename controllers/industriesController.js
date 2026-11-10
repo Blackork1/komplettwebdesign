@@ -29,7 +29,7 @@ const INDUSTRY_GROUP_DEFINITIONS = Object.freeze([
     key: 'appointments',
     title: 'Termine und Buchungen',
     description: 'Angebot, Vertrauen und den Weg zur Terminvereinbarung schnell verständlich machen.',
-    terms: Object.freeze(['fitness', 'coach', 'friseur', 'kosmetik', 'beauty', 'therap', 'physio', 'arzt', 'praxis', 'hebamm', 'massage', 'wellness', 'tattoo', 'fotograf', 'studio'])
+    terms: Object.freeze(['fitness', 'coach', 'friseur', 'kosmetik', 'beauty', 'therap', 'physio', 'arzt', 'praxis', 'hebamm', 'massage', 'wellness', 'tattoo', 'fotograf', 'studio', 'kita'])
   }),
   Object.freeze({
     key: 'local-services',
@@ -137,7 +137,7 @@ function isExcludedIndustry(industry = {}) {
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
-  return ['kita', 'kitas', 'schule', 'schulen', 'school', 'schools', 'daycare', 'daycares', 'kindergarten']
+  return ['schule', 'schulen', 'school', 'schools']
     .some((needle) => text.includes(needle));
 }
 
@@ -192,7 +192,7 @@ function getIndustryCardImage(industry, groupKey) {
   if (niche) {
     return Object.freeze({
       // Für die 4:3-Karten reicht eine kleinere Variante des Hero-Fotos.
-      src: niche.page.hero.image.replace('/upload/c_fill,w_960,h_640,', '/upload/c_fill,w_720,h_540,'),
+      src: niche.page.cardImage || niche.page.hero.image.replace('/upload/c_fill,w_960,h_640,', '/upload/c_fill,w_720,h_540,'),
       alt: niche.page.hero.imageAlt,
       source: Object.freeze({ kind: 'customer-or-own', provider: 'Komplett Webdesign' })
     });

@@ -1,7 +1,7 @@
 // Branchenseiten mit eigenem Inhalt statt der Datenbank-Vorlage (Reinigung, Blumenladen, Fitness,
 // Immobilienmakler, Restaurant, Café und seit 29.10.2026 Arzt, Physiotherapie, Hebamme, Steuerberater,
-// Autowerkstatt, Friseur, Kosmetik, Fotograf, Tattoo, Wellness). Die Adresse bleibt
-// /branchen/webdesign-<slug>; die Datenbankeinträge bleiben unverändert erhalten.
+// Autowerkstatt, Friseur, Kosmetik, Fotograf, Tattoo, Wellness, seit 10.11.2026 Kita und Kindertagespflege).
+// Die Adresse bleibt /branchen/webdesign-<slug>; die Datenbankeinträge bleiben unverändert erhalten.
 import { interpolatePricingTokens } from '../util/pricingViewModel.js';
 import { buildNichePageSchemas } from '../helpers/pageSchema.js';
 import { SITE_FACTS, formatGoogleRating } from '../helpers/siteFacts.js';
@@ -22,6 +22,7 @@ import { BEAUTYSALON_PAGE, BEAUTYSALON_FAQ, BEAUTYSALON_CONTENT_UPDATED_ISO } fr
 import { FOTOGRAF_PAGE, FOTOGRAF_FAQ, FOTOGRAF_CONTENT_UPDATED_ISO } from '../data/fotografPage.js';
 import { TATTOO_PAGE, TATTOO_FAQ, TATTOO_CONTENT_UPDATED_ISO } from '../data/tattooPage.js';
 import { WELLNESS_PAGE, WELLNESS_FAQ, WELLNESS_CONTENT_UPDATED_ISO } from '../data/wellnessPage.js';
+import { KITA_PAGE, KITA_FAQ, KITA_CONTENT_UPDATED_ISO } from '../data/kitaPage.js';
 
 export const NICHE_PAGES = Object.freeze({
   reinigung: Object.freeze({ page: REINIGUNG_PAGE, faq: REINIGUNG_FAQ, updatedIso: REINIGUNG_CONTENT_UPDATED_ISO }),
@@ -39,7 +40,8 @@ export const NICHE_PAGES = Object.freeze({
   beautysalon: Object.freeze({ page: BEAUTYSALON_PAGE, faq: BEAUTYSALON_FAQ, updatedIso: BEAUTYSALON_CONTENT_UPDATED_ISO }),
   fotograf: Object.freeze({ page: FOTOGRAF_PAGE, faq: FOTOGRAF_FAQ, updatedIso: FOTOGRAF_CONTENT_UPDATED_ISO }),
   tattoo: Object.freeze({ page: TATTOO_PAGE, faq: TATTOO_FAQ, updatedIso: TATTOO_CONTENT_UPDATED_ISO }),
-  wellness: Object.freeze({ page: WELLNESS_PAGE, faq: WELLNESS_FAQ, updatedIso: WELLNESS_CONTENT_UPDATED_ISO })
+  wellness: Object.freeze({ page: WELLNESS_PAGE, faq: WELLNESS_FAQ, updatedIso: WELLNESS_CONTENT_UPDATED_ISO }),
+  kita: Object.freeze({ page: KITA_PAGE, faq: KITA_FAQ, updatedIso: KITA_CONTENT_UPDATED_ISO })
 });
 
 const PACKAGE_KEYS = ['start', 'business', 'wachstum'];

@@ -71,12 +71,13 @@ test('deaktivierte statische Routen stehen nicht in der Sitemap', async () => {
   }
 });
 
-test('industry sitemap policy only includes reviewed priority industries and excludes schools and daycare', () => {
+test('industry sitemap policy only includes reviewed priority industries and excludes schools', () => {
   assert.deepEqual(
     PRIORITY_INDUSTRY_SLUGS,
     [
       'handwerker', 'restaurant', 'cafe', 'reinigungsfirma', 'reinigung', 'blumenladen', 'immobilienmakler', 'fitnesscoach',
-      'arzt', 'physiotherapie', 'hebamme', 'steuerberater', 'autowerkstatt', 'friseur', 'beautysalon', 'fotograf', 'tattoo', 'wellness'
+      'arzt', 'physiotherapie', 'hebamme', 'steuerberater', 'autowerkstatt', 'friseur', 'beautysalon', 'fotograf', 'tattoo', 'wellness',
+      'kita'
     ]
   );
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'fitnesscoach', name: 'Fitness-Coach' }), true);
@@ -85,8 +86,11 @@ test('industry sitemap policy only includes reviewed priority industries and exc
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'restaurant' }), true);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-reinigung' }), true);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-blumenladen' }), true);
-  assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-kita', name: 'Kita' }), false);
+  // Die Kita-Seite hat seit 10.11.2026 eigenen Inhalt; auch der alte Datenbanktitel mit „Kindergärten“ bleibt zugelassen.
+  assert.equal(shouldIncludeIndustryInSitemap({ slug: 'webdesign-kita', name: 'Kita' }), true);
+  assert.equal(shouldIncludeIndustryInSitemap({ slug: 'kita', name: 'Kita', title: 'Kita Website erstellen Berlin - Webdesign für Kindergärten' }), true);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'schule', title: 'Webdesign Schule' }), false);
+  assert.equal(shouldIncludeIndustryInSitemap({ slug: 'kita', name: 'Kita', description: 'Für Kita und Schule' }), false);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'daycare', description: 'Daycare website' }), false);
   assert.equal(shouldIncludeIndustryInSitemap({ slug: 'zahnarzt' }), false);
 });

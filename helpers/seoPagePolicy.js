@@ -62,7 +62,9 @@ export const PRIORITY_INDUSTRY_SLUGS = [
   'beautysalon',
   'fotograf',
   'tattoo',
-  'wellness'
+  'wellness',
+  // Seit 10.11.2026 mit eigenem Inhalt (data/kitaPage.js); bis dahin war die Vorlage aus dem Index ausgeschlossen.
+  'kita'
 ];
 
 export const REVIEWED_DISTRICT_SLUGS = [
@@ -74,16 +76,12 @@ export const REVIEWED_DISTRICT_SLUGS = [
   'prenzlauer-berg'
 ];
 
+// Schulen bleiben draußen: Für sie gibt es keine geprüfte Seite.
 const EXCLUDED_INDUSTRY_TERMS = [
-  'kita',
-  'kitas',
   'schule',
   'schulen',
   'school',
-  'schools',
-  'daycare',
-  'daycares',
-  'kindergarten'
+  'schools'
 ];
 
 export function normalizeIndustrySlug(slug = '') {

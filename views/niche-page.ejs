@@ -14,8 +14,14 @@
   const blocks = typeof structuredDataBlocks !== 'undefined' ? structuredDataBlocks : [];
   const track = pg.trackPrefix || pg.slug;
   const sectionClass = (section) => `wd-section${section.soft ? ' wd-section--soft' : ''}`;
+  // Seiten mit page.motion blenden ihre Abschnitte beim Scrollen ein (public/js/slideOnScroll.js).
+  // Der Hero bleibt ohne Animation, damit das größte Bild sofort sichtbar ist.
+  const rv = pg.motion ? ' animate-on-scroll' : '';
+  const rvAttr = pg.motion ? ' class="animate-on-scroll"' : '';
+  // Eigene Stylesheets einer Seite (page.extraCss), z. B. public/kita-page.css für Zeitleiste und Bildkarten.
+  const pageCss = ['webdesign-berlin.css', ...(Array.isArray(pg.extraCss) ? pg.extraCss : [])];
 %>
-<%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: ['webdesign-berlin.css'] }) %>
+<%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: pageCss }) %>
 <body>
   <%- include('partials/header') %>
   <main class="webdesign-berlin-page webdesign-berlin handwerk-page niche-page niche-page--<%= pg.slug %>" id="content">
@@ -53,7 +59,7 @@
     <% if (section.type === 'why') { const hasStats = Array.isArray(section.stats) && section.stats.length > 0; %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container<%= hasStats ? ' wd-split' : ' niche-page__narrow' %>">
-        <div class="handwerk-page__why">
+        <div class="handwerk-page__why<%= rv %>">
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <% section.paragraphs.forEach((paragraph) => { %>
@@ -63,7 +69,7 @@
         <% if (hasStats) { %>
         <ul class="handwerk-page__stats" aria-label="Zahlen zur Branche">
           <% section.stats.forEach((stat) => { %>
-          <li class="wd-card">
+          <li class="wd-card<%= rv %>">
             <strong><%= stat.value %></strong>
             <span><%= stat.label %></span>
             <small>Quelle: <%= stat.source %></small>
@@ -77,14 +83,14 @@
     <% } else if (section.type === 'cards') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head<%= rv %>">
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <p class="wd-lead"><%= section.intro %></p>
         </div>
         <div class="wd-grid handwerk-page__essentials">
           <% section.items.forEach((item) => { %>
-          <article class="wd-card">
+          <article class="wd-card<%= rv %>">
             <div class="handwerk-page__card-head">
               <i class="fa-solid <%= item.icon %>" aria-hidden="true"></i>
               <h3><%= item.title %></h3>
@@ -99,14 +105,14 @@
     <% } else if (section.type === 'catalog') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head<%= rv %>">
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <p class="wd-lead"><%= section.intro %></p>
         </div>
         <div class="wd-grid handwerk-page__trades">
           <% section.items.forEach((entry) => { %>
-          <article class="wd-card">
+          <article class="wd-card<%= rv %>">
             <h3><%= entry.name %></h3>
             <p class="handwerk-page__label"><%= section.pagesLabel %></p>
             <ul class="wd-list wd-list--checks">
@@ -123,7 +129,7 @@
           </article>
           <% }) %>
           <% if (section.related) { %>
-          <article class="wd-card handwerk-page__related">
+          <article class="wd-card handwerk-page__related<%= rv %>">
             <h3><%= section.related.title %></h3>
             <p><%= section.related.text %></p>
             <ul class="wd-list">
@@ -140,14 +146,14 @@
     <% } else if (section.type === 'columns') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head<%= rv %>">
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <p class="wd-lead"><%= section.intro %></p>
         </div>
         <div class="wd-grid wd-grid--three niche-page__columns">
           <% section.items.forEach((item) => { %>
-          <article class="wd-card">
+          <article class="wd-card<%= rv %>">
             <h3><%= item.title %></h3>
             <% if (item.text) { %><p><%= item.text %></p><% } %>
             <ul class="wd-list wd-list--checks">
@@ -166,7 +172,7 @@
     <% } else if (section.type === 'form') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container wd-split">
-        <div>
+        <div<%- rvAttr %>>
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <p><%= section.text %></p>
@@ -174,7 +180,7 @@
           <p class="handwerk-page__note"><%= note %></p>
           <% }) %>
         </div>
-        <div class="wd-card handwerk-page__form" aria-label="<%= section.formLabel %>">
+        <div class="wd-card handwerk-page__form<%= rv %>" aria-label="<%= section.formLabel %>">
           <p class="handwerk-page__label"><%= section.formLabel %></p>
           <ol>
             <% section.fields.forEach((field) => { %>
@@ -188,7 +194,7 @@
     <% } else if (section.type === 'case') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container wd-split niche-page__case">
-        <div>
+        <div<%- rvAttr %>>
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <p><%= section.text %></p>
@@ -215,7 +221,7 @@
             <% if (rating && rating.href) { %><a href="<%= rating.href %>" target="_blank" rel="noopener"><%= rating.label %></a><% } %>
           </div>
         </div>
-        <figure class="niche-page__case-media">
+        <figure class="niche-page__case-media<%= rv %>">
           <img src="<%= section.image.src %>" alt="<%= section.image.alt %>" width="<%= section.image.width %>" height="<%= section.image.height %>" loading="lazy" decoding="async">
         </figure>
       </div>
@@ -224,7 +230,7 @@
     <% } else if (section.type === 'checklist') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container wd-split">
-        <div>
+        <div<%- rvAttr %>>
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <% section.paragraphs.forEach((paragraph) => { %>
@@ -234,7 +240,7 @@
           <p class="handwerk-page__note"><%= section.note %><% if (section.noteLinks || section.noteLink) { (section.noteLinks || [section.noteLink]).forEach((link, linkIndex) => { %><%= linkIndex > 0 ? ' ·' : '' %> <a href="<%= link.href %>"><%= link.label %></a><% }) } %></p>
           <% } %>
         </div>
-        <article class="wd-card">
+        <article class="wd-card<%= rv %>">
           <h3><%= section.cardTitle %></h3>
           <ul class="wd-list wd-list--checks">
             <% section.items.forEach((item) => { %>
@@ -248,7 +254,7 @@
     <% } else if (section.type === 'pricing') { %>
     <section id="<%= section.id %>" class="wd-section wd-section--soft" aria-labelledby="<%= titleId %>">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head<%= rv %>">
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <p class="wd-lead"><%= section.lead %></p>
@@ -256,7 +262,7 @@
         <% if (cards.length) { %>
         <div class="wd-grid wd-grid--three handwerk-page__packages">
           <% cards.forEach((pkg) => { %>
-          <article class="wd-card wd-package<%= pkg.featured ? ' wd-package--featured' : '' %>">
+          <article class="wd-card wd-package<%= pkg.featured ? ' wd-package--featured' : '' %><%= rv %>">
             <% if (pkg.featured) { %>
             <span class="wd-package__label">Häufig passend</span>
             <% } else { %>
@@ -277,7 +283,7 @@
     <% } else if (section.type === 'process') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container wd-split">
-        <div>
+        <div<%- rvAttr %>>
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
           <p><%= section.duration %></p>
@@ -289,7 +295,7 @@
         </div>
         <ol class="wd-steps">
           <% section.steps.forEach((step) => { %>
-          <li>
+          <li<%- rvAttr %>>
             <h3><%= step.title %></h3>
             <p><%= step.text %></p>
           </li>
@@ -301,11 +307,11 @@
     <% } else if (section.type === 'faq') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head<%= rv %>">
           <span class="wd-chip"><%= section.chip %></span>
           <h2 id="<%= titleId %>"><%= section.title %></h2>
         </div>
-        <div class="wd-faq">
+        <div class="wd-faq<%= rv %>">
           <% faqList.forEach((faq, index) => { %>
           <details<%= index === 0 ? ' open' : '' %>>
             <summary><%= faq.q %></summary>
@@ -315,19 +321,85 @@
         </div>
       </div>
     </section>
+
+    <% } else if (section.type === 'timeline') { %>
+    <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
+      <div class="wd-container">
+        <div class="wd-section-head<%= rv %>">
+          <span class="wd-chip"><%= section.chip %></span>
+          <h2 id="<%= titleId %>"><%= section.title %></h2>
+          <p class="wd-lead"><%= section.intro %></p>
+        </div>
+        <ol class="niche-page__timeline" aria-label="<%= section.listLabel %>">
+          <% section.items.forEach((item) => { %>
+          <li class="niche-page__timeline-item<%= rv %>">
+            <span class="niche-page__timeline-time"><time datetime="<%= item.time %>"><%= item.time %></time> Uhr</span>
+            <h3><%= item.title %></h3>
+            <p><%= item.text %></p>
+          </li>
+          <% }) %>
+        </ol>
+        <% if (section.note) { %><p class="handwerk-page__center-note"><%= section.note %></p><% } %>
+      </div>
+    </section>
+
+    <% } else if (section.type === 'feature') { %>
+    <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
+      <div class="wd-container wd-split niche-page__feature">
+        <div<%- rvAttr %>>
+          <span class="wd-chip"><%= section.chip %></span>
+          <h2 id="<%= titleId %>"><%= section.title %></h2>
+          <% section.paragraphs.forEach((paragraph) => { %>
+          <p><%= paragraph %></p>
+          <% }) %>
+          <h3><%= section.pointsTitle %></h3>
+          <ul class="wd-list wd-list--checks">
+            <% section.points.forEach((point) => { %>
+            <li><%= point %></li>
+            <% }) %>
+          </ul>
+        </div>
+        <figure class="niche-page__feature-media<%= rv %>">
+          <img src="<%= section.image.src %>" alt="<%= section.image.alt %>" width="<%= section.image.width %>" height="<%= section.image.height %>" loading="lazy" decoding="async">
+        </figure>
+      </div>
+    </section>
+
+    <% } else if (section.type === 'gallery') { %>
+    <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
+      <div class="wd-container">
+        <div class="wd-section-head<%= rv %>">
+          <span class="wd-chip"><%= section.chip %></span>
+          <h2 id="<%= titleId %>"><%= section.title %></h2>
+          <p class="wd-lead"><%= section.intro %></p>
+        </div>
+        <div class="wd-grid wd-grid--three niche-page__gallery">
+          <% section.items.forEach((item) => { %>
+          <figure class="wd-card<%= rv %>">
+            <img src="<%= item.src %>" alt="<%= item.alt %>" width="<%= item.width %>" height="<%= item.height %>" loading="lazy" decoding="async">
+            <figcaption>
+              <strong><%= item.title %></strong>
+              <span><%= item.caption %></span>
+            </figcaption>
+          </figure>
+          <% }) %>
+        </div>
+        <% if (section.note) { %><p class="handwerk-page__center-note"><%= section.note %><% if (section.noteLink) { %> <a href="<%= section.noteLink.href %>"><%= section.noteLink.label %></a><% } %></p><% } %>
+      </div>
+    </section>
     <% } %>
     <% }) %>
 
     <% if (related.length) { %>
     <section id="verwandte-branchen" class="wd-section" aria-labelledby="niche-related-title">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head<%= rv %>">
           <span class="wd-chip">Weitere Branchen</span>
           <h2 id="niche-related-title">Websites für verwandte Branchen</h2>
         </div>
         <div class="wd-grid wd-grid--three niche-page__related">
           <% related.forEach((item) => { %>
-          <article class="wd-card">
+          <article class="wd-card<%= rv %>">
             <h3><a class="wd-card-title-link" href="<%= item.href %>"><%= item.label %></a></h3>
             <p><%= item.teaser %></p>
           </article>
@@ -340,7 +412,7 @@
 
     <section id="kontakt" class="wd-section wd-section--soft" aria-labelledby="niche-cta-title">
       <div class="wd-container">
-        <div class="wd-cta">
+        <div class="wd-cta<%= rv %>">
           <h2 id="niche-cta-title"><%= pg.cta.title %></h2>
           <p class="wd-lead"><%= pg.cta.text %></p>
           <div class="wd-actions">

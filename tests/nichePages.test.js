@@ -43,7 +43,7 @@ async function render(slug) {
 test('Reinigung und Blumenladen haben eigene Seiten unter der bisherigen Adresse', () => {
   assert.equal(getNichePage('reinigung')?.page.path, '/branchen/webdesign-reinigung');
   assert.equal(getNichePage('webdesign-blumenladen')?.page.path, '/branchen/webdesign-blumenladen');
-  assert.equal(getNichePage('kita'), null);
+  assert.equal(getNichePage('schule'), null);
   assert.equal(getNichePage('constructor'), null);
   const controller = read('controllers/industriesController.js');
   assert.ok(controller.indexOf('getNichePage(slug)') < controller.indexOf('await getIndustryBySlug(slug)'), 'eigene Seite vor der Datenbank-Vorlage');
@@ -171,6 +171,74 @@ test('Branchenübersicht zeigt Titel, Text und Foto der eigenen Seiten statt der
   assert.equal(groupOf('/branchen/webdesign-hebamme'), 'appointments');
   assert.equal(groupOf('/branchen/webdesign-autowerkstatt'), 'local-services');
   assert.equal(groupOf('/branchen/webdesign-steuerberater'), 'consulting-real-estate');
+});
+
+test('Kita-Seite: eigene Inhalte für Kitas und Kindertagespflege, im Index, mit Bildplätzen und dezenter Bewegung', async () => {
+  const kita = getNichePage('kita');
+  assert.equal(kita?.page.path, '/branchen/webdesign-kita');
+  assert.equal(getNichePage('webdesign-kita'), kita);
+  assert.ok(PRIORITY_INDUSTRY_SLUGS.includes('kita'));
+  assert.equal(shouldIncludeIndustryInSitemap({ slug: 'kita', name: 'Kita', title: 'Kita Website erstellen Berlin - Webdesign für Kindergärten' }), true);
+
+  const { model, html, main, text } = await render('kita');
+  assert.match(model.title, /^Kita-Website erstellen lassen/);
+  assert.ok(model.title.length <= 60, model.title);
+  assert.ok(model.description.length >= 120 && model.description.length <= 160, `Description ${model.description.length}`);
+  assert.match(model.description, /ab 799 €\.$/);
+  assert.match(main, /<h1[^>]*>Website für Kitas, Kinderläden und Tagesmütter in Berlin<\/h1>/);
+  assert.ok(model.nicheFaq.length >= 10);
+  assert.ok(model.nichePage.sources.length >= 3);
+  for (const term of ['Kita-Website', 'Kita-Homepage', 'Internetseite', 'Kindertagesstätte', 'Kindergarten', 'Kinderladen', 'Krippe', 'Hort', 'Tagesmutter', 'Tagesvater', 'Kindertagespflege', 'Großtagespflege', 'Elterninitiative', 'Förderverein', 'Kita-Gutschein', 'Kita-Navigator', 'Eingewöhnung', 'Tagesablauf', 'Platzanfrage', 'Erzieher']) {
+    assert.ok(text.includes(term), `„${term}“ fehlt`);
+  }
+  assert.doesNotMatch(text, /\b(?:Ihnen|Ihrer|Ihrem|Ihren)\b|\b(?:können|möchten|haben|kontaktieren|erhalten) Sie\b/);
+  assert.doesNotMatch(text, /[–—]/, 'keine Gedankenstriche im Text');
+
+  // Bildplätze: feste Dateien mit Maßen, damit später Fotos an dieselbe Stelle können.
+  const allImages = [...main.matchAll(/<img\b[^>]*>/g)].map((match) => match[0]);
+  const images = allImages.filter((image) => image.includes('/images/branchen/kita/'));
+  const expected = { 'kita-hero.webp': [960, 640], 'kita-tagespflege.webp': [720, 540], 'kita-raeume.webp': [720, 540], 'kita-garten.webp': [720, 540], 'kita-team.webp': [720, 540] };
+  assert.equal(images.length, Object.keys(expected).length);
+  for (const [file, [width, height]] of Object.entries(expected)) {
+    const tag = images.find((image) => image.includes(`/images/branchen/kita/${file}`));
+    assert.ok(tag, file);
+    assert.ok(tag.includes(`width="${width}"`) && tag.includes(`height="${height}"`), `${file}: Maße`);
+    assert.match(tag, /alt="[^"]{20,}"/, `${file}: Alt-Text`);
+    assert.ok(readFileSync(new URL(`../public/images/branchen/kita/${file}`, import.meta.url)).length > 1000, `${file} liegt im Repo`);
+  }
+  assert.equal(allImages.filter((image) => image.includes('fetchpriority="high"')).length, 1, 'nur das Hero-Bild lädt bevorzugt');
+  assert.match(images.find((image) => image.includes('kita-hero.webp')), /fetchpriority="high"/);
+  assert.equal(images.filter((image) => image.includes('loading="lazy"')).length, 4);
+
+  // Bewegung: eigenes Stylesheet, Einblenden über slideOnScroll, Hero ohne Animation.
+  assert.match(html, /<link[^>]+kita-page\.css/);
+  assert.match(main, /class="wd-section-head animate-on-scroll"/);
+  assert.match(main, /<ol class="niche-page__timeline"/);
+  assert.equal((main.match(/class="niche-page__timeline-item animate-on-scroll"/g) || []).length, 6);
+  assert.doesNotMatch(main.slice(0, main.indexOf('</section>')), /animate-on-scroll/, 'Hero bleibt sofort sichtbar');
+  const css = read('public/kita-page.css');
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(css, /html:not\(\.kwd-interaction-polish\) \.webdesign-berlin\.niche-page--kita \.animate-on-scroll/);
+  assert.doesNotMatch(css, /font-family|@font-face/);
+
+  // Die übrigen Branchenseiten bleiben ohne Bewegung und ohne das Kita-Stylesheet.
+  const hebamme = await render('hebamme');
+  assert.doesNotMatch(hebamme.main, /animate-on-scroll/);
+  assert.doesNotMatch(hebamme.html, /kita-page\.css/);
+  assert.ok(hebamme.main.includes('href="/branchen/webdesign-kita"'), 'Hebammen-Seite verlinkt die Kita-Seite');
+});
+
+test('Branchenübersicht zeigt die Kita-Seite mit eigener Karte', async () => {
+  const { buildIndustryGroups } = await import('../controllers/industriesController.js');
+  const groups = buildIndustryGroups([{ slug: 'kita', name: 'Kita', title: 'Kita Website erstellen Berlin - Webdesign für Kindergärten ab 499€', description: 'Alter Text' }]);
+  const group = groups.find((entry) => entry.items.some((item) => item.href === '/branchen/webdesign-kita'));
+  assert.equal(group.key, 'appointments');
+  const card = group.items.find((item) => item.href === '/branchen/webdesign-kita');
+  assert.equal(card.title, 'Website für Kitas und Tagesmütter');
+  assert.doesNotMatch(card.description, /Alter Text|\{\{|499/);
+  assert.equal(card.image.src, '/images/branchen/kita/kita-hero-720.webp');
+  assert.ok(readFileSync(new URL('../public/images/branchen/kita/kita-hero-720.webp', import.meta.url)).length > 1000);
+  assert.match(read('controllers/industriesController.js'), /return \['schule', 'schulen', 'school', 'schools'\]/);
 });
 
 test('Sitemap nimmt für die eigenen Seiten das Datum der Inhalte', () => {
