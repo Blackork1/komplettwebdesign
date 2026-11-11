@@ -44,6 +44,10 @@ const HOMEPAGE_FAQ = {
       a: 'Start passt für kompakte Websites, Business für mehrere Leistungen und Wachstum für Relaunches oder stärkere Seitenstruktur. Sonderfunktionen wie Buchungssystem, CMS, Mehrsprachigkeit oder Shop-Funktionen werden individuell geprüft.'
     },
     {
+      q: 'Ich brauche nur eine einfache Homepage. Bin ich bei dir richtig?',
+      a: 'Ja. Für eine einfache Internetseite mit 1 bis 3 Seiten oder einen Onepager gibt es das Start-Paket {{price.start}}. Auch eine kleine Homepage programmiere ich individuell, gut lesbar auf dem Handy und mit Kontaktformular. Kommen später Leistungen oder Funktionen dazu, lässt sich deine Webseite erweitern.'
+    },
+    {
       q: 'Was kostet die Website nach dem Launch im Monat?',
       a: 'Hosting gibt es ab 5 € im Monat, Domain und E-Mail ab 6 € im Monat. Wartung ist optional und hat feste Monatspreise, die du auf der Seite Website-Wartung findest. Domain, E-Mail, Hosting, Wartung und Drittanbieter-Tools stehen immer getrennt vom einmaligen Projektpreis.'
     },
@@ -76,7 +80,7 @@ const HOMEPAGE_FAQ = {
       a: 'Ja. Ein Relaunch ist sinnvoll, wenn Struktur, Technik, Inhalte oder die Darstellung auf dem Handy nicht mehr passen. Umfang, Weiterleitungen alter Adressen und Risiken klären wir vorab, damit bestehende Google-Rankings nicht verloren gehen.'
     },
     {
-      q: 'Wie lange dauert ein Projekt?',
+      q: 'Wie lange dauert es, eine Website erstellen zu lassen?',
       a: 'Kompakte Start-Websites dauern häufig 2 bis 4 Wochen, Business-Projekte meist 4 bis 6 Wochen. Wachstum- und individuelle Projekte hängen stärker von Inhalten, Feedback, Funktionen und technischen Zugängen ab.'
     }
   ],
@@ -126,15 +130,15 @@ const HOMEPAGE_FAQ = {
 
 const HOMEPAGE_I18N = {
   de: {
-    seoTitle: 'Webdesign Berlin: Websites ab {{lowestPackagePriceLabel}} | Komplett Webdesign',
-    seoDescription: 'Webdesign in Berlin für kleine Unternehmen: individuell programmierte Websites ab {{lowestPackagePriceLabel}}, persönlich betreut seit 5 Jahren. Kostenloses Erstgespräch.',
-    seoKeywords: 'webdesign berlin, webdesigner berlin, website erstellen lassen berlin, homepage erstellen lassen berlin, webdesign agentur berlin, webdesign preise berlin, website für kleine unternehmen berlin, webdesign brandenburg',
-    ogTitle: 'Webdesign Berlin: Websites für kleine Unternehmen | Komplett Webdesign',
-    ogDescription: 'Webdesign in Berlin für kleine Unternehmen: individuell programmierte Websites ab {{lowestPackagePriceLabel}}, persönlich betreut vom ersten Gespräch bis nach dem Launch.',
+    seoTitle: 'Webdesign Berlin: Website erstellen lassen ab {{lowestPackagePriceLabel}}',
+    seoDescription: 'Website erstellen lassen in Berlin: individuelles Webdesign für kleine Unternehmen ab {{lowestPackagePriceLabel}}, persönlich betreut seit 5 Jahren. Kostenloses Erstgespräch.',
+    seoKeywords: 'webdesign berlin, webdesigner berlin, website erstellen lassen berlin, webseite erstellen lassen berlin, homepage erstellen lassen berlin, internetseite erstellen lassen berlin, webdesign agentur berlin, webdesign preise berlin, website für kleine unternehmen berlin, webdesign brandenburg',
+    ogTitle: 'Webdesign Berlin: Website erstellen lassen | Komplett Webdesign',
+    ogDescription: 'Website erstellen lassen in Berlin: individuell programmiertes Webdesign für kleine Unternehmen ab {{lowestPackagePriceLabel}}, persönlich betreut vom ersten Gespräch bis nach dem Launch.',
     heroBadge: 'Dein Webdesigner aus Berlin-Lichtenberg',
     heroTitle: 'Webdesign Berlin für kleine Unternehmen',
     heroTitle2: '',
-    heroSubline: 'Ich bin Sören, dein Webdesigner in Berlin. Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen, Selbstständige und Handwerksbetriebe – mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
+    heroSubline: 'Ich bin Sören, dein Webdesigner in Berlin. Seit 5 Jahren plane, gestalte und betreue ich Websites für kleine Unternehmen, Selbstständige und Handwerksbetriebe. Bei mir kannst du deine Website erstellen lassen: mit Texten, SEO-Grundlage, Kontaktformular und auf Wunsch Hosting, Wartung, Buchungssystem oder Shop.',
     heroBullet1: 'Individuelles Webdesign statt Baukasten oder Template-Look',
     heroBullet2: 'Klare Pakete ab {{lowestPackagePriceLabel}} mit transparentem Leistungsumfang',
     heroBullet3: 'Struktur, Design und Entwicklung mit Fokus auf Kontaktanfragen',
@@ -147,7 +151,7 @@ const HOMEPAGE_I18N = {
     introTitleStrong: 'Webdesign, Pakete und persönliche Umsetzung',
     introTitleRest: 'aus einer Hand bei',
     featuresTitle: 'Warum Komplett Webdesign anders arbeitet',
-    timelineTitle: 'So läuft dein Webdesign-Projekt in Berlin ab',
+    timelineTitle: 'Website erstellen lassen: der Ablauf in 6 Schritten',
     timelineNote: 'Vom ersten Gespräch bis zum Launch weißt du immer, was als Nächstes passiert und was es kostet.',
     servicesTitle: 'Webdesign-Leistungen im Überblick',
     blogSectionTitle: 'Aktuelles zum Thema Webseiten und bisherige Kundenstimmen',

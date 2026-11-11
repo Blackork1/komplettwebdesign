@@ -85,7 +85,7 @@ const structuredDataBlocks = [
     '@id': schemaWebsiteId,
     name: 'Komplett Webdesign',
     url: schemaHomeUrl,
-    description: `Webdesign Berlin: individuell programmierte Websites für kleine Unternehmen mit SEO-Grundlage und ${homePackagesPriceText}.`,
+    description: `Webdesign Berlin: Website erstellen lassen für kleine Unternehmen, individuell programmiert, mit SEO-Grundlage und ${homePackagesPriceText}.`,
     publisher: { '@id': schemaOrgId },
     inLanguage: isEn ? 'en-US' : 'de-DE'
   },
@@ -101,18 +101,18 @@ const structuredDataBlocks = [
       { '@type': 'State', name: 'Brandenburg' },
       { '@type': 'Country', name: 'Deutschland' }
     ],
-    description: 'Webdesign in Berlin für kleine Unternehmen: individuell programmierte Websites mit klarer Seitenstruktur, SEO-Grundlage und persönlicher Betreuung.'
+    description: 'Website erstellen lassen in Berlin: individuell programmiertes Webdesign für kleine Unternehmen mit klarer Seitenstruktur, SEO-Grundlage und persönlicher Betreuung.'
   },
   {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     '@id': `${schemaBase}/#webpage`,
     name: isEn ? 'Web design Berlin' : 'Webdesign Berlin',
-    description: `Webdesign Berlin von Komplett Webdesign: individuell programmierte Websites für kleine Unternehmen, ${homePackagesPriceText} und persönliche Betreuung vom Erstgespräch bis nach dem Launch.`,
+    description: `Webdesign Berlin von Komplett Webdesign: Website erstellen lassen für kleine Unternehmen, individuell programmiert, ${homePackagesPriceText} und persönliche Betreuung vom Erstgespräch bis nach dem Launch.`,
     url: schemaHomeUrl,
     inLanguage: isEn ? 'en-US' : 'de-DE',
     datePublished: '2024-01-01',
-    dateModified: '2026-10-25',
+    dateModified: '2026-11-11',
     isPartOf: { '@id': schemaWebsiteId },
     about: [{ '@id': schemaOrgId }, { '@id': `${schemaBase}/#webdesign-service` }],
     author: { '@id': schemaPersonId },
@@ -181,15 +181,15 @@ const homePackageImages = {
               <p class="home-hero-lead home-hero-reveal home-hero-reveal--support animate-on-scroll"><%= copy.heroSubline %> <a href="/about"><%= isEn ? 'About me' : 'Mehr über mich' %></a></p>
               <ul class="home-hero-bullets" role="list">
                 <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
-                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <img src="/images/icons/check.svg" alt="" width="26" height="26" />
                   <span><%= copy.heroBullet1 %></span>
                 </li>
                 <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
-                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <img src="/images/icons/check.svg" alt="" width="26" height="26" />
                   <span><%= copy.heroBullet2 %></span>
                 </li>
                 <li class="home-hero-reveal home-hero-reveal--bullet animate-on-scroll">
-                  <img src="/images/icons/check.svg" alt="check icon" width="26" height="26" />
+                  <img src="/images/icons/check.svg" alt="" width="26" height="26" />
                   <span><%= copy.heroBullet3 %></span>
                 </li>
               </ul>
@@ -640,6 +640,10 @@ const homePackageImages = {
           <div class="inner-wrapper text-left animate-on-scroll">
             <span class="home-section-kicker"><i class="fas fa-sliders-h" aria-hidden="true"></i><%= isEn ? 'Scope' : 'Leistungsumfang' %></span>
             <h2><%= isEn ? 'What is included and what you can add' : 'Was enthalten ist und was du dazubuchen kannst' %></h2>
+            <p class="home-section-lead"><%= isEn
+              ? 'When you have your website built with me, you get a finished site and not just a draft.'
+              : 'Ob du es Website, Webseite, Homepage oder Internetseite nennst: Wenn du sie bei mir erstellen lässt, bekommst du einen fertig umgesetzten Auftritt und nicht nur einen Entwurf.'
+            %></p>
             <div class="home-split">
               <div class="home-card">
                 <h3><%= isEn ? 'Included in every package' : 'In jedem Paket enthalten' %></h3>

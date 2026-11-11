@@ -251,8 +251,8 @@ test('homepage shows real projects early and keeps the trust section for reviews
 test('homepage hero uses the final recommended copy and a quieter CTA hierarchy', () => {
   const joined = `${homepage}\n${controller}`;
 
-  assert.match(controller, /seoTitle:\s*'Webdesign Berlin: Websites ab \{\{lowestPackagePriceLabel\}\} \| Komplett Webdesign'/);
-  assert.match(controller, /seoDescription:\s*'Webdesign in Berlin für kleine Unternehmen: individuell programmierte Websites ab \{\{lowestPackagePriceLabel\}\}, persönlich betreut seit 5 Jahren\. Kostenloses Erstgespräch\.'/);
+  assert.match(controller, /seoTitle:\s*'Webdesign Berlin: Website erstellen lassen ab \{\{lowestPackagePriceLabel\}\}'/);
+  assert.match(controller, /seoDescription:\s*'Website erstellen lassen in Berlin: individuelles Webdesign für kleine Unternehmen ab \{\{lowestPackagePriceLabel\}\}, persönlich betreut seit 5 Jahren\. Kostenloses Erstgespräch\.'/);
   assert.match(controller, /heroBadge:\s*'Dein Webdesigner aus Berlin-Lichtenberg'/);
   assert.match(controller, /heroTitle:\s*'Webdesign Berlin für kleine Unternehmen'/);
   assert.match(controller, /heroTitle2:\s*''/);
