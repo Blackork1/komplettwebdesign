@@ -366,6 +366,14 @@ p {
   left: 5px;
 }
 
+/* Unter 1400 px ist der Seitenrand schmaler als die Symbole: nur die Leiste zeigen,
+   sonst liegen die Symbole über Überschriften und Fließtext. */
+@media (max-width: 1399.98px) {
+  .scroll-indicator .icon-link {
+    display: none;
+  }
+}
+
 /* Barrierefrei */
 .is-hidden {
   display: none !important;

@@ -41,6 +41,11 @@ test('Tippflächen sind mindestens 24 × 24 px und überlappen nicht', () => {
   assert.match(slider, /link\.classList\.toggle\('is-crowded', crowded\)/);
 });
 
+test('Abschnittssymbole erscheinen erst, wenn der Seitenrand breit genug ist', () => {
+  const main = read('public/css/main.css');
+  assert.match(main, /@media \(max-width: 1399\.98px\) \{\s*\.scroll-indicator \.icon-link \{\s*display: none;/);
+});
+
 test('Footer-Überschrift überspringt keine Ebene', () => {
   const footer = read('views/partials/footer.ejs');
   assert.doesNotMatch(footer, /<h4\b/);

@@ -116,9 +116,9 @@
     "css/main.css": {
       "source": "css/main.css",
       "output": "css/main.min.css",
-      "href": "/css/main.min.css?v=da1e482f02e6",
-      "hash": "da1e482f02e6",
-      "bytes": 30294
+      "href": "/css/main.min.css?v=84a80ab4f89c",
+      "hash": "84a80ab4f89c",
+      "bytes": 30366
     },
     "demo/cq-compare/styles.css": {
       "source": "demo/cq-compare/styles.css",
