@@ -130,7 +130,7 @@ export const REINIGUNG_PAGE = Object.freeze({
       id: 'inhalte',
       soft: true,
       chip: 'Inhalte',
-      title: 'Was auf die Website einer Reinigungsfirma gehört',
+      title: 'Was auf die Website eines Reinigungs\u00ADunternehmens gehört',
       intro: 'Diese Inhalte erwarten Auftraggeber von einem Reinigungsunternehmen, bevor sie ein Angebot anfragen. Zugleich helfen sie Google zu verstehen, welche Reinigung du wo anbietest.',
       items: [
         { icon: 'fa-broom', title: 'Leistungen nach Reinigungsart', text: 'Unterhaltsreinigung, Glasreinigung, Grundreinigung oder Hausmeisterservice: Jede wichtige Leistung bekommt eine eigene Seite mit Ablauf, Intervallen und passenden Objekten.' },
@@ -166,7 +166,7 @@ export const REINIGUNG_PAGE = Object.freeze({
       id: 'gebaeudeservice',
       soft: true,
       chip: 'Gebäudeservice',
-      title: 'Webdesign für Gebäudeservice: mehrere Leistungen auf einer Website',
+      title: 'Webdesign für Gebäudereinigung und Gebäudeservice: mehrere Leistungen auf einer Website',
       paragraphs: [
         'Viele Betriebe bieten längst mehr als Reinigung: Hausmeisterdienst, Winterdienst, Grünpflege, kleine Reparaturen. Auf der Website steht das oft in einer einzigen langen Liste. Auftraggeber suchen aber nach der einzelnen Leistung, zum Beispiel nach „Winterdienst“ oder „Hausmeisterservice“ mit ihrem Bezirk. Eine Liste beantwortet diese Suche nicht.',
         'Besser ist eine Seite je Leistung und eine Übersicht, die alles verbindet. Jede Seite nennt Umfang, Objektarten, Turnus und Einsatzgebiet. Die Startseite macht deutlich, dass Hausverwaltungen alles bei einem festen Ansprechpartner bekommen. So entsteht kein Bauchladen, sondern ein klares Angebot mit mehreren Standbeinen.',

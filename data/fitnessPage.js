@@ -171,7 +171,7 @@ export const FITNESS_PAGE = Object.freeze({
       id: 'agentur-oder-webdesigner',
       soft: true,
       chip: 'Entscheidungshilfe',
-      title: 'Fitnessstudio-Website: Agentur, Baukasten oder Webdesigner?',
+      title: 'Website für dein Fitnessstudio: Agentur, Baukasten oder Webdesigner?',
       paragraphs: [
         'Wer eine Fitnessstudio-Website erstellen lassen will, hat drei Wege. Eine Agentur mit Team passt zu Ketten mit vielen Standorten, eigener App und laufenden Kampagnen. Ein Baukasten passt, wenn du Zeit hast und Texte, Bilder und Technik selbst übernimmst. Dazwischen liegt der Weg, den ich anbiete: ein Webdesigner als fester Ansprechpartner, der plant, schreibt, gestaltet und umsetzt.',
         'Das passt zu inhabergeführten Studios, Boutique-Studios und Personal Trainern. Du sprichst mit der Person, die deine Website baut. Es gibt keine Projektleitung dazwischen und keine langen Abstimmungsrunden. Die Website bleibt schlank: Kursplan, Preise, Trainer, Probetraining und die Angaben, die Google für die lokale Suche braucht.',

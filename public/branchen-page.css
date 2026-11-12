@@ -170,6 +170,16 @@
   }
 }
 
+/* Abschnittsüberschriften bis 1100 px: weiche Trennstellen (­ in den Daten) erlauben, z. B.
+   „Reinigungs-unternehmens“ auf dem Handy oder „Immobilien-bewertung“ in schmalen Spalten bei 1024 px.
+   extra.css schaltet die Trennung für die ganze Seite ab; automatisch getrennt wird weiter nicht.
+   Auf breiteren Bildschirmen passen die Wörter, dort rutschen sie ungetrennt in die nächste Zeile. */
+@media (max-width: 1100px) {
+  .webdesign-berlin.niche-page--motion .wd-section :is(h2, h3) {
+    hyphens: manual;
+  }
+}
+
 /* Farbiger Strich unter den Abschnittsüberschriften */
 .webdesign-berlin.niche-page--motion .wd-section-head h2::after,
 .webdesign-berlin.niche-page--motion .wd-split > div > h2::after {

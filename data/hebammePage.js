@@ -147,7 +147,7 @@ export const HEBAMME_PAGE = Object.freeze({
       birthWeek: 40,
       phases: [
         { name: 'Hebamme finden', from: 5, to: 14, label: 'gleich nach dem positiven Test', query: 'Hebamme finden Berlin Pankow', text: 'Freie Plätze nach Monat des Entbindungstermins, dein Einzugsgebiet und eine Anfrage mit Termin und Postleitzahl.' },
-        { name: 'Geburtsvorbereitung', from: 20, to: 33, label: 'ungefähr ab der 20. Woche', query: 'Geburtsvorbereitungskurs Berlin Wochenende', text: 'Kurse mit Termin, Ort und freien Plätzen. Eigene Hinweise für Paare, Wochenendkurse und das zweite Kind.' },
+        { name: 'Geburts\u00ADvorbereitung', from: 20, to: 33, label: 'ungefähr ab der 20. Woche', query: 'Geburtsvorbereitungskurs Berlin Wochenende', text: 'Kurse mit Termin, Ort und freien Plätzen. Eigene Hinweise für Paare, Wochenendkurse und das zweite Kind.' },
         { name: 'Wochenbett', from: 40, to: 48, label: 'die ersten Wochen nach der Geburt', query: 'Hebamme Wochenbett Berlin', text: 'Was Hausbesuche umfassen, wie lange du begleitest und wen man bei Fragen am Wochenende erreicht.' },
         { name: 'Rückbildung und Babykurse', from: 48, to: 60, label: 'einige Wochen nach der Geburt', query: 'Rückbildungskurs Berlin', text: 'Kurszeiten, Ort, Kosten und ob das Baby mitkommen kann. Dazu Babymassage oder Stillgruppe, wenn du sie anbietest.' }
       ],

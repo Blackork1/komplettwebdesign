@@ -157,7 +157,7 @@ export const PHYSIOTHERAPIE_PAGE = Object.freeze({
       id: 'therapieseiten',
       soft: true,
       chip: 'Therapien',
-      title: 'Website für Physiotherapie: jede Therapie verständlich erklärt',
+      title: 'Webdesign für Physiotherapie: jede Therapie verständlich erklärt',
       paragraphs: [
         'Auf der Verordnung steht „KG“, „MT“ oder „MLD“. Viele Patientinnen und Patienten wissen nicht, was sich dahinter verbirgt, und suchen genau danach: „Manuelle Therapie Berlin“ oder „Lymphdrainage in der Nähe“. Eine Liste mit zwölf Fachbegriffen beantwortet diese Suche nicht. Eine kurze Seite je Therapie schon.',
         'Jede Therapieseite erklärt in einfachen Worten, was bei der Behandlung passiert, wie lange ein Termin dauert und was auf der Verordnung stehen muss. Dazu kommt, was mitzubringen ist und ob die Therapie auch als Hausbesuch möglich ist. Am Ende steht der Weg zur Terminanfrage. Die Texte bleiben sachlich und beschreiben den Ablauf, nicht den Erfolg.',
@@ -183,7 +183,7 @@ export const PHYSIOTHERAPIE_PAGE = Object.freeze({
       type: 'catalog',
       id: 'praxisarten',
       chip: 'Praxisarten',
-      title: 'Websites für Kassenpraxen, Privatpraxen und Spezialisierungen',
+      title: 'Webdesign für Physiotherapeuten: Kassenpraxen, Privatpraxen und Spezialisierungen',
       intro: 'Eine Kassenpraxis mit Hausbesuchen braucht andere Seiten als eine Privatpraxis für Sportlerinnen und Sportler. Die Übersicht zeigt, welche Inhalte sich lohnen und wie Patienten tatsächlich suchen.',
       pagesLabel: 'Wichtige Inhalte',
       searchesLabel: 'So wird gesucht',

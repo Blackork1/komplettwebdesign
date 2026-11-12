@@ -73,14 +73,14 @@ bandscheibenvorfall“, „geburtsvorbereitungskurs berlin wochenende“, „fre
 
 | Seite | Farbton | Themenabschnitt (Variante) | Vertiefung (mit Bild) | Bild der Vertiefung | Bilder im Beispielaufbau |
 |---|---|---|---|---|---|
-| `/branchen/webdesign-reinigung` | frisch | SEO für Reinigungsfirmen: Jeder Suchbegriff braucht seine Seite (`suchbegriffe`) | Webdesign für Gebäudeservice: mehrere Leistungen auf einer Website | `reinigung-angebot.webp` | `reinigung-startseite.webp`, `reinigung-anfrage.webp`, `reinigung-suche.webp` |
+| `/branchen/webdesign-reinigung` | frisch | SEO für Reinigungsfirmen: Jeder Suchbegriff braucht seine Seite (`suchbegriffe`) | Webdesign für Gebäudereinigung und Gebäudeservice: mehrere Leistungen auf einer Website | `reinigung-angebot.webp` | `reinigung-startseite.webp`, `reinigung-anfrage.webp`, `reinigung-suche.webp` |
 | `/branchen/webdesign-blumenladen` | floral | SEO für Blumenläden: der Kalender der Anlässe (`anlasskalender`) | Blumen-Onlineshop erstellen lassen: was ein kleiner Shop können muss | `blumenladen-angebot.webp` | `blumenladen-startseite.webp`, `blumenladen-anfrage.webp`, `blumenladen-suche.webp` |
-| `/branchen/webdesign-fitnesscoach` | energie | Kursplan auf der Website: lesbar für Mitglieder und für Google (`kursplan`) | Fitnessstudio-Website: Agentur, Baukasten oder Webdesigner? | `fitnesscoach-startseite.webp` | `fitnesscoach-angebot.webp`, `fitnesscoach-anfrage.webp`, `fitnesscoach-suche.webp` |
+| `/branchen/webdesign-fitnesscoach` | energie | Kursplan auf der Website: lesbar für Mitglieder und für Google (`kursplan`) | Website für dein Fitnessstudio: Agentur, Baukasten oder Webdesigner? | `fitnesscoach-startseite.webp` | `fitnesscoach-angebot.webp`, `fitnesscoach-anfrage.webp`, `fitnesscoach-suche.webp` |
 | `/branchen/webdesign-immobilienmakler` | klar | SEO für Immobilienmakler in Berlin: Lagekenntnis pro Bezirk zeigen (`bezirkskarte`) | Webdesign für Makler: Objekte zeigen, ohne sie doppelt zu pflegen | `immobilienmakler-angebot.webp` | `immobilienmakler-startseite.webp`, `immobilienmakler-anfrage.webp`, `immobilienmakler-suche.webp` |
 | `/branchen/webdesign-restaurant` | genuss | Google-Profil und Restaurant-Webseite: was wohin gehört (`profil-website`) | Restaurant-Webseite: warum die Speisekarte die wichtigste Seite ist | `restaurant-angebot.webp` | `restaurant-startseite.webp`, `restaurant-anfrage.webp`, `restaurant-suche.webp` |
 | `/branchen/webdesign-cafe` | genuss | SEO für Cafés: Gäste suchen nach Merkmalen, nicht nach Namen (`bon`) | Torten über die Café-Website vorbestellen: so klappt es ohne Zettelwirtschaft | `cafe-anfrage.webp` | `cafe-startseite.webp`, `cafe-angebot.webp`, `cafe-suche.webp` |
 | `/branchen/webdesign-arzt` | frisch | Das digitale Praxisschild: was Patienten und Google zuerst brauchen (`praxisschild`) | Praxis-Homepage erstellen lassen: was Patienten in den ersten Sekunden suchen | `arzt-startseite.webp` | `arzt-angebot.webp`, `arzt-anfrage.webp`, `arzt-suche.webp` |
-| `/branchen/webdesign-physiotherapie` | frisch | Physiotherapie bei Rücken, Knie, Schulter: Seiten, über die Patienten dich finden (`beschwerden`) | Website für Physiotherapie: jede Therapie verständlich erklärt | `physiotherapie-angebot.webp` | `physiotherapie-startseite.webp`, `physiotherapie-anfrage.webp`, `physiotherapie-suche.webp` |
+| `/branchen/webdesign-physiotherapie` | frisch | Physiotherapie bei Rücken, Knie, Schulter: Seiten, über die Patienten dich finden (`beschwerden`) | Webdesign für Physiotherapie: jede Therapie verständlich erklärt | `physiotherapie-angebot.webp` | `physiotherapie-startseite.webp`, `physiotherapie-anfrage.webp`, `physiotherapie-suche.webp` |
 | `/branchen/webdesign-hebamme` | pastell | Hebamme finden: wann Familien wonach suchen (`schwangerschaft`) | Hebammen-Website erstellen lassen: Kurse mit Termin, Ort und freien Plätzen | `hebamme-angebot.webp` | `hebamme-startseite.webp`, `hebamme-anfrage.webp`, `hebamme-suche.webp` |
 | `/branchen/webdesign-steuerberater` | klar | Woran man eine gute Steuerberater-Website erkennt (`pruefbogen`) | Kanzlei-Website erstellen lassen: nach Mandantengruppen statt nach Leistungsliste | `steuerberater-angebot.webp` | `steuerberater-startseite.webp`, `steuerberater-anfrage.webp`, `steuerberater-suche.webp` |
 | `/branchen/webdesign-autowerkstatt` | energie | SEO für Kfz-Werkstätten: Marken, Antriebe und Service, nach denen gesucht wird (`kennzeichen`) | Webdesign für Kfz-Werkstätten: Leistungen so erklären, dass niemand nachfragen muss | `autowerkstatt-angebot.webp` | `autowerkstatt-startseite.webp`, `autowerkstatt-anfrage.webp`, `autowerkstatt-suche.webp` |
@@ -198,9 +198,23 @@ Zweite Runde (12.11.2026, Themenabschnitte und neue Bildformate):
   Blumenladen 99, jeweils SEO 100, Barrierefreiheit 100, Layoutverschiebung 0.
 - Tests: wieder 2461 von 2486 bestanden, dieselben sechs bekannten Fehlschläge.
 
+Dritte Runde (12.11.2026, Überschriften nach Suchanfragen):
+
+- Vergleich Live-Stand gegen neuen Stand mit allen 164 Suchanfragen seit Mai (3.458 Impressionen):
+  Anteil der Impressionen, deren Suchanfrage in Titel, H1 oder einer Zwischenüberschrift steht,
+  live 53 %, nach den ersten zwei Runden 69 %, jetzt 81 %. Keine Anfrage ist schlechter abgedeckt.
+- Geänderte Überschriften: „Webdesign für Physiotherapie“ und „Webdesign für Physiotherapeuten“,
+  „Webdesign für Handwerker in Berlin“ und „Website für deinen Handwerksbetrieb in Berlin“,
+  „Website eines Reinigungsunternehmens“ und „Webdesign für Gebäudereinigung und Gebäudeservice“,
+  „Webdesign für Friseure“, „Webdesign für Steuerberater“, „Website für dein Fitnessstudio“.
+- Lange Wörter in Überschriften haben weiche Trennstellen (`\u00AD`), die bis 1100 px wirken
+  (`public/branchen-page.css`). Geprüft in elf Breiten von 320 bis 1440 px: kein Wort bricht
+  mehr ohne Trennstrich um.
+- Allgemeine Anfragen wie „website erstellen berlin“ auf der Reinigungsseite bleiben bewusst
+  draußen, sie gehören auf die Startseite.
+
 ## 6. Was offen bleibt
 
-- Echte Bilder statt der Skizzen, siehe Abschnitt 3.
 - Die Seiten stehen bei Google noch auf Seite 4 bis 7. Mehr Inhalt und sauberere Technik sind
   die Voraussetzung für bessere Plätze, aber keine Zusage. Ohne Verweise von anderen Websites
   und ohne Klicks aus der Suche bleibt der Sprung auf Seite 1 unsicher.

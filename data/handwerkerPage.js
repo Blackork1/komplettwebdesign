@@ -93,7 +93,7 @@ export const HANDWERKER_PAGE = Object.freeze({
     imageSize: [653, 436]
   },
   why: {
-    title: 'Warum eine gute Website im Handwerk mehr Aufträge bringt',
+    title: 'Webdesign für Handwerker in Berlin: warum eine gute Website mehr Aufträge bringt',
     paragraphs: [
       'Fast jeder Betrieb ist online: Laut der Bitkom-Studie 2025 nutzen 94 Prozent der Handwerksbetriebe eine eigene Website und 88 Prozent Online-Verzeichnisse. Eine Homepage allein hebt dich also nicht mehr ab. Entscheidend ist, ob Interessenten schnell verstehen, dass du der richtige Betrieb für ihren Auftrag bist.',
       'Auch Empfehlungen landen auf deiner Website. Wer deinen Namen hört, prüft dich meist kurz online: Leistungen, Bilder, Bewertungen, Erreichbarkeit. 87 Prozent der befragten Betriebe sagen, dass Kunden individuelle Angebote und schnelle Erreichbarkeit erwarten. Deine Website muss deshalb auf dem Handy funktionieren und den Kontakt leicht machen.'
@@ -261,7 +261,7 @@ export const HANDWERKER_PAGE = Object.freeze({
   },
   gallery: {
     chip: 'Beispielaufbau',
-    title: 'So kann die Website für deinen Handwerksbetrieb aufgebaut sein',
+    title: 'So kann die Website für deinen Handwerksbetrieb in Berlin aufgebaut sein',
     intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Baustellen.',
     items: [
       { src: '/images/branchen/handwerker/handwerker-startseite.webp', alt: 'Laptop auf einer Werkbank vor einer Werkzeugwand: Beispielaufbau der Startseite eines Handwerksbetriebs mit Überschrift, Knopf zur Angebotsanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Gewerk, Einsatzgebiet und der Knopf zur Angebotsanfrage stehen oben, darunter Leistungen, Referenzen und Karriere.' },

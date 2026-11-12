@@ -184,7 +184,7 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
       searchesLabel: 'So wird gesucht',
       items: [
         { name: 'Immobilie verkaufen', pages: ['Ablauf vom Erstgespräch bis zum Notartermin', 'Vermarktung und Besichtigungen', 'Provision und Kosten'], searches: ['Wohnung verkaufen Pankow', 'Haus verkaufen Makler Berlin'] },
-        { name: 'Immobilienbewertung', pages: ['Was die Bewertung beinhaltet', 'Anfrage mit wenigen Angaben', 'Unterschied zu Online-Rechnern'], searches: ['Immobilienbewertung Berlin', 'Wohnung bewerten lassen Charlottenburg'] },
+        { name: 'Immobilien\u00ADbewertung', pages: ['Was die Bewertung beinhaltet', 'Anfrage mit wenigen Angaben', 'Unterschied zu Online-Rechnern'], searches: ['Immobilienbewertung Berlin', 'Wohnung bewerten lassen Charlottenburg'] },
         { name: 'Vermietung', pages: ['Mietersuche und Auswahl', 'Besichtigungen und Unterlagen', 'Bestellerprinzip erklärt'], searches: ['Wohnung vermieten Makler Berlin', 'Mieter finden lassen'] },
         { name: 'Kapitalanlage und Gewerbe', pages: ['Angebote für Anleger', 'Gewerbeflächen', 'Diskrete Vermarktung'], searches: ['Mehrfamilienhaus verkaufen Berlin', 'Gewerbeimmobilie Makler Berlin'] },
         { name: 'Lagen und Bezirke', pages: ['Marktberichte je Bezirk', 'Verkaufte Objekte in der Lage', 'Ansprechpartner vor Ort'], searches: ['Immobilienmakler Steglitz', 'Makler Prenzlauer Berg'] }

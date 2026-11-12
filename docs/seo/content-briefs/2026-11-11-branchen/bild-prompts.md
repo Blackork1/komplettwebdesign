@@ -33,7 +33,7 @@ Erstelle ein Foto im Querformat 3:2 (1536 × 1024 Pixel). Ein aufgeklappter Lapt
 
 ### reinigung-angebot.webp
 
-- Stelle: Abschnitt „Webdesign für Gebäudeservice: mehrere Leistungen auf einer Website“, neben dem langen Text
+- Stelle: Abschnitt „Webdesign für Gebäudereinigung und Gebäudeservice: mehrere Leistungen auf einer Website“, neben dem langen Text
 - Format: Hochformat 2:3, in ChatGPT 1024 × 1536, auf der Website 720 × 1080
 - Datei: `public/images/branchen/reinigung/reinigung-angebot.webp`
 
@@ -107,7 +107,7 @@ Erstelle ein Foto im Querformat 3:2 (1536 × 1024 Pixel). Ein Smartphone liegt a
 
 ### fitnesscoach-startseite.webp
 
-- Stelle: Abschnitt „Fitnessstudio-Website: Agentur, Baukasten oder Webdesigner?“, neben dem langen Text
+- Stelle: Abschnitt „Website für dein Fitnessstudio: Agentur, Baukasten oder Webdesigner?“, neben dem langen Text
 - Format: Hochformat 2:3, in ChatGPT 1024 × 1536, auf der Website 720 × 1080
 - Datei: `public/images/branchen/fitnesscoach/fitnesscoach-startseite.webp`
 
@@ -327,7 +327,7 @@ Erstelle ein Foto im Querformat 3:2 (1536 × 1024 Pixel). Ein aufgeklappter Lapt
 
 ### physiotherapie-angebot.webp
 
-- Stelle: Abschnitt „Website für Physiotherapie: jede Therapie verständlich erklärt“, neben dem langen Text
+- Stelle: Abschnitt „Webdesign für Physiotherapie: jede Therapie verständlich erklärt“, neben dem langen Text
 - Format: Hochformat 2:3, in ChatGPT 1024 × 1536, auf der Website 720 × 1080
 - Datei: `public/images/branchen/physiotherapie/physiotherapie-angebot.webp`
 

@@ -195,7 +195,7 @@ export const ARZT_PAGE = Object.freeze({
         { name: 'Hausarztpraxis', pages: ['Sprechzeiten und offene Sprechstunde', 'Neue Patienten und Hausbesuche', 'Rezept- und Überweisungsanfrage'], searches: ['Hausarzt Berlin Lichtenberg', 'Hausarzt online Termin Berlin'] },
         { name: 'Facharztpraxis', pages: ['Schwerpunkte und Untersuchungen', 'Was zum ersten Termin gehört', 'Online-Termin je Leistung'], searches: ['HNO Praxis Berlin ohne Termin', 'Arzt in der Nähe Samstag geöffnet'] },
         { name: 'Kinderarztpraxis', pages: ['Vorsorge-Untersuchungen und Impfungen', 'Infektsprechstunde und Akutzeiten', 'Hinweise für neue Familien'], searches: ['Arzt in der Nähe Kinderarzt', 'Arzt in der Nähe jetzt geöffnet'] },
-        { name: 'Gemeinschaftspraxis und MVZ', pages: ['Ärztinnen und Ärzte mit Fachgebiet', 'Standorte und Zuständigkeiten', 'Karriereseite für MFA'], searches: ['Hausarzt Berlin Mitte', 'Hausarzt Berlin Charlottenburg'] },
+        { name: 'Gemeinschafts\u00ADpraxis und MVZ', pages: ['Ärztinnen und Ärzte mit Fachgebiet', 'Standorte und Zuständigkeiten', 'Karriereseite für MFA'], searches: ['Hausarzt Berlin Mitte', 'Hausarzt Berlin Charlottenburg'] },
         { name: 'Privatpraxis und Selbstzahler', pages: ['Leistungen mit Ablauf', 'Hinweis zur Abrechnung nach GOÄ', 'Terminanfrage mit Rückruf'], searches: ['Arzt in der Nähe ohne Termin', 'Arzt in der Nähe Öffnungszeiten'] }
       ],
       related: {

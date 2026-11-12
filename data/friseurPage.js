@@ -183,7 +183,7 @@ export const FRISEUR_PAGE = Object.freeze({
       type: 'catalog',
       id: 'salonarten',
       chip: 'Salonarten',
-      title: 'Websites für Salons, Barbershops und Spezialisten',
+      title: 'Webdesign für Friseure: Salons, Barbershops und Spezialisten',
       intro: 'Ein Barbershop braucht andere Seiten als ein Salon für Coloration oder ein mobiler Friseur. Die Übersicht zeigt, welche Inhalte sich lohnen und wie in Berlin tatsächlich gesucht wird.',
       pagesLabel: 'Wichtige Inhalte',
       searchesLabel: 'So wird gesucht',

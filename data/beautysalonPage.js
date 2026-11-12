@@ -151,7 +151,7 @@ export const BEAUTYSALON_PAGE = Object.freeze({
       id: 'behandlungsuebersicht',
       soft: true,
       chip: 'Behandlungen',
-      title: 'Kosmetikstudio-Website erstellen lassen: eine Behandlungsübersicht, die schnell zum Termin führt',
+      title: 'Kosmetikstudio-Website erstellen lassen: eine Behandlungs\u00ADübersicht, die schnell zum Termin führt',
       paragraphs: [
         'Viele Studios bieten zwanzig oder mehr Behandlungen an. Als lange Liste auf einer Seite wird daraus eine Wand aus Fachbegriffen. Neukundinnen wissen oft nicht, ob sie ein Lash Lifting oder eine Wimpernverlängerung suchen und worin sich ein Peeling von einem Microneedling unterscheidet. Wer sich nicht zurechtfindet, bucht nicht, sondern sucht weiter.',
         'Eine gute Übersicht sortiert nach Anliegen statt nach Fachbegriffen: Gesicht, Hände und Füße, Wimpern und Brauen, Haarentfernung. Jede Kachel nennt Dauer und Ab-Preis und sagt in einem Satz, für wen die Behandlung passt. Von dort geht es auf die Behandlungsseite und mit einem Tipp weiter zur Buchung. So finden auch Kundinnen den Weg, die nur wissen, was sie stört, und nicht, wie die Behandlung heißt.',

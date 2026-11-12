@@ -187,7 +187,7 @@ export const STEUERBERATER_PAGE = Object.freeze({
       type: 'catalog',
       id: 'kanzleiarten',
       chip: 'Kanzleiarten',
-      title: 'Websites für Einzelkanzleien, Spezialisten und größere Kanzleien',
+      title: 'Webdesign für Steuerberater: Einzelkanzleien, Spezialisten und größere Kanzleien',
       intro: 'Eine Kanzlei für Privatpersonen braucht andere Seiten als eine Kanzlei für Gründer oder Unternehmen. Die Übersicht zeigt, welche Inhalte sich lohnen und wie Mandanten tatsächlich suchen.',
       pagesLabel: 'Wichtige Inhalte',
       searchesLabel: 'So wird gesucht',
