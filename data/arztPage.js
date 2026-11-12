@@ -136,21 +136,25 @@ export const ARZT_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'alltag',
-      chip: 'Beispiel',
-      title: 'Ein Tag mit deiner Praxis-Website',
-      intro: 'Während dein Team am Empfang und im Behandlungszimmer gebraucht wird, beantwortet die Website die Fragen, die sonst das Telefon blockieren. Die Zeiten sind ein Beispiel.',
-      listLabel: 'Beispiel für einen Tag mit der Website einer Arztpraxis',
-      items: [
-        { time: '07:30', title: 'Vor dem ersten Anruf', text: 'Patienten sehen auf dem Handy, wann die offene Sprechstunde beginnt und was sie mitbringen sollen.' },
-        { time: '08:15', title: 'Rezept ohne Warteschleife', text: 'Ein Folgerezept wird per Formular angefragt, während am Empfang alle Leitungen belegt sind.' },
-        { time: '10:30', title: 'Neu im Kiez', text: 'Jemand sucht „Hausarzt Pankow“ und liest sofort, ob du neue Patienten aufnimmst.' },
-        { time: '13:00', title: 'Termin in der Mittagspause', text: 'Die Terminanfrage kommt an, obwohl die Praxis gerade geschlossen ist.' },
-        { time: '16:00', title: 'Anfahrt und Aufzug', text: 'Eine Angehörige prüft, ob die Praxis stufenlos erreichbar ist und wo sie parken kann.' },
-        { time: '20:00', title: 'Fragen nach Praxisschluss', text: 'Urlaub, Vertretung, Bereitschaftsdienst: Die Antworten stehen auf der Seite.' }
+      type: 'thema',
+      variant: 'praxisschild',
+      id: 'praxisschild',
+      chip: 'Lokale Suche',
+      title: 'Das digitale Praxisschild: was Patienten und Google zuerst brauchen',
+      intro: 'Gesucht wird nach Fachrichtung und Ortsteil: „Hausarzt Lichterfelde“, „Kinderarzt Pankow“, „Hautarzt Berlin Termin“. Was früher auf dem Schild an der Haustür stand, muss heute oben auf der Website und im Google-Profil stehen, überall mit denselben Angaben.',
+      sign: {
+        name: 'Praxis Dr. med. Muster',
+        field: 'Fachärztin für Allgemeinmedizin',
+        lines: [['Sprechzeiten', 'Mo, Di, Do 8 bis 12 und 15 bis 18 Uhr, Mi und Fr 8 bis 13 Uhr'], ['Versicherung', 'Alle Kassen und privat'], ['Zugang', '2. Etage, Aufzug vorhanden'], ['Termine', 'Telefon und Online-Termin']]
+      },
+      points: [
+        { title: 'Fachrichtung und Ortsteil', text: 'Beides steht im Seitentitel, in der Hauptüberschrift und im Google-Profil. So passt die Seite zu Suchen wie „Hausarzt Lichterfelde“.' },
+        { title: 'Sprechzeiten als Text', text: 'Nicht als Bild und nicht nur im PDF. Urlaub und Vertretung stehen oben auf der Startseite.' },
+        { title: 'Kassen oder privat', text: 'Eine der ersten Fragen neuer Patienten. Die Antwort gehört auf den ersten Bildschirm.' },
+        { title: 'Zugang und Anfahrt', text: 'Etage, Aufzug, Parkplätze, Haltestelle. Für ältere Patienten und Eltern mit Kinderwagen oft entscheidend.' },
+        { title: 'Ein Weg zum Termin', text: 'Telefon, Online-Termin oder Rückruf. Was du anbietest, steht auf jeder Seite an derselben Stelle.' }
       ],
-      note: 'Du musst nicht mit allem starten. Viele Praxen beginnen mit Sprechzeiten, Terminweg und Anfahrt und ergänzen Rezeptanfrage oder Leistungsseiten später.'
+      note: 'Dieselben Angaben schreibe ich zusätzlich als strukturierte Daten in den Quelltext. So erkennen Suchmaschinen Praxis, Fachrichtung, Adresse und Sprechzeiten eindeutig.'
     },
     {
       type: 'feature',
@@ -176,7 +180,7 @@ export const ARZT_PAGE = Object.freeze({
         src: '/images/branchen/arzt/arzt-startseite.webp',
         alt: 'Beispielaufbau der Startseite einer Hausarztpraxis mit Überschrift, Knopf zur Terminanfrage und den Kacheln Sprechzeiten, Team und Rezepte',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -253,9 +257,9 @@ export const ARZT_PAGE = Object.freeze({
       title: 'So kann die Website für deine Praxis aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Leistungsübersicht, Terminanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Praxisräumen und Team.',
       items: [
-        { src: '/images/branchen/arzt/arzt-angebot.webp', alt: 'Beispielaufbau einer Leistungsübersicht einer Arztpraxis mit sechs Kacheln von Vorsorge über Impfungen bis Rezepte', width: 720, height: 540, title: 'Leistungen', caption: 'Beispielaufbau: Vorsorge, Impfungen, Hausbesuche und Videosprechstunde bekommen je eine Kachel mit kurzer Erklärung.' },
-        { src: '/images/branchen/arzt/arzt-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage auf dem Handy mit Anliegen, Versicherung und Wunschzeit', width: 720, height: 540, title: 'Terminanfrage', caption: 'Beispielaufbau: Anliegen, Versicherung und Wunschzeit in drei Feldern, ohne Angaben zu Diagnosen.' },
-        { src: '/images/branchen/arzt/arzt-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Hausarztpraxis mit Sprechzeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Hausarzt Berlin Pankow“ erscheinen, mit Sprechzeiten, Route und Anruf.' }
+        { src: '/images/branchen/arzt/arzt-angebot.webp', alt: 'Beispielaufbau einer Leistungsübersicht einer Arztpraxis mit sechs Kacheln von Vorsorge über Impfungen bis Rezepte', width: 720, height: 480, title: 'Leistungen', caption: 'Beispielaufbau: Vorsorge, Impfungen, Hausbesuche und Videosprechstunde bekommen je eine Kachel mit kurzer Erklärung.' },
+        { src: '/images/branchen/arzt/arzt-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage auf dem Handy mit Anliegen, Versicherung und Wunschzeit', width: 720, height: 480, title: 'Terminanfrage', caption: 'Beispielaufbau: Anliegen, Versicherung und Wunschzeit in drei Feldern, ohne Angaben zu Diagnosen.' },
+        { src: '/images/branchen/arzt/arzt-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Hausarztpraxis mit Sprechzeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Hausarzt Berlin Pankow“ erscheinen, mit Sprechzeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deiner Praxis aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

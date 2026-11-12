@@ -136,21 +136,35 @@ export const FITNESS_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'alltag',
-      chip: 'Beispiel',
-      title: 'Ein Tag mit deiner Fitnessstudio-Website',
-      intro: 'Während du auf der Fläche stehst oder einen Kurs gibst, beantwortet die Website die Fragen, die sonst am Tresen oder am Telefon landen. Die Zeiten sind ein Beispiel.',
-      listLabel: 'Beispiel für einen Tag mit der Website eines Fitnessstudios',
-      items: [
-        { time: '06:30', title: 'Kursplan vor dem Frühkurs', text: 'Mitglieder prüfen auf dem Handy, ob der Kurs stattfindet und wer ihn leitet.' },
-        { time: '10:00', title: 'Gefunden in der Nähe', text: 'Jemand sucht „Fitnessstudio in der Nähe“ und landet bei Öffnungszeiten, Preisen und Fotos der Fläche.' },
-        { time: '12:30', title: 'Probetraining angefragt', text: 'In der Mittagspause füllt eine Interessentin das Formular mit Wunschtermin und Trainingsziel aus.' },
-        { time: '16:00', title: 'Rückruf mit allen Angaben', text: 'Du rufst zurück und weißt schon, worum es geht. Das Gespräch dauert drei Minuten.' },
-        { time: '18:30', title: 'Personal Training gefunden', text: 'Die Seite zum Personal Training nennt Ablauf, Preisrahmen und den Weg zum Kennenlerngespräch.' },
-        { time: '21:00', title: 'Fragen nach Feierabend', text: 'Kündigungsfrist, Parkplätze, Duschen: Die Antworten stehen auf der Seite, niemand muss anrufen.' }
+      type: 'thema',
+      variant: 'kursplan',
+      id: 'kursplan',
+      chip: 'Kursplan',
+      title: 'Kursplan auf der Website: lesbar für Mitglieder und für Google',
+      intro: 'Nach dem Namen eines Studios wird oft direkt der Kursplan gesucht. Steht er nur als Bild, als PDF oder in einer eingebetteten App, kann Google ihn kaum lesen, und auf dem Handy muss man zoomen. Als Text auf der Seite ist er schnell, durchsuchbar und mit einem Tipp gefiltert.',
+      planLabel: 'Beispiel für einen Wochenkursplan',
+      kinds: [
+        { key: 'kraft', label: 'Kraft' },
+        { key: 'ausdauer', label: 'Ausdauer' },
+        { key: 'mobility', label: 'Yoga und Mobility' },
+        { key: 'ruecken', label: 'Rücken' }
       ],
-      note: 'Kursplan und Buchung müssen nicht neu gebaut werden. Wenn du bereits eine Studio-Software nutzt, binde ich sie ein oder verlinke gezielt dorthin.'
+      days: [
+        { day: 'Montag', short: 'Mo', items: [['07:00', 'Mobility', 'mobility'], ['18:00', 'Langhantel-Basics', 'kraft'], ['19:15', 'Indoor Cycling', 'ausdauer']] },
+        { day: 'Dienstag', short: 'Di', items: [['09:30', 'Rückenfit', 'ruecken'], ['18:30', 'HIIT', 'ausdauer']] },
+        { day: 'Mittwoch', short: 'Mi', items: [['07:00', 'Yoga', 'mobility'], ['17:30', 'Kettlebell', 'kraft'], ['19:00', 'Rückenfit', 'ruecken']] },
+        { day: 'Donnerstag', short: 'Do', items: [['18:00', 'Functional', 'kraft'], ['19:15', 'Indoor Cycling', 'ausdauer']] },
+        { day: 'Freitag', short: 'Fr', items: [['07:00', 'Mobility', 'mobility'], ['17:00', 'Langhantel-Basics', 'kraft']] },
+        { day: 'Samstag', short: 'Sa', items: [['10:00', 'Yoga', 'mobility'], ['11:15', 'HIIT', 'ausdauer']] },
+        { day: 'Sonntag', short: 'So', items: [['10:30', 'Rückenfit', 'ruecken']] }
+      ],
+      points: [
+        { title: 'Als Text, nicht als Bild', text: 'Kursnamen und Zeiten stehen im Quelltext. Google findet „Yoga am Samstag“ in deinem Studio, und niemand muss etwas herunterladen.' },
+        { title: 'Filter nach Kursart', text: 'Ein Tipp auf „Kraft“ oder „Yoga“ zeigt nur diese Kurse. Auf dem Handy erscheint der Plan als Liste pro Tag.' },
+        { title: 'Gefragte Kurse mit eigener Seite', text: 'Yoga, Rückenfit oder Indoor Cycling bekommen eine kurze Seite mit Ablauf, Niveau und Trainerin.' },
+        { title: 'Buchen in deiner Software', text: 'Plätze buchen Mitglieder weiter dort, wo du sie verwaltest. Die Website verlinkt gezielt dorthin.' }
+      ],
+      note: 'Pflegst du den Plan schon in einer Studio-Software, übernehme ich ihn von dort, wenn es technisch möglich ist. Sonst baue ich eine Liste, die du selbst änderst.'
     },
     {
       type: 'feature',
@@ -176,7 +190,7 @@ export const FITNESS_PAGE = Object.freeze({
         src: '/images/branchen/fitnesscoach/fitnesscoach-startseite.webp',
         alt: 'Beispielaufbau der Startseite eines Fitnessstudios mit Überschrift, Knopf zum Probetraining und drei Themenkacheln',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -242,9 +256,9 @@ export const FITNESS_PAGE = Object.freeze({
       title: 'Webdesign für Fitnessstudios: drei Ansichten als Beispiel',
       intro: 'So können Kursübersicht, Probetraining und lokale Suche aussehen. Es sind Skizzen, kein fertiges Design. Dein Studio bekommt eigene Farben und echte Fotos von Fläche, Kursen und Team.',
       items: [
-        { src: '/images/branchen/fitnesscoach/fitnesscoach-angebot.webp', alt: 'Beispielaufbau einer Übersicht mit sechs Kacheln von Gerätetraining über Kurse bis Personal Training', width: 720, height: 540, title: 'Kurse und Training', caption: 'Beispielaufbau: Jede Trainingsart bekommt eine Kachel und führt auf eine eigene Seite.' },
-        { src: '/images/branchen/fitnesscoach/fitnesscoach-anfrage.webp', alt: 'Beispielaufbau eines Formulars für ein Probetraining auf dem Handy mit Name, Wunschtermin und Trainingsziel', width: 720, height: 540, title: 'Probetraining', caption: 'Beispielaufbau: Name, Wunschtermin und Ziel reichen. Die Anfrage landet sofort in deinem Postfach.' },
-        { src: '/images/branchen/fitnesscoach/fitnesscoach-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Fitnessstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Fitnessstudio in der Nähe“ erscheinen, mit Öffnungszeiten und Route.' }
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-angebot.webp', alt: 'Beispielaufbau einer Übersicht mit sechs Kacheln von Gerätetraining über Kurse bis Personal Training', width: 720, height: 480, title: 'Kurse und Training', caption: 'Beispielaufbau: Jede Trainingsart bekommt eine Kachel und führt auf eine eigene Seite.' },
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-anfrage.webp', alt: 'Beispielaufbau eines Formulars für ein Probetraining auf dem Handy mit Name, Wunschtermin und Trainingsziel', width: 720, height: 480, title: 'Probetraining', caption: 'Beispielaufbau: Name, Wunschtermin und Ziel reichen. Die Anfrage landet sofort in deinem Postfach.' },
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Fitnessstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Fitnessstudio in der Nähe“ erscheinen, mit Öffnungszeiten und Route.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

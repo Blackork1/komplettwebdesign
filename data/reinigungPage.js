@@ -144,21 +144,22 @@ export const REINIGUNG_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'weg-zum-auftrag',
-      chip: 'Beispiel',
-      title: 'Vom Suchbegriff zum Auftrag: so arbeitet deine Website',
-      intro: 'Gewerbliche Aufträge entstehen selten mit einem Klick. Zwischen der ersten Suche und dem unterschriebenen Vertrag liegen mehrere Schritte. Die Website begleitet jeden davon.',
-      listLabel: 'Sechs Schritte von der Suche bis zum Auftrag',
-      items: [
-        { label: 'Schritt 1', title: 'Die Suche', text: 'Eine Hausverwaltung sucht „Treppenhausreinigung Pankow“ und findet deine Leistungsseite.' },
-        { label: 'Schritt 2', title: 'Die Leistungsseite', text: 'Sie nennt Umfang, Objektarten und Einsatzgebiet, ohne dass jemand nachfragen muss.' },
-        { label: 'Schritt 3', title: 'Die Nachweise', text: 'Versicherung, Innungsmitgliedschaft und Ansprechpartner mit Foto stehen direkt daneben.' },
-        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Objekt, Fläche und Turnus ab. Die Anfrage landet in deinem Postfach.' },
-        { label: 'Schritt 5', title: 'Die Besichtigung', text: 'Du rufst zurück, vereinbarst einen Termin und kennst die Eckdaten schon vorher.' },
-        { label: 'Schritt 6', title: 'Das Angebot', text: 'Nach der Besichtigung geht das Angebot raus. Referenzen auf der Website stützen die Entscheidung.' }
+      type: 'thema',
+      variant: 'suchbegriffe',
+      id: 'suchbegriffe',
+      chip: 'SEO für Reinigungsfirmen',
+      title: 'SEO für Reinigungsfirmen: Jeder Suchbegriff braucht seine Seite',
+      intro: 'Auftraggeber suchen nach Leistung und Bezirk: „Gebäudereinigung Berlin Mitte“, „Treppenhausreinigung Pankow“, „Praxisreinigung Berlin“. Google zeigt dann die Seite, die genau diese Frage beantwortet. So ordnest du die wichtigsten Suchbegriffe den Seiten deiner Website zu.',
+      domain: 'deine-reinigung.de',
+      rows: [
+        { query: 'büroreinigung berlin', path: 'bueroreinigung', title: 'Büroreinigung in Berlin: Turnus, Umfang, Ansprechpartner', text: 'Unterhaltsreinigung ab einmal pro Woche, Leistungsverzeichnis zum Ansehen, Angebot nach Besichtigung.' },
+        { query: 'treppenhausreinigung pankow', path: 'treppenhausreinigung', title: 'Treppenhausreinigung für Hausverwaltungen', text: 'Reinigungsplan, Nachweis im Treppenhaus und feste Kräfte für deine Objekte in Pankow und Weißensee.' },
+        { query: 'praxisreinigung berlin', path: 'praxisreinigung', title: 'Praxisreinigung nach Hygieneplan', text: 'Reinigung außerhalb der Sprechzeiten, geschulte Kräfte, Dokumentation für die Praxis.' },
+        { query: 'bauendreinigung berlin', path: 'bauendreinigung', title: 'Bauendreinigung nach Umbau und Sanierung', text: 'Ablauf, Termin nach Absprache mit der Bauleitung, Anfrage mit Fotos und Fläche.' },
+        { query: 'gebäudereinigung charlottenburg', path: 'einsatzgebiet', title: 'Einsatzgebiet: Bezirke, in denen wir täglich arbeiten', text: 'Eine Seite für alle Bezirke, mit Referenzobjekten statt kopierter Texte pro Bezirk.' },
+        { query: 'gebäudereinigung berlin jobs', path: 'karriere', title: 'Jobs in der Gebäudereinigung: Stellen und Bewerbung', text: 'Offene Stellen, Arbeitszeiten und eine Bewerbung, die auf dem Handy in wenigen Minuten erledigt ist.' }
       ],
-      note: 'Privatkunden gehen denselben Weg in kürzerer Form: Preisrahmen ansehen, anrufen oder schreiben, Termin vereinbaren.'
+      note: 'Die Beispiele orientieren sich an echten Suchvorschlägen bei Google. Welche Begriffe für deinen Betrieb zählen, klären wir im Erstgespräch und legen danach die Seiten fest.'
     },
     {
       type: 'feature',
@@ -183,7 +184,7 @@ export const REINIGUNG_PAGE = Object.freeze({
         src: '/images/branchen/reinigung/reinigung-angebot.webp',
         alt: 'Beispielaufbau einer Leistungsübersicht mit sechs Kacheln von Büroreinigung bis Hausmeisterservice',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -330,9 +331,9 @@ export const REINIGUNG_PAGE = Object.freeze({
       title: 'So kann die Website einer Reinigungsfirma aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Arbeiten.',
       items: [
-        { src: '/images/branchen/reinigung/reinigung-startseite.webp', alt: 'Beispielaufbau der Startseite einer Reinigungsfirma mit Überschrift, Knopf zur Angebotsanfrage und drei Leistungskacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Leistung, Stadt und der Knopf zur Angebotsanfrage stehen oben, darunter die wichtigsten Reinigungsarten.' },
-        { src: '/images/branchen/reinigung/reinigung-anfrage.webp', alt: 'Beispielaufbau einer Angebotsanfrage auf dem Handy mit Objektart, Fläche und Turnus', width: 720, height: 540, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Objektart, Fläche und Turnus in drei Feldern, dazu Besichtigung oder Rückruf zur Auswahl.' },
-        { src: '/images/branchen/reinigung/reinigung-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Gebäudereinigung mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Gebäudereinigung“ mit deinem Bezirk erscheinen, mit Route und Anruf.' }
+        { src: '/images/branchen/reinigung/reinigung-startseite.webp', alt: 'Beispielaufbau der Startseite einer Reinigungsfirma mit Überschrift, Knopf zur Angebotsanfrage und drei Leistungskacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Leistung, Stadt und der Knopf zur Angebotsanfrage stehen oben, darunter die wichtigsten Reinigungsarten.' },
+        { src: '/images/branchen/reinigung/reinigung-anfrage.webp', alt: 'Beispielaufbau einer Angebotsanfrage auf dem Handy mit Objektart, Fläche und Turnus', width: 720, height: 480, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Objektart, Fläche und Turnus in drei Feldern, dazu Besichtigung oder Rückruf zur Auswahl.' },
+        { src: '/images/branchen/reinigung/reinigung-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Gebäudereinigung mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Gebäudereinigung“ mit deinem Bezirk erscheinen, mit Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Betrieb aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

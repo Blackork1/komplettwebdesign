@@ -136,21 +136,21 @@ export const FRISEUR_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'alltag',
-      chip: 'Beispiel',
-      title: 'Ein Tag mit deiner Salon-Website',
-      intro: 'Während du schneidest, färbst und berätst, beantwortet die Website die Fragen, die sonst das Telefon am Empfang klingeln lassen. Die Zeiten sind ein Beispiel.',
-      listLabel: 'Beispiel für einen Tag mit der Website eines Friseursalons',
-      items: [
-        { time: '08:30', title: 'Termine vom Vorabend', text: 'Zwei Buchungen sind über Nacht eingegangen. Der Kalender füllt sich, bevor du aufschließt.' },
-        { time: '10:00', title: 'Gefunden im Kiez', text: 'Jemand sucht „Friseur in der Nähe“ und sieht Preise, Öffnungszeiten und den Weg zu dir.' },
-        { time: '12:30', title: 'Preise in der Mittagspause', text: 'Eine Neukundin liest, was Schnitt und Farbe ab welchem Preis kosten, und bucht für Freitag.' },
-        { time: '15:00', title: 'Walk-in ohne Anruf', text: 'Die Seite nennt die Zeiten ohne Termin. Ein Kunde kommt vorbei, statt erst anzurufen.' },
-        { time: '18:00', title: 'Arbeiten ansehen', text: 'Die Galerie zeigt deine Balayage. Der Knopf daneben führt direkt zur Buchung.' },
-        { time: '21:30', title: 'Buchen nach Ladenschluss', text: 'Der Termin für nächste Woche wird abends auf dem Sofa gebucht. Die Erinnerung verschickt das Buchungssystem.' }
+      type: 'thema',
+      variant: 'farbfaecher',
+      id: 'spezialisierungen',
+      chip: 'SEO für Friseure',
+      title: 'SEO für Friseure: mit Spezialisierungen gefunden werden',
+      intro: 'Bei „Friseur Berlin“ konkurrierst du mit Hunderten Salons. Gefunden wirst du eher über das, was dich ausmacht: „Friseur ohne Termin Mitte“, „Balayage Berlin“, „Locken schneiden Berlin“, „Barber Neukölln“. Jede Spezialisierung bekommt einen eigenen Abschnitt oder eine eigene Seite mit Fotos, Dauer und Preisrahmen.',
+      swatches: [
+        { name: 'Ohne Termin', color: 'blond', query: 'Friseur ohne Termin Mitte', text: 'Tage und Zeiten für spontane Besuche, dazu ein Hinweis auf die Wartezeit am Samstag.' },
+        { name: 'Balayage und Strähnen', color: 'kupfer', query: 'Balayage Berlin', text: 'Echte Fotos vorher und nachher, Dauer, Preis ab und Beratung vorab.' },
+        { name: 'Locken', color: 'braun', query: 'Locken schneiden Berlin', text: 'Deine Methode erklärt, Pflege für zu Hause und ein Termin für den ersten Schnitt.' },
+        { name: 'Herren und Barber', color: 'schwarz', query: 'Barber Neukölln', text: 'Haarschnitt, Bart und Rasur mit Preisen, Online-Termin oder spontan vorbeikommen.' },
+        { name: 'Braut und Anlass', color: 'rose', query: 'Brautfrisur Berlin', text: 'Probetermin, Ablauf am Hochzeitstag und Styling auch vor Ort.' },
+        { name: 'Kinder', color: 'silber', query: 'Kinderfriseur Berlin', text: 'Ab welchem Alter, wie lange es dauert und was ein Kinderhaarschnitt kostet.' }
       ],
-      note: 'Ein Buchungssystem musst du dafür nicht neu anschaffen. Nutzt du schon eines, binde ich es ein. Ohne System arbeitet die Seite mit Anruf, WhatsApp und einer kurzen Terminanfrage.'
+      note: 'Biete nur an, was du wirklich gern machst. Eine starke Spezialisierung bringt mehr passende Anfragen als eine lange Liste.'
     },
     {
       type: 'feature',
@@ -176,7 +176,7 @@ export const FRISEUR_PAGE = Object.freeze({
         src: '/images/branchen/friseur/friseur-angebot.webp',
         alt: 'Beispielaufbau einer Preisliste für einen Friseursalon mit den Gruppen Damen sowie Herren und Kinder',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -244,9 +244,9 @@ export const FRISEUR_PAGE = Object.freeze({
       title: 'So kann die Website für deinen Salon aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Terminbuchung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Salon, Team und deinen Arbeiten.',
       items: [
-        { src: '/images/branchen/friseur/friseur-startseite.webp', alt: 'Beispielaufbau der Startseite eines Friseursalons mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Kiez und der Knopf zum Termin stehen oben, darunter Schnitt, Farbe und Preise.' },
-        { src: '/images/branchen/friseur/friseur-anfrage.webp', alt: 'Beispielaufbau einer Terminbuchung für den Friseur auf dem Handy mit Leistung, Wunschtermin und Stylistin', width: 720, height: 540, title: 'Terminbuchung', caption: 'Beispielaufbau: Leistung, Wunschtermin und Stylistin in drei Feldern, dazu der Hinweis, ob es der erste Besuch ist.' },
-        { src: '/images/branchen/friseur/friseur-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Friseursalon mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Salon bei „Friseur in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/friseur/friseur-startseite.webp', alt: 'Beispielaufbau der Startseite eines Friseursalons mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Kiez und der Knopf zum Termin stehen oben, darunter Schnitt, Farbe und Preise.' },
+        { src: '/images/branchen/friseur/friseur-anfrage.webp', alt: 'Beispielaufbau einer Terminbuchung für den Friseur auf dem Handy mit Leistung, Wunschtermin und Stylistin', width: 720, height: 480, title: 'Terminbuchung', caption: 'Beispielaufbau: Leistung, Wunschtermin und Stylistin in drei Feldern, dazu der Hinweis, ob es der erste Besuch ist.' },
+        { src: '/images/branchen/friseur/friseur-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Friseursalon mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Salon bei „Friseur in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Salon aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

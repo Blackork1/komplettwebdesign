@@ -1,0 +1,12 @@
+<ul class="bt-faecher">
+  <% section.swatches.forEach((swatch, index) => { %>
+  <li class="bt-faecher__karte bt-faecher__karte--<%= swatch.color %><%= rv %>" style="--i: <%= index %>">
+    <span class="bt-faecher__straehne" aria-hidden="true"></span>
+    <div class="bt-faecher__text">
+      <h3><%= swatch.name %></h3>
+      <p class="bt-query"><span class="visually-hidden">Suchbeispiel: </span>„<%= swatch.query %>“</p>
+      <p><%= swatch.text %></p>
+    </div>
+  </li>
+  <% }) %>
+</ul>

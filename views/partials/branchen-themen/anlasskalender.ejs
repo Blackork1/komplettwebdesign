@@ -1,0 +1,23 @@
+<% const monate = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez']; %>
+<div class="bt-kalender">
+  <div class="bt-kalender__jahr<%= rv %>" aria-hidden="true">
+    <% monate.forEach((monat, index) => { %><span class="bt-kalender__monat" style="--m: <%= index + 1 %>"><span class="bt-kalender__lang"><%= monat %></span><span class="bt-kalender__kurz"><%= monat.charAt(0) %></span></span><% }) %>
+    <% section.occasions.forEach((item, index) => { %><span class="bt-kalender__marke bt-farbe-<%= (index % 4) + 1 %>" style="--von: <%= item.months[0] %>; --bis: <%= item.months[1] + 1 %>; --zeile: <%= (item.lane || 1) + 1 %>"><%= index + 1 %></span><% }) %>
+  </div>
+  <ol class="bt-kalender__liste" aria-label="<%= section.calendarLabel %>">
+    <% section.occasions.forEach((item, index) => { %>
+    <li class="bt-kalender__anlass bt-farbe-<%= (index % 4) + 1 %><%= rv %>">
+      <div class="bt-kalender__kopf">
+        <span class="bt-kalender__nummer" aria-hidden="true"><%= index + 1 %></span>
+        <div>
+          <h3><%= item.name %></h3>
+          <span class="bt-kalender__datum"><%= item.date %></span>
+        </div>
+      </div>
+      <p class="bt-kalender__online"><%= item.online %></p>
+      <p><%= item.text %></p>
+      <p class="bt-query"><span class="visually-hidden">Suchbeispiel: </span>„<%= item.query %>“</p>
+    </li>
+    <% }) %>
+  </ol>
+</div>

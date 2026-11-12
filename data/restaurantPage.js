@@ -135,21 +135,16 @@ export const RESTAURANT_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'alltag',
-      chip: 'Beispiel',
-      title: 'Ein Tag mit deiner Restaurant-Website',
-      intro: 'Während du in der Küche stehst oder Gäste bedienst, beantwortet die Website die Fragen, die sonst am Telefon landen. Die Zeiten sind ein Beispiel.',
-      listLabel: 'Beispiel für einen Tag mit der Website eines Restaurants',
-      items: [
-        { time: '09:30', title: 'Mittagskarte eintragen', text: 'Zwei Gerichte, zwei Preise, speichern. Die Karte ist aktuell, bevor die ersten Gäste suchen.' },
-        { time: '11:45', title: 'Gefunden zur Mittagszeit', text: 'Jemand sucht „Mittagstisch in der Nähe“ und sieht Gerichte, Preise und den Weg zu dir.' },
-        { time: '15:00', title: 'Reservierung für Samstag', text: 'Die Anfrage für sechs Personen kommt per Formular, obwohl gerade Ruhezeit ist.' },
-        { time: '17:30', title: 'Blick in die Karte', text: 'Gäste lesen die Speisekarte auf dem Handy, ohne ein PDF zu laden oder zu zoomen.' },
-        { time: '20:00', title: 'Anfrage für eine Feier', text: 'Das Formular fragt Datum, Personenzahl und Anlass ab. Du antwortest am nächsten Vormittag.' },
-        { time: '22:30', title: 'Bewertung nach dem Besuch', text: 'Ein Link auf der Seite führt Gäste nach dem Essen direkt zur Bewertung bei Google.' }
-      ],
-      note: 'Die Reservierung muss kein eigenes System sein. Ein vorhandenes Reservierungssystem binde ich ein, für kleine Lokale reicht oft ein Formular oder der Anruf mit einem Tipp.'
+      type: 'thema',
+      variant: 'profil-website',
+      id: 'google-profil',
+      chip: 'Lokale Suche',
+      title: 'Google-Profil und Restaurant-Webseite: was wohin gehört',
+      intro: 'Wer „Restaurant in der Nähe“ sucht, sieht zuerst dein Google-Unternehmensprofil auf der Karte. Der Klick auf die Website kommt danach, wenn jemand mehr wissen will. Beide müssen zusammenpassen, aber nicht alles doppelt enthalten.',
+      profile: { title: 'Google-Unternehmensprofil', text: 'Für die schnelle Entscheidung unterwegs', items: ['Bewertungen und deine Antworten', 'Fotos von Gästen', 'Stoßzeiten und Route', 'Anruf mit einem Tipp'] },
+      both: { title: 'Auf beiden, immer gleich', items: ['Name, Adresse, Telefon', 'Öffnungszeiten und Feiertage', 'Link zur Speisekarte', 'Reservierung'] },
+      website: { title: 'Restaurant-Webseite', text: 'Für alles, was mehr Platz braucht', items: ['Ganze Speisekarte als Text', 'Feiern und Gruppen', 'Geschichte, Küche und Team', 'Jobs, Gutscheine, Allergene'] },
+      note: 'Ändern sich Öffnungszeiten, änderst du sie an beiden Stellen am selben Tag. Abweichende Angaben kosten Vertrauen, bei Gästen und bei Google.'
     },
     {
       type: 'feature',
@@ -175,7 +170,7 @@ export const RESTAURANT_PAGE = Object.freeze({
         src: '/images/branchen/restaurant/restaurant-angebot.webp',
         alt: 'Beispielaufbau einer Speisekarte als Text mit den Abschnitten Vorspeisen und Hauptgerichte',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -254,9 +249,9 @@ export const RESTAURANT_PAGE = Object.freeze({
       title: 'So kann die Website für dein Restaurant aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Reservierung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Gerichten, Gastraum und Team.',
       items: [
-        { src: '/images/branchen/restaurant/restaurant-startseite.webp', alt: 'Beispielaufbau der Startseite eines Restaurants mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Küche, Kiez und der Knopf zum Reservieren stehen oben, darunter Speisekarte, Öffnungszeiten und Feiern.' },
-        { src: '/images/branchen/restaurant/restaurant-anfrage.webp', alt: 'Beispielaufbau einer Tischreservierung auf dem Handy mit Datum, Personenzahl und Anlass', width: 720, height: 540, title: 'Reservierung', caption: 'Beispielaufbau: Datum, Personenzahl und Anlass, dazu die Wahl zwischen Innenraum und Terrasse.' },
-        { src: '/images/branchen/restaurant/restaurant-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Restaurant mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Restaurant bei „Restaurant in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/restaurant/restaurant-startseite.webp', alt: 'Beispielaufbau der Startseite eines Restaurants mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Küche, Kiez und der Knopf zum Reservieren stehen oben, darunter Speisekarte, Öffnungszeiten und Feiern.' },
+        { src: '/images/branchen/restaurant/restaurant-anfrage.webp', alt: 'Beispielaufbau einer Tischreservierung auf dem Handy mit Datum, Personenzahl und Anlass', width: 720, height: 480, title: 'Reservierung', caption: 'Beispielaufbau: Datum, Personenzahl und Anlass, dazu die Wahl zwischen Innenraum und Terrasse.' },
+        { src: '/images/branchen/restaurant/restaurant-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Restaurant mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Restaurant bei „Restaurant in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Restaurant aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

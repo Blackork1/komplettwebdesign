@@ -130,21 +130,21 @@ export const BEAUTYSALON_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'weg-zum-termin',
-      chip: 'Beispiel',
-      title: 'Von der Suche zum Termin: der Weg einer Neukundin über deine Website',
-      intro: 'Wer ein Studio zum ersten Mal bucht, entscheidet in mehreren kleinen Schritten. Die Website begleitet jeden davon, auch wenn du gerade in der Kabine stehst.',
-      listLabel: 'Sechs Schritte von der Suche bis zum nächsten Termin',
-      items: [
-        { label: 'Schritt 1', title: 'Die Suche', text: 'Eine Neukundin sucht „Wimpernlifting“ mit ihrem Bezirk und landet auf deiner Behandlungsseite.' },
-        { label: 'Schritt 2', title: 'Die Behandlung', text: 'Sie liest Ablauf, Dauer, Haltbarkeit und Preis, ohne eine Nachricht schreiben zu müssen.' },
-        { label: 'Schritt 3', title: 'Der Eindruck', text: 'Echte Fotos, Angaben zur Hygiene und deine Qualifikation zeigen, wie du arbeitest.' },
-        { label: 'Schritt 4', title: 'Die Buchung', text: 'Der Knopf führt ins Buchungssystem, die Behandlung ist schon ausgewählt.' },
-        { label: 'Schritt 5', title: 'Die Vorbereitung', text: 'Was vor dem Termin zu beachten ist, steht auf der Seite. Rückfragen im Chat entfallen meist.' },
-        { label: 'Schritt 6', title: 'Der nächste Termin', text: 'Zum Auffüllen bucht sie über denselben Link. Die Website bleibt die feste Adresse.' }
-      ],
-      note: 'Stammkundinnen gehen den kurzen Weg: Seite öffnen, Termin buchen, fertig. Deshalb bleibt der Buchungsknopf auf dem Handy immer sichtbar.'
+      type: 'thema',
+      variant: 'steckbrief',
+      id: 'behandlungs-steckbrief',
+      chip: 'Behandlungsseiten',
+      title: 'Eine Seite pro Behandlung: der Steckbrief, den Neukundinnen suchen',
+      intro: 'Vor dem ersten Termin wollen Neukundinnen wissen, wie lange eine Behandlung dauert, was sie kostet, wie lange sie hält und was sie vorher beachten müssen. Fragen wie „Wimpernlifting wie lange hält es“ oder „Microneedling wie oft“ werden oft gesucht. Eine Behandlungsseite mit festem Steckbrief beantwortet sie, bevor jemand anruft.',
+      card: {
+        tag: 'Beispiel',
+        name: 'Wimpernlifting mit Färben',
+        fields: [['Dauer', 'rund 60 Minuten'], ['Preis', 'dein Preis, Färben inklusive'], ['Hält', 'mehrere Wochen, je nach Wimpernzyklus'], ['Vorher', 'ohne Mascara kommen, Kontaktlinsen herausnehmen'], ['Danach', 'die ersten 24 Stunden kein Wasser und kein Dampf'], ['Passt zu', 'geraden Wimpern, die mehr Schwung bekommen sollen']]
+      },
+      moreTitle: 'Steckbriefe, die oft gesucht werden',
+      more: ['Microneedling', 'Augenbrauen-Lifting', 'Gesichtsbehandlung bei unreiner Haut', 'Aquafacial', 'Permanent Make-up', 'Fußpflege'],
+      moreText: 'Jede Seite folgt demselben Aufbau. Wer eine Behandlung kennt, findet sich auf der nächsten sofort zurecht, und Google erkennt die Antworten auf typische Fragen.',
+      note: 'Angaben zur Wirkung formuliere ich vorsichtig und ehrlich. Versprechen zur Haut gehören nicht auf die Website, Erfahrungswerte mit Spanne schon.'
     },
     {
       type: 'feature',
@@ -170,7 +170,7 @@ export const BEAUTYSALON_PAGE = Object.freeze({
         src: '/images/branchen/beautysalon/beautysalon-angebot.webp',
         alt: 'Beispielaufbau einer Behandlungsübersicht für ein Kosmetikstudio mit sechs Kacheln von Gesichtsbehandlung bis Gutscheine',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -244,9 +244,9 @@ export const BEAUTYSALON_PAGE = Object.freeze({
       title: 'So kann die Website für dein Kosmetikstudio aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Terminbuchung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Studio, Team und deinen Arbeiten.',
       items: [
-        { src: '/images/branchen/beautysalon/beautysalon-startseite.webp', alt: 'Beispielaufbau der Startseite eines Kosmetikstudios mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Studio, Kiez und der Knopf zum Termin stehen oben, darunter Gesicht, Nägel und Gutscheine.' },
-        { src: '/images/branchen/beautysalon/beautysalon-anfrage.webp', alt: 'Beispielaufbau einer Terminbuchung für das Kosmetikstudio auf dem Handy mit Behandlung, Wunschtermin und Hinweis', width: 720, height: 540, title: 'Terminbuchung', caption: 'Beispielaufbau: Behandlung, Wunschtermin und ein Hinweis wie empfindliche Haut, dazu Erstbesuch oder Gutschein zur Auswahl.' },
-        { src: '/images/branchen/beautysalon/beautysalon-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Kosmetikstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Kosmetikstudio in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/beautysalon/beautysalon-startseite.webp', alt: 'Beispielaufbau der Startseite eines Kosmetikstudios mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Studio, Kiez und der Knopf zum Termin stehen oben, darunter Gesicht, Nägel und Gutscheine.' },
+        { src: '/images/branchen/beautysalon/beautysalon-anfrage.webp', alt: 'Beispielaufbau einer Terminbuchung für das Kosmetikstudio auf dem Handy mit Behandlung, Wunschtermin und Hinweis', width: 720, height: 480, title: 'Terminbuchung', caption: 'Beispielaufbau: Behandlung, Wunschtermin und ein Hinweis wie empfindliche Haut, dazu Erstbesuch oder Gutschein zur Auswahl.' },
+        { src: '/images/branchen/beautysalon/beautysalon-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Kosmetikstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Kosmetikstudio in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

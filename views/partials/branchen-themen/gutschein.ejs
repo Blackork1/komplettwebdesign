@@ -1,0 +1,22 @@
+<div class="bt-gutschein-layout">
+  <div class="bt-gutschein<%= rv %>" aria-hidden="true">
+    <div class="bt-gutschein__haupt">
+      <span class="bt-gutschein__label"><%= section.voucher.label %></span>
+      <strong><%= section.voucher.title %></strong>
+      <span class="bt-gutschein__wert"><%= section.voucher.value %></span>
+      <span class="bt-gutschein__fuer"><%= section.voucher.from %></span>
+    </div>
+    <div class="bt-gutschein__abriss">
+      <span><%= section.voucher.code %></span>
+    </div>
+    <span class="bt-gutschein__schleife"></span>
+  </div>
+  <ol class="bt-gutschein__punkte">
+    <% section.points.forEach((point) => { %>
+    <li class="<%= rv.trim() %>">
+      <h3><%= point.title %></h3>
+      <p><%= point.text %></p>
+    </li>
+    <% }) %>
+  </ol>
+</div>

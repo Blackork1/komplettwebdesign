@@ -1,0 +1,30 @@
+<% const filterName = `${section.id}-filter`; %>
+<div class="bt-kursplan<%= rv %>">
+  <fieldset class="bt-kursplan__filter">
+    <legend>Probier den Filter aus:</legend>
+    <label><input type="radio" name="<%= filterName %>" value="alle" checked><span>Alle Kurse</span></label>
+    <% section.kinds.forEach((kind) => { %>
+    <label><input type="radio" name="<%= filterName %>" value="<%= kind.key %>"><span class="bt-kurs--<%= kind.key %>"><%= kind.label %></span></label>
+    <% }) %>
+  </fieldset>
+  <div class="bt-kursplan__woche" role="list" aria-label="<%= section.planLabel %>">
+    <% section.days.forEach((day) => { %>
+    <div class="bt-kursplan__tag" role="listitem">
+      <h3><abbr title="<%= day.day %>"><%= day.short %></abbr><span class="bt-kursplan__tagname"><%= day.day %></span></h3>
+      <ul>
+        <% day.items.forEach(([time, name, kind]) => { %>
+        <li class="bt-kurs bt-kurs--<%= kind %>" data-kurs="<%= kind %>"><time><%= time %></time> <span><%= name %></span></li>
+        <% }) %>
+      </ul>
+    </div>
+    <% }) %>
+  </div>
+</div>
+<ol class="bt-kursplan__punkte">
+  <% section.points.forEach((point) => { %>
+  <li class="<%= rv.trim() %>">
+    <h3><%= point.title %></h3>
+    <p><%= point.text %></p>
+  </li>
+  <% }) %>
+</ol>

@@ -118,20 +118,23 @@ export const HANDWERKER_PAGE = Object.freeze({
       { icon: 'fa-scale-balanced', title: 'Impressum und Datenschutz', text: 'Beides ist Pflicht. Für Handwerksbetriebe gibt es beim Impressum ein paar Besonderheiten, die du weiter unten findest.' }
     ]
   },
-  journey: {
-    chip: 'Beispiel',
-    title: 'Von der Suche bis zum Auftrag: der Weg eines Kunden über deine Website',
-    intro: 'Kaum ein Auftrag entsteht mit einem Klick. Zwischen der ersten Suche und dem unterschriebenen Angebot liegen mehrere Schritte, und bei jedem kann ein Interessent abspringen. Das Beispiel zeigt eine Badsanierung.',
-    listLabel: 'Sechs Schritte von der Suche bis zum Auftrag',
-    items: [
-      { label: 'Schritt 1', title: 'Der Anlass', text: 'Das Bad soll im Frühjahr neu werden. Jemand sucht abends auf dem Handy „Badsanierung Spandau“.' },
-      { label: 'Schritt 2', title: 'Der erste Eindruck', text: 'Die Leistungsseite zeigt, was du übernimmst, in welchen Bezirken du arbeitest und Fotos fertiger Bäder.' },
-      { label: 'Schritt 3', title: 'Die Prüfung', text: 'Meisterbrief, Bewertungen und ein Ansprechpartner mit Foto beantworten die Frage, wem man die Wohnung anvertraut.' },
-      { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Leistung, Ort und Zeitraum ab. Fotos vom Ist-Zustand kommen nach Absprache dazu.' },
-      { label: 'Schritt 5', title: 'Der Rückruf', text: 'Du rufst nach Feierabend zurück und weißt schon, worum es geht. Der Termin vor Ort ist schnell vereinbart.' },
-      { label: 'Schritt 6', title: 'Das Angebot', text: 'Nach dem Aufmaß geht das Angebot raus. Wer vergleicht, schaut noch einmal auf deine Referenzen.' }
+  area: {
+    type: 'thema',
+    variant: 'einsatzgebiet',
+    id: 'einsatzgebiet',
+    chip: 'Einsatzgebiet',
+    title: 'Einsatzgebiet auf der Website: gefunden werden, wo du arbeitest',
+    intro: 'Gesucht wird mit Ort: „Elektriker Prenzlauer Berg“, „Klempner Notdienst Neukölln“, „Dachdecker Spandau“. Google zeigt Betriebe, die in der Nähe sind und deren Website das Gebiet klar nennt. Eine Seite zum Einsatzgebiet sagt ehrlich, wohin du fährst und wie schnell.',
+    center: 'Dein Betrieb',
+    ringsLabel: 'Beispiel für ein Einsatzgebiet mit drei Zonen rund um einen Betrieb in Pankow',
+    rings: [
+      { name: 'Kerngebiet', text: 'Täglich vor Ort, auch kurzfristig', places: ['Pankow', 'Prenzlauer Berg', 'Weißensee'] },
+      { name: 'Regelmäßig', text: 'Mit Termin, meist innerhalb einer Woche', places: ['Reinickendorf', 'Lichtenberg', 'Mitte'] },
+      { name: 'Nach Absprache', text: 'Größere Aufträge', places: ['ganz Berlin', 'Umland im Norden'] }
     ],
-    note: 'Im Notfall ist der Weg kürzer: Notdienst-Nummer antippen, anrufen, fertig. Deshalb steht sie getrennt vom Formular ganz oben.'
+    pointsTitle: 'Das steht auf der Seite zum Einsatzgebiet',
+    points: ['Ortsteile, in denen du wirklich arbeitest, als Text', 'Anfahrtskosten oder ab wann keine anfallen', 'Notdienst nur, wenn du ihn anbietest, mit Zeiten', 'Referenzen aus dem Gebiet mit Ortsteil', 'Dasselbe Gebiet im Google-Unternehmensprofil'],
+    note: 'Kopierte Seiten für jeden Bezirk, in denen nur der Name wechselt, bringen nichts. Eine ehrliche Seite mit echten Ortsteilen und Referenzen schon.'
   },
   focus: {
     chip: 'Baufirmen',
@@ -154,7 +157,7 @@ export const HANDWERKER_PAGE = Object.freeze({
       src: '/images/branchen/handwerker/handwerker-angebot.webp',
       alt: 'Beispielaufbau einer Leistungsübersicht mit sechs Kacheln von Badsanierung bis Notdienst',
       width: 720,
-      height: 540
+      height: 1080
     }
   },
   trades: {
@@ -261,9 +264,9 @@ export const HANDWERKER_PAGE = Object.freeze({
     title: 'So kann die Website für deinen Handwerksbetrieb aufgebaut sein',
     intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Baustellen.',
     items: [
-      { src: '/images/branchen/handwerker/handwerker-startseite.webp', alt: 'Beispielaufbau der Startseite eines Handwerksbetriebs mit Überschrift, Knopf zur Angebotsanfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Gewerk, Einsatzgebiet und der Knopf zur Angebotsanfrage stehen oben, darunter Leistungen, Referenzen und Karriere.' },
-      { src: '/images/branchen/handwerker/handwerker-anfrage.webp', alt: 'Beispielaufbau einer Angebotsanfrage auf dem Handy mit Leistung, Ort und Zeitraum', width: 720, height: 540, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Leistung, Ort und Zeitraum in drei Feldern, dazu Fotos oder Rückruf zur Auswahl.' },
-      { src: '/images/branchen/handwerker/handwerker-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Handwerksbetrieb mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Handwerker Berlin Spandau“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      { src: '/images/branchen/handwerker/handwerker-startseite.webp', alt: 'Beispielaufbau der Startseite eines Handwerksbetriebs mit Überschrift, Knopf zur Angebotsanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Gewerk, Einsatzgebiet und der Knopf zur Angebotsanfrage stehen oben, darunter Leistungen, Referenzen und Karriere.' },
+      { src: '/images/branchen/handwerker/handwerker-anfrage.webp', alt: 'Beispielaufbau einer Angebotsanfrage auf dem Handy mit Leistung, Ort und Zeitraum', width: 720, height: 480, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Leistung, Ort und Zeitraum in drei Feldern, dazu Fotos oder Rückruf zur Auswahl.' },
+      { src: '/images/branchen/handwerker/handwerker-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Handwerksbetrieb mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Handwerker Berlin Spandau“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
     ],
     note: 'Farben, Schriften und Bilder richte ich nach deinem Betrieb aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
     noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

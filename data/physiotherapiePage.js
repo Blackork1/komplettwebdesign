@@ -135,21 +135,22 @@ export const PHYSIOTHERAPIE_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'alltag',
-      chip: 'Beispiel',
-      title: 'Ein Tag mit deiner Physio-Website',
-      intro: 'Während alle Therapeutinnen und Therapeuten in der Behandlung sind, beantwortet die Website die Fragen, die sonst auf dem Anrufbeantworter landen. Die Zeiten sind ein Beispiel.',
-      listLabel: 'Beispiel für einen Tag mit der Website einer Physiotherapie-Praxis',
-      items: [
-        { time: '07:00', title: 'Termin vor der Arbeit', text: 'Eine Patientin fragt per Formular nach Terminen ab 16 Uhr, bevor die Praxis öffnet.' },
-        { time: '09:30', title: 'Mit Rezept in der Hand', text: 'Jemand kommt vom Orthopäden, sucht „Krankengymnastik in der Nähe“ und findet deine Leistungsseite.' },
-        { time: '11:00', title: 'Hausbesuch für die Mutter', text: 'Ein Angehöriger liest, in welche Bezirke du fährst, und schickt die Anfrage für den Hausbesuch.' },
-        { time: '14:00', title: 'Absage mit Ansage', text: 'Die Absageregel steht auf der Seite. Wer verhindert ist, weiß, bis wann und wie er absagt.' },
-        { time: '17:30', title: 'Bewerbung vom Handy', text: 'Eine Therapeutin liest die Karriereseite und meldet sich in zwei Minuten, ohne Anschreiben.' },
-        { time: '20:30', title: 'Fragen am Abend', text: 'Parkplatz, Aufzug, was zum ersten Termin mitzubringen ist: Die Antworten stehen auf der Seite.' }
+      type: 'thema',
+      variant: 'beschwerden',
+      id: 'beschwerden',
+      chip: 'Seiten nach Beschwerden',
+      title: 'Physiotherapie bei Rücken, Knie, Schulter: Seiten, über die Patienten dich finden',
+      intro: 'Kaum jemand sucht nach „Manueller Therapie“. Gesucht wird nach der Beschwerde: „Physiotherapie bei Bandscheibenvorfall“, „Physio nach Knie-OP“, „Physiotherapie bei Schwindel“. Seiten, die von der Beschwerde ausgehen, holen diese Suchen ab und führen zur passenden Therapie in deiner Praxis.',
+      figureLabel: 'Körperskizze mit sechs Bereichen, für die eine eigene Seite sinnvoll sein kann',
+      regions: [
+        { key: 'kiefer', name: 'Kiefer', query: 'Physiotherapie bei CMD', text: 'Was CMD ist, wie die Behandlung abläuft und welche Verordnung man braucht.' },
+        { key: 'nacken', name: 'Nacken und Kopf', query: 'Physiotherapie bei Schwindel', text: 'Ablauf der ersten Stunde, Übungen für zu Hause und wann eine ärztliche Abklärung nötig ist.' },
+        { key: 'schulter', name: 'Schulter', query: 'Physiotherapie bei Impingement', text: 'Behandlungsschritte, Dauer einer Serie, Termine auch früh am Morgen.' },
+        { key: 'ruecken', name: 'Rücken', query: 'Physiotherapie bei Bandscheibenvorfall', text: 'Die ersten Termine, aktive Therapie und der Übergang zu Kursen wie Rückenfit.' },
+        { key: 'knie', name: 'Knie und Hüfte', query: 'Physio nach Knie-OP', text: 'Ablauf nach der Operation, Zusammenarbeit mit der Klinik, Hausbesuche, wenn du sie anbietest.' },
+        { key: 'fuss', name: 'Fuß und Sprunggelenk', query: 'Physiotherapie nach Bänderriss', text: 'Ablauf, Belastung im Alltag und Training für die Rückkehr zum Sport.' }
       ],
-      note: 'Du musst nicht mit allem starten. Viele Praxen beginnen mit Therapien, Terminanfrage und Anfahrt und ergänzen die Karriereseite, sobald eine Stelle frei wird.'
+      note: 'Die Seiten erklären Ablauf und Behandlung, nicht das Ergebnis. Heilversprechen gehören nicht auf die Website einer Praxis.'
     },
     {
       type: 'feature',
@@ -175,7 +176,7 @@ export const PHYSIOTHERAPIE_PAGE = Object.freeze({
         src: '/images/branchen/physiotherapie/physiotherapie-angebot.webp',
         alt: 'Beispielaufbau einer Therapieübersicht mit sechs Kacheln von Krankengymnastik über Lymphdrainage bis Gerätetraining',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -252,9 +253,9 @@ export const PHYSIOTHERAPIE_PAGE = Object.freeze({
       title: 'So kann die Website für deine Physiopraxis aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Terminanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Praxisräumen und Team.',
       items: [
-        { src: '/images/branchen/physiotherapie/physiotherapie-startseite.webp', alt: 'Beispielaufbau der Startseite einer Physiotherapie-Praxis mit Überschrift, Knopf zur Terminanfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Leistung, Kiez und der Knopf zum Termin, darunter Therapien, Termine und Rezept.' },
-        { src: '/images/branchen/physiotherapie/physiotherapie-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage auf dem Handy mit Verordnung, Versicherung und Wunschzeit', width: 720, height: 540, title: 'Terminanfrage', caption: 'Beispielaufbau: Verordnung, Versicherung und Wunschzeit in drei Feldern, dazu die Wahl zwischen Rezept und Selbstzahler.' },
-        { src: '/images/branchen/physiotherapie/physiotherapie-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Physiotherapie-Praxis mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Physiotherapie in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/physiotherapie/physiotherapie-startseite.webp', alt: 'Beispielaufbau der Startseite einer Physiotherapie-Praxis mit Überschrift, Knopf zur Terminanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Leistung, Kiez und der Knopf zum Termin, darunter Therapien, Termine und Rezept.' },
+        { src: '/images/branchen/physiotherapie/physiotherapie-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage auf dem Handy mit Verordnung, Versicherung und Wunschzeit', width: 720, height: 480, title: 'Terminanfrage', caption: 'Beispielaufbau: Verordnung, Versicherung und Wunschzeit in drei Feldern, dazu die Wahl zwischen Rezept und Selbstzahler.' },
+        { src: '/images/branchen/physiotherapie/physiotherapie-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Physiotherapie-Praxis mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Physiotherapie in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deiner Praxis aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

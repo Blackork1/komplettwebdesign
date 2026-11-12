@@ -1,0 +1,18 @@
+<%
+  // Eigener Themenabschnitt je Branche (section.type 'thema'): Kopf, Baustein nach section.variant, Hinweis.
+  // Jede Variante hat ein eigenes Stylesheet unter public/branchen-themen/<variante>.css.
+  const themaRv = typeof rv !== 'undefined' ? rv : '';
+  const themaTitleId = `${section.id}-title`;
+  const themaClass = typeof sectionCls !== 'undefined' ? sectionCls : 'wd-section';
+%>
+<section id="<%= section.id %>" class="<%= themaClass %> bt-section bt-section--<%= section.variant %>" aria-labelledby="<%= themaTitleId %>">
+  <div class="wd-container">
+    <div class="wd-section-head<%= themaRv %>">
+      <span class="wd-chip"><%= section.chip %></span>
+      <h2 id="<%= themaTitleId %>"><%= section.title %></h2>
+      <p class="wd-lead"><%= section.intro %></p>
+    </div>
+    <%- include('./' + section.variant + '.ejs', { section, rv: themaRv }) %>
+    <% if (section.note) { %><p class="handwerk-page__center-note"><%= section.note %></p><% } %>
+  </div>
+</section>

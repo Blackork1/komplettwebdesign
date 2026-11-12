@@ -136,21 +136,23 @@ export const HEBAMME_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'weg-zur-betreuung',
-      chip: 'Beispiel',
-      title: 'Von der Suche zur Betreuung: der Weg einer Familie über deine Website',
-      intro: 'Schwangere suchen oft früh und schreiben mehrere Hebammen gleichzeitig an. Die Website sorgt dafür, dass vor allem passende Anfragen bei dir ankommen. So kann der Weg aussehen.',
-      listLabel: 'Sechs Schritte von der Suche bis zur Betreuung',
-      items: [
-        { label: 'Schritt 1', title: 'Die Suche', text: 'Eine Schwangere sucht „Hebamme Berlin Pankow“ und findet deine Seite neben den Portalen.' },
-        { label: 'Schritt 2', title: 'Der Abgleich', text: 'Geburtsmonat und Einzugsgebiet stehen ganz oben. Sie sieht sofort, ob du Plätze hast und zu ihr kommst.' },
-        { label: 'Schritt 3', title: 'Die Leistungen', text: 'Vorsorge, Kurse und Wochenbett sind kurz erklärt, mit einem Hinweis zur Kostenübernahme.' },
-        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt errechneten Termin, Wohnort und Wunsch ab. Die Anfrage landet in deinem Postfach.' },
-        { label: 'Schritt 5', title: 'Die Antwort', text: 'Du antwortest zwischen zwei Hausbesuchen in einem Satz, weil alle Angaben schon vorliegen.' },
-        { label: 'Schritt 6', title: 'Das Kennenlernen', text: 'Im ersten Gespräch geht es um die Familie und nicht mehr um Postleitzahl und Termin.' }
+      type: 'thema',
+      variant: 'schwangerschaft',
+      id: 'hebamme-finden',
+      chip: 'Wann gesucht wird',
+      title: 'Hebamme finden: wann Familien wonach suchen',
+      intro: 'Die Suche nach einer Hebamme beginnt früh, oft gleich nach dem positiven Test. Geburtsvorbereitung wird einige Monate später gesucht, Rückbildung nach der Geburt. Hat jede Phase ihre eigene Seite, wirst du zur richtigen Zeit gefunden, und Familien sehen sofort, ob du noch Plätze hast.',
+      scaleLabel: 'Vier Phasen von der Schwangerschaft bis zu den ersten Monaten nach der Geburt',
+      scaleMax: 60,
+      birthWeek: 40,
+      phases: [
+        { name: 'Hebamme finden', from: 5, to: 14, label: 'gleich nach dem positiven Test', query: 'Hebamme finden Berlin Pankow', text: 'Freie Plätze nach Monat des Entbindungstermins, dein Einzugsgebiet und eine Anfrage mit Termin und Postleitzahl.' },
+        { name: 'Geburtsvorbereitung', from: 20, to: 33, label: 'ungefähr ab der 20. Woche', query: 'Geburtsvorbereitungskurs Berlin Wochenende', text: 'Kurse mit Termin, Ort und freien Plätzen. Eigene Hinweise für Paare, Wochenendkurse und das zweite Kind.' },
+        { name: 'Wochenbett', from: 40, to: 48, label: 'die ersten Wochen nach der Geburt', query: 'Hebamme Wochenbett Berlin', text: 'Was Hausbesuche umfassen, wie lange du begleitest und wen man bei Fragen am Wochenende erreicht.' },
+        { name: 'Rückbildung und Babykurse', from: 48, to: 60, label: 'einige Wochen nach der Geburt', query: 'Rückbildungskurs Berlin', text: 'Kurszeiten, Ort, Kosten und ob das Baby mitkommen kann. Dazu Babymassage oder Stillgruppe, wenn du sie anbietest.' }
       ],
-      note: 'Bist du für einen Monat ausgebucht, sagt die Seite das offen. Das erspart Familien das Warten und dir Absagen am Abend.'
+      ticks: [[0, 'Beginn'], [12, '12. Woche'], [24, '24. Woche'], [40, 'Geburt'], [60, '5 Monate danach']],
+      note: 'Hast du keine Kapazität mehr, sag es oben auf der Startseite. Das spart Familien Zeit und dir viele Absagen. Die Kursseiten bleiben trotzdem online.'
     },
     {
       type: 'feature',
@@ -176,7 +178,7 @@ export const HEBAMME_PAGE = Object.freeze({
         src: '/images/branchen/hebamme/hebamme-angebot.webp',
         alt: 'Beispielaufbau einer Übersicht für Hebammen mit sechs Kacheln von Vorsorge über Geburtsvorbereitung bis Babymassage',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -250,9 +252,9 @@ export const HEBAMME_PAGE = Object.freeze({
       title: 'So kann deine Hebammen-Website aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Betreuungsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von dir und deinen Kursräumen.',
       items: [
-        { src: '/images/branchen/hebamme/hebamme-startseite.webp', alt: 'Beispielaufbau der Startseite einer Hebamme mit Überschrift, Knopf zur Betreuungsanfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Betreuung, Bezirk und der Knopf zur Anfrage stehen oben, darunter Vorsorge, Kurse und Wochenbett.' },
-        { src: '/images/branchen/hebamme/hebamme-anfrage.webp', alt: 'Beispielaufbau einer Betreuungsanfrage auf dem Handy mit Entbindungstermin, Wohnort und gewünschter Leistung', width: 720, height: 540, title: 'Betreuungsanfrage', caption: 'Beispielaufbau: Entbindungstermin, Wohnort und Wunsch in drei Feldern, dazu Vorsorge oder Kurs zur Auswahl.' },
-        { src: '/images/branchen/hebamme/hebamme-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Hebamme mit Terminhinweis, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis oder dein Kursraum bei „Hebamme Berlin Pankow“ erscheinen, mit Terminhinweis, Route und Anruf.' }
+        { src: '/images/branchen/hebamme/hebamme-startseite.webp', alt: 'Beispielaufbau der Startseite einer Hebamme mit Überschrift, Knopf zur Betreuungsanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Betreuung, Bezirk und der Knopf zur Anfrage stehen oben, darunter Vorsorge, Kurse und Wochenbett.' },
+        { src: '/images/branchen/hebamme/hebamme-anfrage.webp', alt: 'Beispielaufbau einer Betreuungsanfrage auf dem Handy mit Entbindungstermin, Wohnort und gewünschter Leistung', width: 720, height: 480, title: 'Betreuungsanfrage', caption: 'Beispielaufbau: Entbindungstermin, Wohnort und Wunsch in drei Feldern, dazu Vorsorge oder Kurs zur Auswahl.' },
+        { src: '/images/branchen/hebamme/hebamme-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Hebamme mit Terminhinweis, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis oder dein Kursraum bei „Hebamme Berlin Pankow“ erscheinen, mit Terminhinweis, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach dir und deiner Arbeit aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

@@ -135,21 +135,21 @@ export const TATTOO_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'weg-zum-termin',
-      chip: 'Beispiel',
-      title: 'Von der Idee zum Termin: der Weg über deine Studio-Website',
-      intro: 'Ein Tattoo wird selten spontan gebucht. Zwischen der ersten Idee und dem Termin liegen mehrere Schritte. Die Website begleitet jeden davon.',
-      listLabel: 'Sechs Schritte von der Idee bis zum Termin',
-      items: [
-        { label: 'Schritt 1', title: 'Die Suche', text: 'Jemand sucht „Fineline Tattoo Berlin“ und landet auf der Seite zu diesem Stil.' },
-        { label: 'Schritt 2', title: 'Der Stil', text: 'Die Galerie zeigt Arbeiten nach Stil sortiert und nennt den Artist, der sie gestochen hat.' },
-        { label: 'Schritt 3', title: 'Der Preisrahmen', text: 'Mindestpreis und Stundensatz stehen auf der Seite. Dafür muss niemand eine Nachricht schreiben.' },
-        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Motiv, Größe, Körperstelle und Referenzbilder ab.' },
-        { label: 'Schritt 5', title: 'Die Beratung', text: 'Du meldest dich mit einem Vorschlag. Die Regeln zur Anzahlung waren vorher schon nachzulesen.' },
-        { label: 'Schritt 6', title: 'Der Termin', text: 'Vor dem Termin steht auf der Seite, wie die Vorbereitung und die Pflege danach ablaufen.' }
+      type: 'thema',
+      variant: 'flash',
+      id: 'fragen-vor-dem-termin',
+      chip: 'SEO für Tätowierer',
+      title: 'SEO für Tätowierer: Fragen vor dem ersten Termin als eigene Seiten',
+      intro: 'Bevor jemand ein Studio anschreibt, sucht er Antworten: Was kostet ein Tattoo, wie läuft der erste Termin ab, wie pflege ich es danach, geht ein Cover-up? Studios, die diese Fragen auf ihrer Website beantworten, werden bei genau diesen Suchen gefunden und bekommen Anfragen, die besser vorbereitet sind.',
+      cards: [
+        { title: 'Was kostet ein Tattoo?', symbol: 'stern', query: 'Tattoo Kosten Berlin', text: 'Mindestpreis, Stundensatz oder Preis nach Größe, dazu die Anzahlung und was sie abdeckt.' },
+        { title: 'Der erste Termin', symbol: 'herz', query: 'Tattoo erstes Mal Ablauf', text: 'Beratung, Entwurf, Termin: in welcher Reihenfolge, wie lange und was man mitbringt.' },
+        { title: 'Pflege danach', symbol: 'mond', query: 'Tattoo Pflege', text: 'Die Pflegehinweise, die du ohnehin mitgibst, zum Nachlesen. Dazu, wann man sich bei dir melden soll.' },
+        { title: 'Cover-up', symbol: 'raute', query: 'Tattoo Cover-up Berlin', text: 'Was möglich ist, wie die Beratung mit Foto läuft und Beispiele aus deinem Studio.' },
+        { title: 'Fineline und Stile', symbol: 'blitz', query: 'Fineline Tattoo Berlin', text: 'Eine Seite pro Stil, den du oder deine Artists wirklich stechen, mit echten Arbeiten.' },
+        { title: 'Absage und Anzahlung', symbol: 'flamme', query: 'Tattoo Termin absagen Anzahlung', text: 'Regeln zu Absage, Verschiebung und Anzahlung, freundlich und eindeutig.' }
       ],
-      note: 'Bei Walk-ins ist der Weg kürzer: Tag und Uhrzeit ansehen, Wanna-dos durchblättern, vorbeikommen.'
+      note: 'Gut beantwortete Fragen sparen dir Nachrichten im Postfach. Wer die Seiten gelesen hat, schreibt mit Idee, Größe, Körperstelle und Budget.'
     },
     {
       type: 'feature',
@@ -175,7 +175,7 @@ export const TATTOO_PAGE = Object.freeze({
         src: '/images/branchen/tattoo/tattoo-angebot.webp',
         alt: 'Beispielaufbau einer Übersicht mit Stilen und Artists für ein Tattoo-Studio mit sechs Kacheln von Fineline bis Wanna-dos',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -241,9 +241,9 @@ export const TATTOO_PAGE = Object.freeze({
       title: 'So kann die Website für dein Tattoo-Studio aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Anfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Arbeiten, Studio und Artists.',
       items: [
-        { src: '/images/branchen/tattoo/tattoo-startseite.webp', alt: 'Beispielaufbau der Startseite eines Tattoo-Studios mit Überschrift, Knopf zur Terminanfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Stil, Stadt und der Knopf zur Anfrage stehen oben, darunter Galerie, Artists und Hygiene.' },
-        { src: '/images/branchen/tattoo/tattoo-anfrage.webp', alt: 'Beispielaufbau einer Tattoo-Anfrage auf dem Handy mit Motiv, Körperstelle und Größe', width: 720, height: 540, title: 'Tattoo-Anfrage', caption: 'Beispielaufbau: Motiv, Körperstelle und Größe in drei Feldern, dazu die Wahl zwischen Beratung und Wanna-do.' },
-        { src: '/images/branchen/tattoo/tattoo-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Tattoo-Studio mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Tattoostudio Berlin“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/tattoo/tattoo-startseite.webp', alt: 'Beispielaufbau der Startseite eines Tattoo-Studios mit Überschrift, Knopf zur Terminanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Stil, Stadt und der Knopf zur Anfrage stehen oben, darunter Galerie, Artists und Hygiene.' },
+        { src: '/images/branchen/tattoo/tattoo-anfrage.webp', alt: 'Beispielaufbau einer Tattoo-Anfrage auf dem Handy mit Motiv, Körperstelle und Größe', width: 720, height: 480, title: 'Tattoo-Anfrage', caption: 'Beispielaufbau: Motiv, Körperstelle und Größe in drei Feldern, dazu die Wahl zwischen Beratung und Wanna-do.' },
+        { src: '/images/branchen/tattoo/tattoo-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Tattoo-Studio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Tattoostudio Berlin“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

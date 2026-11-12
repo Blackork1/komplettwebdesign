@@ -1,0 +1,13 @@
+<div class="bt-film<%= rv %>">
+  <ol class="bt-film__bilder">
+    <% section.frames.forEach((frame, index) => { %>
+    <li class="bt-film__bild">
+      <span class="bt-film__nr" aria-hidden="true"><%= 12 + index * 2 %>A</span>
+      <span class="bt-film__motiv bt-farbe-<%= (index % 4) + 1 %>"><span><%= frame.name %></span></span>
+      <p class="bt-film__suche"><span class="visually-hidden">Suchbeispiel: </span>„<%= frame.query %>“</p>
+      <p class="bt-film__text"><%= frame.text %></p>
+    </li>
+    <% }) %>
+  </ol>
+  <p class="bt-film__markiert"><span class="bt-film__kreis">„<%= section.marked %>“</span> <%= section.markedText %></p>
+</div>

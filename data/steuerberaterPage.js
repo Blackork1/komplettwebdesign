@@ -136,21 +136,25 @@ export const STEUERBERATER_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'weg-zum-mandat',
-      chip: 'Beispiel',
-      title: 'Von der Suche zum Mandat: der Weg eines Mandanten über deine Kanzlei-Website',
-      intro: 'Ein Mandat entsteht selten mit einem Klick. Wer eine Steuerberatung sucht, prüft erst, ob die Kanzlei zum eigenen Fall passt und ob sie überhaupt neue Mandate annimmt. Die Website begleitet jeden dieser Schritte.',
-      listLabel: 'Sechs Schritte von der Suche bis zum Mandat',
+      type: 'thema',
+      variant: 'pruefbogen',
+      id: 'pruefbogen',
+      chip: 'Selbst prüfen',
+      title: 'Woran man eine gute Steuerberater-Website erkennt',
+      intro: 'Mandanten prüfen eine Kanzlei, bevor sie anrufen, und sie vergleichen. Diese acht Punkte entscheiden, ob aus einem Besuch eine Anfrage wird. Du kannst deine jetzige Website selbst daran messen.',
+      sheetTitle: 'Prüfbogen Kanzlei-Website',
+      stamp: 'Geprüft',
       items: [
-        { label: 'Schritt 1', title: 'Die Suche', text: 'Eine Gründerin sucht „Steuerberater Berlin Pankow“ und stößt auf deine Seite für Selbstständige.' },
-        { label: 'Schritt 2', title: 'Die Einordnung', text: 'Die Startseite sagt in zwei Sätzen, für wen die Kanzlei arbeitet und ob sie neue Mandate annimmt.' },
-        { label: 'Schritt 3', title: 'Die Leistungen', text: 'Buchhaltung, Jahresabschluss und Gründung sind verständlich erklärt, ohne Fachsprache.' },
-        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Rechtsform, Anliegen und Starttermin ab. Unterlagen werden dort nicht hochgeladen.' },
-        { label: 'Schritt 5', title: 'Das Erstgespräch', text: 'Du kennst die Eckdaten schon und sprichst gleich über den konkreten Fall.' },
-        { label: 'Schritt 6', title: 'Das Mandat', text: 'Nach der Vollmacht führt ein Link zum Mandantenportal. Dort beginnt der Belegaustausch.' }
+        { title: 'Mandantengruppen auf der Startseite', text: 'Selbständige, GmbH, Privatpersonen: Jeder erkennt in Sekunden, ob er hier richtig ist.' },
+        { title: 'Schwerpunkte mit eigener Seite', text: 'Gesucht wird „Steuerberater für Ärzte“ oder „für Freiberufler“. Eine Seite pro Schwerpunkt beantwortet genau das.' },
+        { title: 'Menschen statt Stockfotos', text: 'Berufsträger mit Foto, Qualifikation und Fachberater-Titeln. Vertrauen entsteht über Gesichter.' },
+        { title: 'Klarer Weg zur Anfrage', text: 'Telefon, Rückruf und ein kurzes Formular. Dazu der Hinweis, wie Unterlagen sicher in die Kanzlei kommen.' },
+        { title: 'Vollständige Berufsangaben', text: 'Kammer, Berufsbezeichnung und Berufsordnung stehen im Impressum und sind leicht zu finden.' },
+        { title: 'Schnell auf dem Handy', text: 'Viele Mandanten schauen unterwegs. Die Seite lädt schnell und lässt sich ohne Zoomen lesen.' },
+        { title: 'Karriereseite für Fachkräfte', text: 'Steuerfachangestellte suchen gezielt. Eine eigene Stellenseite mit Arbeitszeitmodellen hilft bei der Suche nach Personal.' },
+        { title: 'Aktuelle Inhalte', text: 'Ein Hinweis zur Grundsteuererklärung von 2022 auf der Startseite wirkt verlassen. Lieber wenige Beiträge, die stimmen.' }
       ],
-      note: 'Bewerberinnen und Bewerber gehen einen ähnlichen Weg: Karriereseite lesen, Team ansehen, kurz bewerben. Auch das lässt sich auf der Website abbilden.'
+      note: 'Fehlen bei dir mehr als drei Punkte, lohnt sich ein Relaunch meist mehr als einzelne Korrekturen. Im Erstgespräch gehen wir den Bogen gemeinsam durch.'
     },
     {
       type: 'feature',
@@ -176,7 +180,7 @@ export const STEUERBERATER_PAGE = Object.freeze({
         src: '/images/branchen/steuerberater/steuerberater-angebot.webp',
         alt: 'Beispielaufbau einer Leistungsübersicht für eine Steuerkanzlei mit sechs Kacheln von Buchhaltung bis Beratung',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -242,9 +246,9 @@ export const STEUERBERATER_PAGE = Object.freeze({
       title: 'So kann die Website für deine Kanzlei aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Mandatsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team und Kanzleiräumen.',
       items: [
-        { src: '/images/branchen/steuerberater/steuerberater-startseite.webp', alt: 'Beispielaufbau der Startseite einer Steuerkanzlei mit Überschrift, Knopf zum Erstgespräch und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Zielgruppe, Stadt und der Knopf zum Erstgespräch stehen oben, darunter Buchhaltung, Jahresabschluss und digitale Zusammenarbeit.' },
-        { src: '/images/branchen/steuerberater/steuerberater-anfrage.webp', alt: 'Beispielaufbau einer Mandatsanfrage auf dem Handy mit Rechtsform, Anliegen und gewünschtem Start', width: 720, height: 540, title: 'Mandatsanfrage', caption: 'Beispielaufbau: Rechtsform, Anliegen und Starttermin in drei Feldern, dazu Neugründung oder Wechsel zur Auswahl.' },
-        { src: '/images/branchen/steuerberater/steuerberater-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Steuerkanzlei mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Kanzlei bei „Steuerberater Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/steuerberater/steuerberater-startseite.webp', alt: 'Beispielaufbau der Startseite einer Steuerkanzlei mit Überschrift, Knopf zum Erstgespräch und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Zielgruppe, Stadt und der Knopf zum Erstgespräch stehen oben, darunter Buchhaltung, Jahresabschluss und digitale Zusammenarbeit.' },
+        { src: '/images/branchen/steuerberater/steuerberater-anfrage.webp', alt: 'Beispielaufbau einer Mandatsanfrage auf dem Handy mit Rechtsform, Anliegen und gewünschtem Start', width: 720, height: 480, title: 'Mandatsanfrage', caption: 'Beispielaufbau: Rechtsform, Anliegen und Starttermin in drei Feldern, dazu Neugründung oder Wechsel zur Auswahl.' },
+        { src: '/images/branchen/steuerberater/steuerberater-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Steuerkanzlei mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Kanzlei bei „Steuerberater Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deiner Kanzlei aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

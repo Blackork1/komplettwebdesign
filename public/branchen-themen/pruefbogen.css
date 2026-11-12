@@ -1,0 +1,184 @@
+/* Steuerberater: Prüfbogen auf Papier mit Randlinie, Häkchen und Stempel */
+.webdesign-berlin .bt-bogen {
+  background-color: #fffef9;
+  background-image: linear-gradient(90deg, transparent 44px, rgba(214, 86, 86, 0.38) 44px 46px, transparent 46px);
+  border-radius: 6px;
+  box-shadow: 0 2px 0 rgba(11, 42, 70, 0.04), 0 24px 50px rgba(11, 42, 70, 0.13);
+  margin: 0 auto;
+  max-width: 1000px;
+  padding: 34px 40px 26px 66px;
+  position: relative;
+}
+
+.webdesign-berlin .bt-bogen::before {
+  background: #f4f0e6;
+  border-radius: 6px;
+  bottom: -9px;
+  box-shadow: 0 14px 30px rgba(11, 42, 70, 0.08);
+  content: "";
+  left: 9px;
+  position: absolute;
+  right: -9px;
+  top: 9px;
+  z-index: -1;
+}
+
+.webdesign-berlin .bt-bogen__kopf {
+  align-items: baseline;
+  border-bottom: 2px solid var(--wd-ink);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin-bottom: 6px;
+  padding: 0 120px 12px 0;
+  position: relative;
+}
+
+.webdesign-berlin .bt-bogen__titel {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.webdesign-berlin .bt-bogen__felder {
+  color: var(--wd-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  gap: 8px 22px;
+  margin: 0;
+}
+
+.webdesign-berlin .bt-bogen__felder span::after {
+  border-bottom: 1px solid rgba(11, 42, 70, 0.35);
+  content: "";
+  display: inline-block;
+  margin-left: 8px;
+  width: 90px;
+}
+
+.webdesign-berlin .bt-bogen__stempel {
+  background: rgba(255, 255, 255, 0.35);
+  border: 3px solid var(--np-1-ink);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 5px #fffef9, inset 0 0 0 7px var(--np-1-ink);
+  color: var(--np-1-ink);
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 700;
+  height: 108px;
+  letter-spacing: 0.14em;
+  opacity: 0.85;
+  place-items: center;
+  position: absolute;
+  right: -12px;
+  rotate: -14deg;
+  text-transform: uppercase;
+  top: -46px;
+  transition: scale 0.45s var(--np-ease) 0.5s, opacity 0.45s ease 0.5s;
+  width: 108px;
+}
+
+html.kwd-interaction-polish .webdesign-berlin .bt-bogen:not(.visible):not(.out) .bt-bogen__stempel {
+  opacity: 0;
+  scale: 1.6;
+}
+
+.webdesign-berlin .bt-bogen__liste {
+  column-gap: 38px;
+  counter-reset: bt-punkt;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.webdesign-berlin .bt-bogen__liste li {
+  border-bottom: 1px solid rgba(11, 42, 70, 0.1);
+  counter-increment: bt-punkt;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 26px minmax(0, 1fr);
+  padding: 14px 0;
+}
+
+.webdesign-berlin .bt-bogen__kasten {
+  border: 2px solid var(--wd-ink);
+  border-radius: 4px;
+  height: 24px;
+  margin-top: 1px;
+  position: relative;
+  width: 24px;
+}
+
+.webdesign-berlin .bt-bogen__kasten::after {
+  border: solid var(--np-1-ink);
+  border-width: 0 3px 3px 0;
+  content: "";
+  height: 15px;
+  left: 6px;
+  position: absolute;
+  rotate: 40deg;
+  top: -1px;
+  transition: opacity 0.3s ease, scale 0.3s var(--np-ease);
+  width: 8px;
+}
+
+.webdesign-berlin .bt-bogen__liste li:nth-child(2) .bt-bogen__kasten::after { transition-delay: 0.1s; }
+.webdesign-berlin .bt-bogen__liste li:nth-child(3) .bt-bogen__kasten::after { transition-delay: 0.2s; }
+.webdesign-berlin .bt-bogen__liste li:nth-child(4) .bt-bogen__kasten::after { transition-delay: 0.3s; }
+.webdesign-berlin .bt-bogen__liste li:nth-child(5) .bt-bogen__kasten::after { transition-delay: 0.4s; }
+.webdesign-berlin .bt-bogen__liste li:nth-child(6) .bt-bogen__kasten::after { transition-delay: 0.5s; }
+.webdesign-berlin .bt-bogen__liste li:nth-child(7) .bt-bogen__kasten::after { transition-delay: 0.6s; }
+.webdesign-berlin .bt-bogen__liste li:nth-child(8) .bt-bogen__kasten::after { transition-delay: 0.7s; }
+
+html.kwd-interaction-polish .webdesign-berlin .bt-bogen:not(.visible):not(.out) .bt-bogen__kasten::after {
+  opacity: 0;
+  scale: 0.3;
+}
+
+.webdesign-berlin .bt-bogen__liste h3 {
+  font-size: 1.02rem;
+  margin: 0 0 4px;
+}
+
+.webdesign-berlin .bt-bogen__liste h3::before {
+  color: var(--wd-muted);
+  content: counter(bt-punkt) ". ";
+}
+
+.webdesign-berlin .bt-bogen__liste p {
+  color: var(--wd-muted);
+  font-size: 0.93rem;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .webdesign-berlin .bt-bogen {
+    background-image: linear-gradient(90deg, transparent 26px, rgba(214, 86, 86, 0.38) 26px 28px, transparent 28px);
+    padding: 30px 18px 18px 42px;
+  }
+
+  .webdesign-berlin .bt-bogen::before {
+    left: 6px;
+    right: -6px;
+  }
+
+  .webdesign-berlin .bt-bogen__kopf {
+    padding-right: 74px;
+  }
+
+  .webdesign-berlin .bt-bogen__stempel {
+    font-size: 0.6rem;
+    height: 72px;
+    letter-spacing: 0.08em;
+    right: -10px;
+    top: -44px;
+    width: 72px;
+  }
+
+  .webdesign-berlin .bt-bogen__liste {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

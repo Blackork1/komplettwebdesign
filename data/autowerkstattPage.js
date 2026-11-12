@@ -136,21 +136,18 @@ export const AUTOWERKSTATT_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'alltag',
-      chip: 'Beispiel',
-      title: 'Ein Tag mit deiner Werkstatt-Website',
-      intro: 'Während du unter der Hebebühne stehst, beantwortet die Website die Fragen, die sonst das Telefon klingeln lassen. Die Zeiten sind ein Beispiel.',
-      listLabel: 'Beispiel für einen Tag mit der Website einer Autowerkstatt',
-      items: [
-        { time: '07:00', title: 'Anfragen vor der Annahme', text: 'Im Postfach liegen zwei Terminanfragen von gestern Abend, mit Modell, Baujahr und Anliegen.' },
-        { time: '09:30', title: 'Gefunden nach der Warnleuchte', text: 'Jemand sucht „Autowerkstatt in der Nähe“ und sieht Leistungen, Öffnungszeiten und den Weg zu dir.' },
-        { time: '11:00', title: 'Richtpreis statt Anruf', text: 'Die Seite nennt den Ab-Preis für die Inspektion. Nach den Kosten muss niemand am Telefon fragen.' },
-        { time: '13:30', title: 'HU-Termin geklärt', text: 'Ein Kunde liest, an welchen Tagen die Prüforganisation im Haus ist, und fragt den Donnerstag an.' },
-        { time: '16:00', title: 'Rückruf mit Fahrzeugdaten', text: 'Du rufst zurück, die Teile sind schon geprüft. Der Termin steht in zwei Minuten.' },
-        { time: '20:30', title: 'Anfrage nach Feierabend', text: 'Der Reifenwechsel wird abends vom Sofa angefragt. Die Bestätigung geht von allein raus.' }
+      type: 'thema',
+      variant: 'kennzeichen',
+      id: 'marken-und-service',
+      chip: 'SEO für Kfz-Werkstätten',
+      title: 'SEO für Kfz-Werkstätten: Marken, Antriebe und Service, nach denen gesucht wird',
+      intro: 'Autofahrer suchen nach ihrer Marke, ihrem Anliegen und ihrem Bezirk: „freie Werkstatt BMW Berlin“, „Mercedes Werkstatt Spandau“, „E-Auto Werkstatt Berlin“, „Klimaservice Berlin“. Wer diese Begriffe mit eigenen Seiten oder klaren Abschnitten beantwortet, wird gefunden.',
+      groups: [
+        { title: 'Marken', text: 'Für jede Marke, die oft bei dir in der Halle steht, ein Abschnitt mit Erfahrung, Diagnose und Wartung nach Herstellervorgaben.', plates: [['VW', 'freie Werkstatt VW Berlin'], ['BMW', 'freie Werkstatt BMW Berlin'], ['MERCEDES', 'Mercedes Werkstatt Spandau'], ['FORD', 'Ford Werkstatt Berlin']] },
+        { title: 'Antriebe', text: 'Hybrid und Elektro brauchen Schulung und Ausstattung. Wenn du beides hast, sag es deutlich.', plates: [['E-AUTO', 'E-Auto Werkstatt Berlin'], ['HYBRID', 'Hybrid Werkstatt Berlin'], ['AUTOGAS', 'Autogas Werkstatt Berlin']] },
+        { title: 'Service und Prüfung', text: 'Wiederkehrende Leistungen mit Preisrahmen und Terminanfrage. Diese Seiten werden jedes Jahr wieder gesucht.', plates: [['HU AU', 'HU AU Termin Berlin'], ['KLIMA', 'Klimaservice Berlin'], ['REIFEN', 'Reifenwechsel Berlin']] }
       ],
-      note: 'Ein Buchungssystem ist dafür kein Muss. Viele Werkstätten arbeiten mit Terminanfrage und Rückruf, weil Teile und Arbeitszeit vom Fahrzeug abhängen.'
+      note: 'Markennamen nennst du nur beschreibend, zum Beispiel „Wartung für BMW“. Herstellerlogos und der Eindruck einer Vertragswerkstatt gehören nicht auf die Seite einer freien Werkstatt.'
     },
     {
       type: 'feature',
@@ -176,7 +173,7 @@ export const AUTOWERKSTATT_PAGE = Object.freeze({
         src: '/images/branchen/autowerkstatt/autowerkstatt-angebot.webp',
         alt: 'Beispielaufbau einer Leistungsübersicht für eine Kfz-Werkstatt mit sechs Kacheln von Inspektion bis Batterie',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -247,9 +244,9 @@ export const AUTOWERKSTATT_PAGE = Object.freeze({
       title: 'So kann die Website für deine Werkstatt aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Terminanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Werkstatt, Annahme und Team.',
       items: [
-        { src: '/images/branchen/autowerkstatt/autowerkstatt-startseite.webp', alt: 'Beispielaufbau der Startseite einer Kfz-Werkstatt mit Überschrift, Knopf zur Terminanfrage und drei Leistungskacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Werkstatt, Kiez und der Knopf zur Terminanfrage stehen oben, darunter Inspektion, HU/AU und Ölwechsel.' },
-        { src: '/images/branchen/autowerkstatt/autowerkstatt-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage für die Werkstatt auf dem Handy mit Fahrzeug, Anliegen und Wunschtag', width: 720, height: 540, title: 'Terminanfrage', caption: 'Beispielaufbau: Fahrzeug, Anliegen und Wunschtag in drei Feldern, dazu Ersatzwagen oder Rückruf zur Auswahl.' },
-        { src: '/images/branchen/autowerkstatt/autowerkstatt-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Autowerkstatt mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Werkstatt bei „Autowerkstatt in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-startseite.webp', alt: 'Beispielaufbau der Startseite einer Kfz-Werkstatt mit Überschrift, Knopf zur Terminanfrage und drei Leistungskacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Werkstatt, Kiez und der Knopf zur Terminanfrage stehen oben, darunter Inspektion, HU/AU und Ölwechsel.' },
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage für die Werkstatt auf dem Handy mit Fahrzeug, Anliegen und Wunschtag', width: 720, height: 480, title: 'Terminanfrage', caption: 'Beispielaufbau: Fahrzeug, Anliegen und Wunschtag in drei Feldern, dazu Ersatzwagen oder Rückruf zur Auswahl.' },
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Autowerkstatt mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Werkstatt bei „Autowerkstatt in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deiner Werkstatt aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

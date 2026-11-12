@@ -1,0 +1,18 @@
+<div class="bt-bogen<%= rv %>">
+  <div class="bt-bogen__kopf">
+    <p class="bt-bogen__titel"><%= section.sheetTitle %></p>
+    <p class="bt-bogen__felder" aria-hidden="true"><span>Kanzlei</span><span>Datum</span></p>
+    <span class="bt-bogen__stempel" aria-hidden="true"><%= section.stamp %></span>
+  </div>
+  <ol class="bt-bogen__liste">
+    <% section.items.forEach((item) => { %>
+    <li>
+      <span class="bt-bogen__kasten" aria-hidden="true"></span>
+      <div>
+        <h3><%= item.title %></h3>
+        <p><%= item.text %></p>
+      </div>
+    </li>
+    <% }) %>
+  </ol>
+</div>

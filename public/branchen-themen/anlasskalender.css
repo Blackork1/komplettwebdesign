@@ -1,0 +1,164 @@
+/* Blumenladen: Jahresleiste mit Anlässen und Karten darunter (views/partials/branchen-themen/anlasskalender.ejs) */
+.webdesign-berlin .bt-kalender__jahr {
+  background: #fff;
+  border: 1px solid var(--wd-line);
+  border-radius: 22px;
+  box-shadow: 0 14px 34px rgba(11, 42, 70, 0.07);
+  display: grid;
+  gap: 6px 0;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  /* Monatsnamen überspannen alle Zeilen, deshalb braucht die erste Zeile eine feste Höhe */
+  grid-template-rows: 22px 30px 30px;
+  margin: 0 0 28px;
+  padding: 14px 14px 16px;
+}
+
+.webdesign-berlin .bt-kalender__monat {
+  border-left: 1px dashed rgba(11, 42, 70, 0.14);
+  color: var(--wd-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  grid-column: var(--m);
+  grid-row: 1 / 4;
+  padding-top: 2px;
+  text-align: center;
+}
+
+.webdesign-berlin .bt-kalender__monat:first-child {
+  border-left: 0;
+}
+
+.webdesign-berlin .bt-kalender__kurz {
+  display: none;
+}
+
+.webdesign-berlin .bt-kalender__marke {
+  align-self: center;
+  background: var(--bt-soft);
+  border: 2px solid var(--bt);
+  border-radius: 999px;
+  color: var(--bt-ink);
+  display: grid;
+  font-size: 0.85rem;
+  font-weight: 700;
+  grid-column: var(--von) / var(--bis);
+  grid-row: var(--zeile);
+  height: 28px;
+  margin: 0 4px;
+  place-items: center;
+  position: relative;
+  transition: scale 0.5s var(--np-ease);
+}
+
+.webdesign-berlin .bt-kalender__liste {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.webdesign-berlin .bt-kalender__anlass {
+  background: #fff;
+  border: 1px solid var(--wd-line);
+  border-radius: 20px;
+  border-top: 5px solid var(--bt);
+  box-shadow: 0 12px 28px rgba(11, 42, 70, 0.06);
+  padding: 18px 20px 20px;
+}
+
+.webdesign-berlin .bt-kalender__kopf {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.webdesign-berlin .bt-kalender__nummer {
+  background: var(--bt-soft);
+  border: 2px solid var(--bt);
+  border-radius: 50%;
+  color: var(--bt-ink);
+  display: grid;
+  flex: none;
+  font-weight: 700;
+  height: 38px;
+  place-items: center;
+  width: 38px;
+}
+
+.webdesign-berlin .bt-kalender__anlass h3 {
+  font-size: 1.08rem;
+  margin: 0;
+}
+
+.webdesign-berlin .bt-kalender__datum {
+  color: var(--wd-muted);
+  font-size: 0.9rem;
+}
+
+.webdesign-berlin .bt-kalender__anlass p {
+  color: var(--wd-muted);
+  margin: 0 0 12px;
+}
+
+.webdesign-berlin .bt-kalender__anlass .bt-kalender__online {
+  align-items: center;
+  background: var(--bt-soft);
+  border-radius: 8px;
+  color: var(--bt-ink);
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 600;
+  gap: 7px;
+  padding: 4px 10px;
+}
+
+.webdesign-berlin .bt-kalender__online::before {
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  border-top-width: 4px;
+  content: "";
+  height: 12px;
+  width: 12px;
+}
+
+.webdesign-berlin .bt-kalender__anlass .bt-query {
+  margin: 0;
+}
+
+html.kwd-interaction-polish .webdesign-berlin .bt-kalender__jahr:not(.visible):not(.out) .bt-kalender__marke {
+  scale: 0.4 1;
+}
+
+@media (max-width: 960px) {
+  .webdesign-berlin .bt-kalender__liste {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .webdesign-berlin .bt-kalender__jahr {
+    grid-template-rows: 20px 26px 26px;
+    padding: 12px 8px 12px;
+  }
+
+  .webdesign-berlin .bt-kalender__lang {
+    display: none;
+  }
+
+  .webdesign-berlin .bt-kalender__kurz {
+    display: inline;
+  }
+
+  .webdesign-berlin .bt-kalender__marke {
+    font-size: 0.75rem;
+    height: 24px;
+    margin: 0 2px;
+  }
+
+  .webdesign-berlin .bt-kalender__liste {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

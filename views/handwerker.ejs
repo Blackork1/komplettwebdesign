@@ -10,7 +10,7 @@
   const phoneText = typeof phoneDisplay !== 'undefined' ? phoneDisplay : '';
   const blocks = typeof structuredDataBlocks !== 'undefined' ? structuredDataBlocks : [];
 %>
-<%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: ['webdesign-berlin.css', 'branchen-page.css'] }) %>
+<%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: ['webdesign-berlin.css', 'branchen-page.css', `branchen-themen/${hw.area.variant}.css`] }) %>
 <body>
   <%- include('partials/header') %>
   <main class="webdesign-berlin-page webdesign-berlin handwerk-page niche-page--motion niche-page--tone-energie" id="content">
@@ -86,25 +86,7 @@
       </div>
     </section>
 
-    <section id="weg-zum-auftrag" class="wd-section" aria-labelledby="handwerk-journey-title">
-      <div class="wd-container">
-        <div class="wd-section-head animate-on-scroll">
-          <span class="wd-chip"><%= hw.journey.chip %></span>
-          <h2 id="handwerk-journey-title"><%= hw.journey.title %></h2>
-          <p class="wd-lead"><%= hw.journey.intro %></p>
-        </div>
-        <ol class="niche-page__timeline" aria-label="<%= hw.journey.listLabel %>">
-          <% hw.journey.items.forEach((item) => { %>
-          <li class="niche-page__timeline-item animate-on-scroll">
-            <span class="niche-page__timeline-time"><%= item.label %></span>
-            <h3><%= item.title %></h3>
-            <p><%= item.text %></p>
-          </li>
-          <% }) %>
-        </ol>
-        <p class="handwerk-page__center-note"><%= hw.journey.note %></p>
-      </div>
-    </section>
+    <%- include('partials/branchen-themen/abschnitt', { section: hw.area, rv: ' animate-on-scroll', sectionCls: 'wd-section' }) %>
 
     <section id="baufirmen" class="wd-section wd-section--soft" aria-labelledby="handwerk-focus-title">
       <div class="wd-container wd-split niche-page__feature">

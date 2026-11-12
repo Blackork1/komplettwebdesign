@@ -1,0 +1,20 @@
+<div class="bt-schild-layout">
+  <div class="bt-schild<%= rv %>">
+    <span class="bt-schild__schraube" aria-hidden="true"></span><span class="bt-schild__schraube" aria-hidden="true"></span><span class="bt-schild__schraube" aria-hidden="true"></span><span class="bt-schild__schraube" aria-hidden="true"></span>
+    <p class="bt-schild__name"><%= section.sign.name %></p>
+    <p class="bt-schild__fach"><span class="bt-schild__nr" aria-hidden="true">1</span><%= section.sign.field %></p>
+    <dl class="bt-schild__zeilen">
+      <% section.sign.lines.forEach(([label, value], index) => { %>
+      <div><dt><span class="bt-schild__nr" aria-hidden="true"><%= index + 2 %></span><%= label %></dt><dd><%= value %></dd></div>
+      <% }) %>
+    </dl>
+  </div>
+  <ol class="bt-schild__punkte">
+    <% section.points.forEach((point) => { %>
+    <li class="<%= rv.trim() %>">
+      <h3><%= point.title %></h3>
+      <p><%= point.text %></p>
+    </li>
+    <% }) %>
+  </ol>
+</div>

@@ -197,7 +197,8 @@ test('Kita-Seite: eigene Inhalte für Kitas und Kindertagespflege, im Index, mit
   // Bildplätze: feste Dateien mit Maßen, damit später Fotos an dieselbe Stelle können.
   const allImages = [...main.matchAll(/<img\b[^>]*>/g)].map((match) => match[0]);
   const images = allImages.filter((image) => image.includes('/images/branchen/kita/'));
-  const expected = { 'kita-hero.webp': [960, 640], 'kita-tagespflege.webp': [720, 540], 'kita-raeume.webp': [720, 540], 'kita-garten.webp': [720, 540], 'kita-team.webp': [720, 540] };
+  // Neben langem Text hochkant (2:3), im Beispielaufbau quer (3:2): die Formate, die Bildgeneratoren direkt liefern.
+  const expected = { 'kita-hero.webp': [960, 640], 'kita-tagespflege.webp': [720, 1080], 'kita-raeume.webp': [720, 480], 'kita-garten.webp': [720, 480], 'kita-team.webp': [720, 480] };
   assert.equal(images.length, Object.keys(expected).length);
   for (const [file, [width, height]] of Object.entries(expected)) {
     const tag = images.find((image) => image.includes(`/images/branchen/kita/${file}`));
@@ -227,9 +228,11 @@ test('Kita-Seite: eigene Inhalte für Kitas und Kindertagespflege, im Index, mit
 });
 
 // Seit November 2026 teilen sich alle Branchenseiten das Design der Kita-Seite: Farbton je Branche,
-// Zeitleiste, Bildkarten und dezente Bewegung (public/branchen-page.css).
-test('Alle Branchenseiten: Farbton, Zeitleiste, Beispielbilder und dezente Bewegung', async () => {
+// Bildkarten und dezente Bewegung (public/branchen-page.css). Statt einer Zeitleiste hat jede Branche
+// außer der Kita einen eigenen Themenabschnitt mit eigenem Aufbau (views/partials/branchen-themen).
+test('Alle Branchenseiten: Farbton, eigener Themenabschnitt, Beispielbilder und dezente Bewegung', async () => {
   const css = read('public/branchen-page.css');
+  const variants = new Set();
   for (const [key, { page }] of Object.entries(NICHE_PAGES)) {
     const { html, main, text } = await render(page.slug);
     assert.equal(page.motion, true, `${key}: Bewegung aktiv`);
@@ -239,8 +242,24 @@ test('Alle Branchenseiten: Farbton, Zeitleiste, Beispielbilder und dezente Beweg
     assert.doesNotMatch(main.slice(0, main.indexOf('</section>')), /animate-on-scroll/, `${key}: Hero bleibt sofort sichtbar`);
 
     const types = page.sections.map((section) => section.type);
-    for (const type of ['timeline', 'feature', 'gallery']) assert.ok(types.includes(type), `${key}: Abschnitt ${type}`);
-    assert.equal(page.sections.find((section) => section.type === 'timeline').items.length, 6, `${key}: sechs Stationen`);
+    for (const type of ['feature', 'gallery']) assert.ok(types.includes(type), `${key}: Abschnitt ${type}`);
+    if (key === 'kita') {
+      assert.equal(page.sections.find((section) => section.type === 'timeline').items.length, 6, 'kita: Tagesablauf mit sechs Stationen');
+    } else {
+      assert.ok(!types.includes('timeline'), `${key}: keine Zeitleiste mehr`);
+      const themen = page.sections.filter((section) => section.type === 'thema');
+      assert.equal(themen.length, 1, `${key}: ein eigener Themenabschnitt`);
+      const thema = themen[0];
+      assert.ok(!variants.has(thema.variant), `${key}: Variante ${thema.variant} gibt es nur einmal`);
+      variants.add(thema.variant);
+      assert.ok(read(`views/partials/branchen-themen/${thema.variant}.ejs`).length > 100, `${key}: Vorlage für ${thema.variant}`);
+      assert.ok(read(`public/branchen-themen/${thema.variant}.css`).length > 500, `${key}: Stylesheet für ${thema.variant}`);
+      assert.match(html, new RegExp(`<link[^>]+branchen-themen/${thema.variant}(?:\\.min)?\\.css`), `${key}: lädt nur das eigene Themen-Stylesheet`);
+      assert.equal((html.match(/branchen-themen\//g) || []).length, 1, `${key}: kein fremdes Themen-Stylesheet`);
+      assert.match(main, new RegExp(`<section id="${thema.id}" class="[^"]*bt-section bt-section--${thema.variant}"`), `${key}: Abschnitt gerendert`);
+      assert.match(thema.title, /\S{4,}/);
+      assert.ok(thema.intro.length >= 150, `${key}: Einleitung erklärt das Thema`);
+    }
     assert.equal(page.sections.find((section) => section.type === 'gallery').items.length, 3, `${key}: drei Bildkarten`);
     assert.equal(new Set(page.sections.map((section) => section.id)).size, page.sections.length, `${key}: Abschnitts-IDs sind eindeutig`);
 
@@ -248,10 +267,11 @@ test('Alle Branchenseiten: Farbton, Zeitleiste, Beispielbilder und dezente Beweg
     const allImages = [...main.matchAll(/<img\b[^>]*>/g)].map((match) => match[0]);
     const local = allImages.filter((image) => image.includes(`/images/branchen/${page.slug}/`) && !image.includes('-hero'));
     assert.equal(local.length, 4, `${key}: vier Bildplätze`);
+    assert.equal(local.filter((tag) => tag.includes('width="720"') && tag.includes('height="1080"')).length, 1, `${key}: ein Hochkant-Bild neben langem Text`);
+    assert.equal(local.filter((tag) => tag.includes('width="720"') && tag.includes('height="480"')).length, 3, `${key}: drei Querformate im Beispielaufbau`);
     for (const tag of local) {
       const file = tag.match(/src="\/(images\/branchen\/[^"]+\.webp)"/)?.[1];
       assert.ok(file, `${key}: lokales WebP`);
-      assert.ok(tag.includes('width="720"') && tag.includes('height="540"'), `${file}: Maße`);
       assert.match(tag, /alt="[^"]{20,}"/, `${file}: Alt-Text`);
       assert.match(tag, /loading="lazy"/, `${file}: lädt verzögert`);
       assert.ok(readFileSync(new URL(`../public/${file}`, import.meta.url)).length > 1000, `${file} liegt im Repo`);

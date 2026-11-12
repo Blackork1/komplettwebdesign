@@ -27,7 +27,8 @@ const locals = {
 async function renderPage() {
   const model = buildHandwerkerViewModel({ id: 2, slug: 'handwerker' }, locals);
   const html = await ejs.renderFile(viewPath, { ...locals, ...model }, {
-    includer(_name, _filename) { return { template: ' ' }; }
+    // Kopf, Header und Footer bleiben leer; den Themenabschnitt (partials/branchen-themen) rendern wir echt.
+    includer(name) { return /branchen-themen|^\.\//.test(name) ? undefined : { template: ' ' }; }
   });
   return { model, $: load(html) };
 }
@@ -99,14 +100,20 @@ test('FAQ-Markup beschreibt genau die sichtbaren Fragen und Antworten mit echten
   assert.match(visible[0].a, /ab 799 €/);
 });
 
-test('Zeitleiste, Baufirmen-Abschnitt und Beispielbilder nutzen das Branchen-Design mit dezenter Bewegung', async () => {
+test('Einsatzgebiet, Baufirmen-Abschnitt und Beispielbilder nutzen das Branchen-Design mit dezenter Bewegung', async () => {
   const { $ } = await renderPage();
   const main = $('main');
   assert.ok(main.hasClass('niche-page--motion') && main.hasClass('niche-page--tone-energie'));
   assert.ok(!main.hasClass('niche-page'), 'die Hero-Regeln der Branchenseiten gelten hier nicht');
   assert.equal($('#hero .animate-on-scroll').length, 0);
   assert.ok($('main .animate-on-scroll').length > 20);
-  assert.equal($('#weg-zum-auftrag .niche-page__timeline-item').length, 6);
+  assert.equal($('.niche-page__timeline').length, 0, 'keine Zeitleiste mehr');
+  assert.ok($('#einsatzgebiet').hasClass('bt-section--einsatzgebiet'));
+  assert.equal($('#einsatzgebiet .bt-gebiet__zonen li').length, 3);
+  assert.match($('#einsatzgebiet h2').text(), /Einsatzgebiet/);
+  // Der Kopf ist im Test leer, deshalb prüfen wir das Stylesheet an der Vorlage.
+  const template = await readFile(new URL('../views/handwerker.ejs', import.meta.url), 'utf8');
+  assert.match(template, /extraCssAssets: \[[^\]]*`branchen-themen\/\$\{hw\.area\.variant\}\.css`\]/);
   assert.match($('#baufirmen h2').text(), /Webdesign für Baufirmen/);
   assert.equal($('#beispielaufbau .niche-page__gallery figure').length, 3);
   assert.ok($('#beispielaufbau a[href="/referenzen"]').length);
@@ -116,7 +123,7 @@ test('Zeitleiste, Baufirmen-Abschnitt und Beispielbilder nutzen das Branchen-Des
   for (const el of images.get()) {
     const img = $(el);
     assert.equal(img.attr('width'), '720');
-    assert.equal(img.attr('height'), '540');
+    assert.equal(img.attr('height'), img.closest('#baufirmen').length ? '1080' : '480');
     assert.equal(img.attr('loading'), 'lazy');
     assert.ok((img.attr('alt') || '').length >= 20, img.attr('src'));
     const file = await readFile(new URL(`../public${img.attr('src')}`, import.meta.url));

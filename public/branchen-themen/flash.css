@@ -1,0 +1,75 @@
+/* Tattoo-Studio: Flash-Bogen mit Symbolen, Bändern und harten Schatten */
+.webdesign-berlin .bt-flash {
+  background-color: #f6efe2;
+  background-image: radial-gradient(rgba(120, 90, 50, 0.1) 1px, transparent 1px);
+  background-size: 14px 14px;
+  border-radius: 22px;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 32px;
+}
+
+.webdesign-berlin .bt-flash__karte {
+  background: #fffaf0;
+  border: 3px solid #1a1a1a;
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 #1a1a1a;
+  padding: 20px 20px 22px;
+  text-align: center;
+  transition: translate 0.25s ease, box-shadow 0.25s ease, opacity 0.55s var(--np-ease), transform 0.55s var(--np-ease);
+}
+
+.webdesign-berlin .bt-flash__karte:hover {
+  box-shadow: 9px 9px 0 #1a1a1a;
+  translate: -3px -3px;
+}
+
+.webdesign-berlin .bt-flash__symbol {
+  display: block;
+  fill: var(--bt);
+  height: 54px;
+  margin: 0 auto 12px;
+  overflow: visible;
+  stroke: #1a1a1a;
+  stroke-linejoin: round;
+  stroke-width: 3.5;
+  width: 54px;
+}
+
+.webdesign-berlin .bt-flash__band {
+  background: var(--bt);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 0 100%, 12px 50%);
+  color: #1a1a1a;
+  display: inline-block;
+  font-size: 1.02rem;
+  margin: 0 0 14px;
+  padding: 7px 24px;
+}
+
+.webdesign-berlin .bt-flash__karte .bt-query {
+  border-color: rgba(26, 26, 26, 0.3);
+  margin-bottom: 10px;
+}
+
+.webdesign-berlin .bt-flash__karte p:last-child {
+  color: #3a3530;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+@media (max-width: 960px) {
+  .webdesign-berlin .bt-flash {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .webdesign-berlin .bt-flash {
+    gap: 22px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 20px 18px 24px 16px;
+  }
+}

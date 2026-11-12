@@ -1,0 +1,19 @@
+<% const max = section.scaleMax || 60; const pct = (value) => `${((value / max) * 100).toFixed(2)}%`; %>
+<div class="bt-band<%= rv %>" aria-hidden="true">
+  <div class="bt-band__skala">
+    <% section.phases.forEach((phase, index) => { %><span class="bt-band__phase bt-farbe-<%= (index % 4) + 1 %>" style="--links: <%= pct(phase.from) %>; --breite: <%= pct(phase.to - phase.from) %>"><b><%= index + 1 %></b></span><% }) %>
+  </div>
+  <div class="bt-band__marken">
+    <% section.ticks.forEach(([value, label], index) => { %><span class="bt-band__marke<%= index > 0 && index < section.ticks.length - 1 && value !== section.birthWeek ? ' bt-band__marke--klein' : '' %><%= value === section.birthWeek ? ' bt-band__marke--geburt' : '' %>" style="--links: <%= pct(value) %>"><%= label %></span><% }) %>
+  </div>
+</div>
+<ol class="bt-band__liste" aria-label="<%= section.scaleLabel %>">
+  <% section.phases.forEach((phase, index) => { %>
+  <li class="bt-farbe-<%= (index % 4) + 1 %><%= rv %>">
+    <span class="bt-band__zeit"><span class="bt-band__nr" aria-hidden="true"><%= index + 1 %></span><%= phase.label %></span>
+    <h3><%= phase.name %></h3>
+    <p class="bt-query"><span class="visually-hidden">Suchbeispiel: </span>„<%= phase.query %>“</p>
+    <p><%= phase.text %></p>
+  </li>
+  <% }) %>
+</ol>

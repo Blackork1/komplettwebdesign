@@ -130,21 +130,20 @@ export const WELLNESS_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'weg-zum-gutschein',
-      chip: 'Beispiel',
-      title: 'Vom Geschenk zum Termin: der Weg eines Gutscheins über deine Website',
-      intro: 'Gutscheine werden oft abends und kurz vor einem Anlass gesucht. Zwischen der ersten Suche und der eingelösten Massage liegen sechs Schritte. Die Website begleitet jeden davon.',
-      listLabel: 'Sechs Schritte von der Geschenksuche bis zur eingelösten Massage',
-      items: [
-        { label: 'Schritt 1', title: 'Die Suche', text: 'Jemand sucht kurz vor einem Geburtstag „Massage Gutschein Berlin“ und findet deine Gutscheinseite.' },
-        { label: 'Schritt 2', title: 'Die Auswahl', text: 'Die Seite zeigt Wertgutscheine und Gutscheine für eine bestimmte Massage mit Dauer und Preis.' },
-        { label: 'Schritt 3', title: 'Die Bestellung', text: 'Das Formular fragt Wert, Anlass und Versand ab. Die Bestellung landet in deinem Postfach.' },
-        { label: 'Schritt 4', title: 'Der Gutschein', text: 'Er kommt per E-Mail zum Ausdrucken oder per Post. Gültigkeit und Einlösung stehen darauf.' },
-        { label: 'Schritt 5', title: 'Die Buchung', text: 'Die beschenkte Person bucht ihren Termin über die Website und nennt den Gutscheincode.' },
-        { label: 'Schritt 6', title: 'Der Besuch', text: 'Vorher liest sie, was sie mitbringt und wie der Termin abläuft. Der nächste lässt sich genauso buchen.' }
+      type: 'thema',
+      variant: 'gutschein',
+      id: 'gutscheinseite',
+      chip: 'Gutscheine',
+      title: 'Massage-Gutschein online: die Seite, die vor jedem Anlass gesucht wird',
+      intro: '„Massage Gutschein“ wird das ganze Jahr gesucht, vor Weihnachten, zum Muttertag und zum Valentinstag besonders oft, häufig mit dem Zusatz „in der Nähe“. Eine klare Gutscheinseite verkauft, während du behandelst, und bringt neue Gäste, die über ein Geschenk zu dir kommen.',
+      voucher: { label: 'Gutschein', title: 'Eine Massage nach Wahl', value: '60 Minuten', from: 'Für dich, von Anna', code: 'Nr. 0427' },
+      points: [
+        { title: 'Wert oder Behandlung', text: 'Beides anbieten: einen festen Betrag oder eine bestimmte Massage mit Dauer.' },
+        { title: 'Sofort als PDF', text: 'Für alle, die am 23. Dezember noch ein Geschenk suchen. Als Karte per Post für alle, die gern etwas in der Hand haben.' },
+        { title: 'Klare Bedingungen', text: 'Gültigkeit, Einlösung und Terminvereinbarung stehen direkt beim Gutschein, nicht im Kleingedruckten.' },
+        { title: 'Einfach bezahlen', text: 'Bestellung per Formular und Rechnung geht in jedem Paket. Bezahlung im Netz gehört zum Individuell-Paket ({{price.individuell}}).' }
       ],
-      note: 'Wer für sich selbst bucht, geht einen kürzeren Weg: Massage auswählen, Dauer und Preis ansehen, Termin buchen.'
+      note: 'Die Gutscheinseite verlinke ich von Startseite, Preisliste und Google-Profil. Vor Weihnachten kommt zusätzlich ein Hinweis oben auf die Startseite.'
     },
     {
       type: 'feature',
@@ -170,7 +169,7 @@ export const WELLNESS_PAGE = Object.freeze({
         src: '/images/branchen/wellness/wellness-angebot.webp',
         alt: 'Beispielaufbau einer Übersicht mit Massagen und Anwendungen mit sechs Kacheln von Klassischer Massage bis Gutscheine',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -238,9 +237,9 @@ export const WELLNESS_PAGE = Object.freeze({
       title: 'So kann die Website für deine Massagepraxis aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Gutscheinbestellung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Räumen, Team und Anwendungen.',
       items: [
-        { src: '/images/branchen/wellness/wellness-startseite.webp', alt: 'Beispielaufbau der Startseite einer Massagepraxis mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Stadt und der Knopf zur Buchung stehen oben, darunter Massagen, Gutscheine und Öffnungszeiten.' },
-        { src: '/images/branchen/wellness/wellness-anfrage.webp', alt: 'Beispielaufbau einer Gutscheinbestellung auf dem Handy mit Wert, Anlass und Versand', width: 720, height: 540, title: 'Gutscheinbestellung', caption: 'Beispielaufbau: Wert, Anlass und Versand in drei Feldern, dazu die Wahl zwischen Ausdrucken und Post.' },
-        { src: '/images/branchen/wellness/wellness-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Massagepraxis mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Massage in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/wellness/wellness-startseite.webp', alt: 'Beispielaufbau der Startseite einer Massagepraxis mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Stadt und der Knopf zur Buchung stehen oben, darunter Massagen, Gutscheine und Öffnungszeiten.' },
+        { src: '/images/branchen/wellness/wellness-anfrage.webp', alt: 'Beispielaufbau einer Gutscheinbestellung auf dem Handy mit Wert, Anlass und Versand', width: 720, height: 480, title: 'Gutscheinbestellung', caption: 'Beispielaufbau: Wert, Anlass und Versand in drei Feldern, dazu die Wahl zwischen Ausdrucken und Post.' },
+        { src: '/images/branchen/wellness/wellness-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Massagepraxis mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Massage in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Studio oder deiner Praxis aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

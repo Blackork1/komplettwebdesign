@@ -1,0 +1,20 @@
+<div class="bt-bon-layout">
+  <div class="bt-bon<%= rv %>">
+    <p class="bt-bon__titel"><strong><%= section.receipt.title %></strong><span><%= section.receipt.subtitle %></span></p>
+    <ul class="bt-bon__zeilen">
+      <% section.receipt.lines.forEach(([label, where]) => { %>
+      <li><span><%= label %></span><span class="bt-bon__ort"><%= where %></span></li>
+      <% }) %>
+    </ul>
+    <p class="bt-bon__summe"><span>Summe</span><span><%= section.receipt.total %></span></p>
+    <span class="bt-bon__code" aria-hidden="true"></span>
+  </div>
+  <ol class="bt-bon__punkte">
+    <% section.points.forEach((point) => { %>
+    <li class="<%= rv.trim() %>">
+      <h3><%= point.title %></h3>
+      <p><%= point.text %></p>
+    </li>
+    <% }) %>
+  </ol>
+</div>

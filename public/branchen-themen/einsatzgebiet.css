@@ -1,0 +1,158 @@
+/* Handwerker: Einsatzgebiet als Ringe um den Betrieb, Zonen und Inhalte der Seite daneben */
+.webdesign-berlin .bt-gebiet {
+  align-items: center;
+  display: grid;
+  gap: 48px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.webdesign-berlin .bt-gebiet__figur {
+  margin: 0;
+}
+
+.webdesign-berlin .bt-gebiet__ringe {
+  aspect-ratio: 1;
+  margin: 0 auto;
+  max-width: 520px;
+  position: relative;
+}
+
+.webdesign-berlin .bt-gebiet__ring {
+  border-radius: 50%;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transition: scale 0.8s var(--np-ease);
+  translate: -50% -50%;
+}
+
+.webdesign-berlin .bt-gebiet__ring--3 {
+  background: var(--np-4-soft);
+  border: 2px dashed var(--np-4);
+  height: 100%;
+  width: 100%;
+}
+
+.webdesign-berlin .bt-gebiet__ring--2 {
+  background: var(--np-2-soft);
+  border: 2px solid var(--np-2);
+  height: 72%;
+  transition-delay: 0.1s;
+  width: 72%;
+}
+
+.webdesign-berlin .bt-gebiet__ring--1 {
+  background: var(--np-1-soft);
+  border: 2px solid var(--np-1);
+  height: 44%;
+  transition-delay: 0.2s;
+  width: 44%;
+}
+
+html.kwd-interaction-polish .webdesign-berlin .bt-gebiet__figur:not(.visible):not(.out) .bt-gebiet__ring {
+  scale: 0.6;
+}
+
+.webdesign-berlin .bt-gebiet__mitte {
+  background: var(--wd-ink);
+  border-radius: 999px;
+  box-shadow: 0 10px 22px rgba(11, 42, 70, 0.25);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  left: 50%;
+  padding: 8px 14px;
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+  white-space: nowrap;
+}
+
+.webdesign-berlin .bt-gebiet__ort {
+  background: #fff;
+  border: 1px solid var(--wd-line);
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(11, 42, 70, 0.08);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  position: absolute;
+  translate: -50% -50%;
+  white-space: nowrap;
+}
+
+.webdesign-berlin .bt-gebiet__ort--1-1 { left: 50%; top: 35%; }
+.webdesign-berlin .bt-gebiet__ort--1-2 { left: 38%; top: 60%; }
+.webdesign-berlin .bt-gebiet__ort--1-3 { left: 62%; top: 60%; }
+.webdesign-berlin .bt-gebiet__ort--2-1 { left: 21%; top: 50%; }
+.webdesign-berlin .bt-gebiet__ort--2-2 { left: 79%; top: 50%; }
+.webdesign-berlin .bt-gebiet__ort--2-3 { left: 50%; top: 79%; }
+.webdesign-berlin .bt-gebiet__ort--3-1 { left: 25%; top: 84%; }
+.webdesign-berlin .bt-gebiet__ort--3-2 { left: 50%; top: 7%; }
+
+.webdesign-berlin .bt-gebiet__zonen {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 0 0 26px;
+  padding: 0;
+}
+
+.webdesign-berlin .bt-gebiet__zonen li {
+  border-left: 5px solid var(--np-1);
+  padding: 2px 0 2px 16px;
+}
+
+.webdesign-berlin .bt-gebiet__zonen .bt-gebiet__zone--2 {
+  border-left-color: var(--np-2);
+}
+
+.webdesign-berlin .bt-gebiet__zonen .bt-gebiet__zone--3 {
+  border-left-color: var(--np-4);
+}
+
+.webdesign-berlin .bt-gebiet__zonen h3 {
+  font-size: 1.05rem;
+  margin: 0 0 2px;
+}
+
+.webdesign-berlin .bt-gebiet__zonen p {
+  color: var(--wd-muted);
+  margin: 0;
+}
+
+.webdesign-berlin .bt-gebiet__punkte h3 {
+  font-size: 1.1rem;
+  margin: 0 0 10px;
+}
+
+@media (max-width: 860px) {
+  .webdesign-berlin .bt-gebiet {
+    gap: 32px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .webdesign-berlin .bt-gebiet__ringe {
+    max-width: 380px;
+  }
+}
+
+@media (max-width: 420px) {
+  .webdesign-berlin .bt-gebiet__ort {
+    font-size: 0.66rem;
+    padding: 3px 7px;
+  }
+
+  .webdesign-berlin .bt-gebiet__ort--1-2 {
+    left: 35%;
+  }
+
+  .webdesign-berlin .bt-gebiet__ort--1-3 {
+    left: 66%;
+  }
+
+  .webdesign-berlin .bt-gebiet__mitte {
+    font-size: 0.78rem;
+    padding: 6px 11px;
+  }
+}

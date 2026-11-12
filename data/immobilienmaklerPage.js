@@ -134,21 +134,18 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'weg-zum-auftrag',
-      chip: 'Beispiel',
-      title: 'Vom Verkaufsgedanken zum Auftrag: der Weg eines Eigentümers über deine Website',
-      intro: 'Kaum ein Eigentümer beauftragt den ersten Makler, den er findet. Zwischen der ersten Suche und dem Auftrag liegen mehrere Schritte. Die Website begleitet jeden davon. Das Beispiel zeigt den Verkauf einer geerbten Wohnung.',
-      listLabel: 'Sechs Schritte von der Suche bis zum Maklerauftrag',
-      items: [
-        { label: 'Schritt 1', title: 'Der Anlass', text: 'Ein Ehepaar erbt eine Wohnung in Steglitz und sucht „Wohnung verkaufen Steglitz“.' },
-        { label: 'Schritt 2', title: 'Der erste Eindruck', text: 'Deine Seite zum Verkauf erklärt Vorgehen, Dauer und Provision in klaren Worten.' },
-        { label: 'Schritt 3', title: 'Die Prüfung', text: 'Verkaufte Objekte aus dem Bezirk und Bewertungen zeigen, dass du die Lage kennst.' },
-        { label: 'Schritt 4', title: 'Die Bewertungsanfrage', text: 'Objektart, Lage und Wohnfläche reichen. Die Anfrage landet in deinem Postfach.' },
-        { label: 'Schritt 5', title: 'Der Termin', text: 'Du rufst zurück und vereinbarst die Besichtigung. Die Eckdaten kennst du schon vorher.' },
-        { label: 'Schritt 6', title: 'Der Auftrag', text: 'Nach der Wertermittlung entscheiden die Eigentümer. Team und Referenzen auf der Website stützen die Wahl.' }
-      ],
-      note: 'Kaufinteressenten gehen einen kürzeren Weg: Objekt ansehen, Anfrage direkt am Objekt senden, Besichtigung vereinbaren.'
+      type: 'thema',
+      variant: 'bezirkskarte',
+      id: 'bezirksseiten',
+      chip: 'SEO für Immobilienmakler',
+      title: 'SEO für Immobilienmakler in Berlin: Lagekenntnis pro Bezirk zeigen',
+      intro: 'Eigentümer suchen einen Makler, der ihre Gegend kennt: „Immobilienmakler Zehlendorf“, „Makler Pankow“, „Wohnung verkaufen Charlottenburg“. Eine Bezirksseite wirkt nur, wenn sie Eigenes zeigt: verkaufte Objekte, Wissen über die Lage und einen Ansprechpartner vor Ort.',
+      mapLabel: 'Schematische Karte der zwölf Berliner Bezirke',
+      active: ['charlottenburg-wilmersdorf', 'steglitz-zehlendorf', 'tempelhof-schoeneberg'],
+      legend: 'Beispiel: drei Bezirke, in denen du wirklich verkaufst, bekommen eine eigene Seite.',
+      pointsTitle: 'Das gehört auf eine Bezirksseite',
+      points: ['Verkaufte und aktuelle Objekte im Bezirk, mit Foto', 'Kieze, Bauarten und Lagen, die du wirklich kennst', 'Marktentwicklung mit Quelle, zum Beispiel aus dem Grundstücksmarktbericht', 'Ansprechpartner mit Foto und Telefon', 'Anfrage für eine Wertermittlung im Bezirk'],
+      note: 'Wo du nicht verkaufst, gibt es keine Seite. Drei starke Bezirksseiten bringen mehr als zwölf kopierte.'
     },
     {
       type: 'feature',
@@ -174,7 +171,7 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
         src: '/images/branchen/immobilienmakler/immobilienmakler-angebot.webp',
         alt: 'Beispielaufbau einer Objektübersicht mit sechs Kacheln von Wohnung über Einfamilienhaus bis Gewerbe',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -278,9 +275,9 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
       title: 'So kann die Website für dein Maklerbüro aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Bewertungsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Büro und Objekten.',
       items: [
-        { src: '/images/branchen/immobilienmakler/immobilienmakler-startseite.webp', alt: 'Beispielaufbau der Startseite eines Maklerbüros mit Überschrift, Knopf zur Immobilienbewertung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Leistung, Stadt und der Knopf zur Bewertung, darunter Wertermittlung, Objekte und Verkauf.' },
-        { src: '/images/branchen/immobilienmakler/immobilienmakler-anfrage.webp', alt: 'Beispielaufbau einer Bewertungsanfrage auf dem Handy mit Objektart, Lage und Wohnfläche', width: 720, height: 540, title: 'Bewertungsanfrage', caption: 'Beispielaufbau: Objektart, Lage und Wohnfläche in drei Feldern, dazu die Wahl zwischen Verkauf und Vermietung.' },
-        { src: '/images/branchen/immobilienmakler/immobilienmakler-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Maklerbüro mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Büro bei „Immobilienmakler Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-startseite.webp', alt: 'Beispielaufbau der Startseite eines Maklerbüros mit Überschrift, Knopf zur Immobilienbewertung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Leistung, Stadt und der Knopf zur Bewertung, darunter Wertermittlung, Objekte und Verkauf.' },
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-anfrage.webp', alt: 'Beispielaufbau einer Bewertungsanfrage auf dem Handy mit Objektart, Lage und Wohnfläche', width: 720, height: 480, title: 'Bewertungsanfrage', caption: 'Beispielaufbau: Objektart, Lage und Wohnfläche in drei Feldern, dazu die Wahl zwischen Verkauf und Vermietung.' },
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Maklerbüro mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Büro bei „Immobilienmakler Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Büro aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

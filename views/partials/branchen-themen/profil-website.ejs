@@ -1,0 +1,13 @@
+<div class="bt-venn<%= rv %>">
+  <div class="bt-venn__kreis bt-venn__kreis--a" aria-hidden="true"></div>
+  <div class="bt-venn__kreis bt-venn__kreis--b" aria-hidden="true"></div>
+  <% [['profil', section.profile], ['beide', section.both], ['website', section.website]].forEach(([key, zone]) => { %>
+  <div class="bt-venn__zone bt-venn__zone--<%= key %>">
+    <h3><%= zone.title %></h3>
+    <% if (zone.text) { %><p><%= zone.text %></p><% } %>
+    <ul>
+      <% zone.items.forEach((item) => { %><li><%= item %></li><% }) %>
+    </ul>
+  </div>
+  <% }) %>
+</div>

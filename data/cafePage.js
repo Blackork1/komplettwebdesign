@@ -126,21 +126,24 @@ export const CAFE_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'alltag',
-      chip: 'Beispiel',
-      title: 'Ein Tag mit deiner Café-Website',
-      intro: 'Während du Kaffee machst und Kuchen schneidest, beantwortet die Website die Fragen, die sonst am Tresen oder am Telefon landen. Die Zeiten sind ein Beispiel.',
-      listLabel: 'Beispiel für einen Tag mit der Website eines Cafés',
-      items: [
-        { time: '07:30', title: 'Frühstück vor der Arbeit', text: 'Jemand sucht „Frühstück in der Nähe“ und sieht, dass du schon geöffnet hast.' },
-        { time: '09:30', title: 'Kuchen der Woche', text: 'Der neue Kuchen steht mit Foto und Preis auf der Seite, bevor die ersten Gäste suchen.' },
-        { time: '11:00', title: 'Reservierung fürs Wochenende', text: 'Die Anfrage für das Samstagsfrühstück mit sechs Personen kommt per Formular.' },
-        { time: '14:30', title: 'Blick in die Karte', text: 'Gäste lesen Kuchen und Getränke auf dem Handy, ohne ein PDF zu laden oder zu zoomen.' },
-        { time: '16:00', title: 'Torte für Samstag', text: 'Sorte, Größe und Abholtag stehen in der Anfrage. Du sagst zu, wenn es am Tresen ruhiger wird.' },
-        { time: '19:30', title: 'Fragen nach Ladenschluss', text: 'Öffnungszeiten am Feiertag, Hunde, Kinderwagen: Die Antworten stehen auf der Seite.' }
+      type: 'thema',
+      variant: 'bon',
+      id: 'merkmale',
+      chip: 'SEO für Cafés',
+      title: 'SEO für Cafés: Gäste suchen nach Merkmalen, nicht nach Namen',
+      intro: 'Ein Café, das man noch nicht kennt, findet man über das, was es bietet: „Frühstück Prenzlauer Berg“, „Café Mitte draußen sitzen“, „Café mit Spielplatz“, „Brunch am Wochenende Berlin“. Jedes Merkmal, das bei dir stimmt, gehört als Text auf die Website und in dein Google-Profil.',
+      receipt: {
+        title: 'Dein Café',
+        subtitle: 'Merkmale für die Suche',
+        lines: [['Frühstück bis 14 Uhr', 'Startseite'], ['Brunch am Wochenende', 'eigene Seite'], ['Plätze draußen', 'Startseite'], ['Kinderfreundlich', 'Über uns'], ['Hunde willkommen', 'Startseite'], ['Vegan und glutenfrei', 'Karte'], ['WLAN und Steckdosen', 'Startseite'], ['Torten auf Bestellung', 'eigene Seite']],
+        total: '8 Gründe, dich zu finden'
+      },
+      points: [
+        { title: 'Merkmale in ganzen Sätzen', text: '„Frühstück gibt es bei uns bis 14 Uhr, am Wochenende Brunch“ hilft mehr als ein Symbol ohne Text.' },
+        { title: 'Kiez und Lage nennen', text: 'Straße, Kiez und Orientierung wie „am Helmholtzplatz“ gehören in Überschrift und Text. So passt die Seite zu Suchen mit Ortsnamen.' },
+        { title: 'Dieselben Merkmale im Google-Profil', text: 'Dort gibt es Angaben für Außenplätze, Hunde oder vegane Speisen. Was du dort auswählst, steht auch auf der Website.' }
       ],
-      note: 'Du musst nicht mit allem starten. Viele Cafés beginnen mit Karte, Öffnungszeiten und Bildern und ergänzen Reservierung oder Tortenanfrage später.'
+      note: 'Auf die Liste kommt nur, was wirklich stimmt. Ein falsches Merkmal bringt enttäuschte Gäste und schlechte Bewertungen.'
     },
     {
       type: 'feature',
@@ -166,7 +169,7 @@ export const CAFE_PAGE = Object.freeze({
         src: '/images/branchen/cafe/cafe-anfrage.webp',
         alt: 'Beispielaufbau einer Tortenbestellung auf dem Handy mit Sorte, Größe und Abholtermin',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -279,9 +282,9 @@ export const CAFE_PAGE = Object.freeze({
       title: 'So kann die Website für dein Café aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Karte und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Gastraum, Kuchen und Team.',
       items: [
-        { src: '/images/branchen/cafe/cafe-startseite.webp', alt: 'Beispielaufbau der Startseite eines Cafés mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Reservieren, darunter Kaffee, Torten und Öffnungszeiten.' },
-        { src: '/images/branchen/cafe/cafe-angebot.webp', alt: 'Beispielaufbau einer Karte als Text mit den Abschnitten Frühstück sowie Kuchen und Kaffee', width: 720, height: 540, title: 'Karte als Text', caption: 'Beispielaufbau: Frühstück, Kuchen und Getränke stehen als Text auf der Seite und bleiben auf dem Handy lesbar.' },
-        { src: '/images/branchen/cafe/cafe-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Café mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Café bei „Café in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/cafe/cafe-startseite.webp', alt: 'Beispielaufbau der Startseite eines Cafés mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Reservieren, darunter Kaffee, Torten und Öffnungszeiten.' },
+        { src: '/images/branchen/cafe/cafe-angebot.webp', alt: 'Beispielaufbau einer Karte als Text mit den Abschnitten Frühstück sowie Kuchen und Kaffee', width: 720, height: 480, title: 'Karte als Text', caption: 'Beispielaufbau: Frühstück, Kuchen und Getränke stehen als Text auf der Seite und bleiben auf dem Handy lesbar.' },
+        { src: '/images/branchen/cafe/cafe-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Café mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Café bei „Café in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Café aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

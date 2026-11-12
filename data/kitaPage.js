@@ -8,10 +8,10 @@
 // ersetzt die Datei unter demselben Namen und im selben Seitenverhältnis (WebP), danach hier nur den alt-Text
 // anpassen. Keine erkennbaren Kinder ohne Einwilligung der Sorgeberechtigten.
 //   kita-hero.webp         960 × 640  Hero: Außenansicht, Eingang oder heller Gruppenraum
-//   kita-tagespflege.webp  720 × 540  Abschnitt Kindertagespflege: Spielecke oder Tagesmutter in ihren Räumen
-//   kita-raeume.webp       720 × 540  Einblicke 1: Gruppenraum, Bewegungsraum oder Schlafraum
-//   kita-garten.webp       720 × 540  Einblicke 2: Außengelände oder Spielplatz in der Nähe
-//   kita-team.webp         720 × 540  Einblicke 3: Team oder Detail aus dem Alltag (Garderobe, Basteltisch)
+//   kita-tagespflege.webp  720 × 1080 Abschnitt Kindertagespflege: Spielecke oder Tagesmutter in ihren Räumen
+//   kita-raeume.webp       720 × 480  Einblicke 1: Gruppenraum, Bewegungsraum oder Schlafraum
+//   kita-garten.webp       720 × 480  Einblicke 2: Außengelände oder Spielplatz in der Nähe
+//   kita-team.webp         720 × 480  Einblicke 3: Team oder Detail aus dem Alltag (Garderobe, Basteltisch)
 //   kita-hero-720.webp     720 × 540  Karte auf /branchen: 4:3-Ausschnitt des Hero-Bildes, bei neuem Hero neu erzeugen
 
 export const KITA_CONTENT_UPDATED_ISO = '2026-11-10';
@@ -224,7 +224,7 @@ export const KITA_PAGE = Object.freeze({
         src: `${IMAGE_BASE}/kita-tagespflege.webp`,
         alt: 'Illustration einer Spielecke mit Regal, Teppich und Bauklötzen',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -256,9 +256,9 @@ export const KITA_PAGE = Object.freeze({
       title: 'Räume, Garten und Alltag zeigen, ohne Kinder zu zeigen',
       intro: 'Bilder entscheiden mit, ob Eltern eine Besichtigung anfragen. Gute Kita-Fotos kommen ohne erkennbare Kinder aus: helle Räume, das Außengelände, Hände beim Basteln, die Garderobe mit den kleinen Gummistiefeln.',
       items: [
-        { src: `${IMAGE_BASE}/kita-raeume.webp`, alt: 'Illustration eines Gruppenraums mit Tisch, Regal und Fenster', width: 720, height: 540, title: 'Räume', caption: 'Gruppenraum, Bewegungsraum und Schlafraum bei Tageslicht.' },
-        { src: `${IMAGE_BASE}/kita-garten.webp`, alt: 'Illustration eines Kita-Gartens mit Baum, Sandkasten und Rutsche', width: 720, height: 540, title: 'Garten und Umgebung', caption: 'Außengelände, der Spielplatz um die Ecke, der Weg zum Park.' },
-        { src: `${IMAGE_BASE}/kita-team.webp`, alt: 'Illustration einer Kita-Garderobe mit Jacken, Rucksäcken und Gummistiefeln', width: 720, height: 540, title: 'Team und Alltag', caption: 'Porträts des Teams und Details, die vom Alltag erzählen.' }
+        { src: `${IMAGE_BASE}/kita-raeume.webp`, alt: 'Illustration eines Gruppenraums mit Tisch, Regal und Fenster', width: 720, height: 480, title: 'Räume', caption: 'Gruppenraum, Bewegungsraum und Schlafraum bei Tageslicht.' },
+        { src: `${IMAGE_BASE}/kita-garten.webp`, alt: 'Illustration eines Kita-Gartens mit Baum, Sandkasten und Rutsche', width: 720, height: 480, title: 'Garten und Umgebung', caption: 'Außengelände, der Spielplatz um die Ecke, der Weg zum Park.' },
+        { src: `${IMAGE_BASE}/kita-team.webp`, alt: 'Illustration einer Kita-Garderobe mit Jacken, Rucksäcken und Gummistiefeln', width: 720, height: 480, title: 'Team und Alltag', caption: 'Porträts des Teams und Details, die vom Alltag erzählen.' }
       ],
       note: 'Fotos, auf denen Kinder erkennbar sind, brauchen die Einwilligung der Sorgeberechtigten, und die lässt sich jederzeit widerrufen. Maßgeblich sind die DSGVO und § 22 KUG. Die Berliner Datenschutzbeauftragte hat dazu eine eigene Broschüre für Kitas veröffentlicht.'
     },

@@ -1,0 +1,18 @@
+<% const symbole = {
+  stern: '<polygon points="32,4 39,24 60,24 43,37 49,58 32,45 15,58 21,37 4,24 25,24"/>',
+  herz: '<path d="M32 57 C10 41 4 30 4 20 C4 11 11 5 19 5 C25 5 29 8 32 13 C35 8 39 5 45 5 C53 5 60 11 60 20 C60 30 54 41 32 57 Z"/>',
+  raute: '<polygon points="32,3 58,32 32,61 6,32"/>',
+  mond: '<path d="M40 5 C24 7 12 19 12 34 C12 49 24 60 40 60 C30 54 25 44 25 33 C25 21 31 11 40 5 Z"/>',
+  blitz: '<polygon points="36,3 12,36 29,36 24,61 52,24 34,24"/>',
+  flamme: '<path d="M32 61 C17 61 10 51 10 40 C10 26 22 20 24 6 C33 13 37 22 36 31 C40 27 42 22 42 17 C50 25 54 33 54 41 C54 52 46 61 32 61 Z"/>'
+}; %>
+<ul class="bt-flash">
+  <% section.cards.forEach((card, index) => { %>
+  <li class="bt-flash__karte bt-farbe-<%= (index % 4) + 1 %><%= rv %>">
+    <svg class="bt-flash__symbol" viewBox="0 0 64 64" aria-hidden="true"><%- symbole[card.symbol] || symbole.stern %></svg>
+    <h3 class="bt-flash__band"><%= card.title %></h3>
+    <p class="bt-query"><span class="visually-hidden">Suchbeispiel: </span>„<%= card.query %>“</p>
+    <p><%= card.text %></p>
+  </li>
+  <% }) %>
+</ul>

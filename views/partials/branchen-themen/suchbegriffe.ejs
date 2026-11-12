@@ -1,0 +1,13 @@
+<ol class="bt-suche">
+  <% section.rows.forEach((row) => { %>
+  <li class="bt-suche__zeile<%= rv %>">
+    <p class="bt-suche__feld"><span class="visually-hidden">Suchbegriff: </span><%= row.query %></p>
+    <span class="bt-suche__pfeil" aria-hidden="true"></span>
+    <div class="bt-suche__treffer">
+      <span class="bt-suche__url"><%= section.domain %> › <%= row.path %></span>
+      <h3><%= row.title %></h3>
+      <p><%= row.text %></p>
+    </div>
+  </li>
+  <% }) %>
+</ol>

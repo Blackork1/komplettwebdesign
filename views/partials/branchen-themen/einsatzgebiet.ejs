@@ -1,0 +1,25 @@
+<div class="bt-gebiet">
+  <figure class="bt-gebiet__figur<%= rv %>" aria-label="<%= section.ringsLabel %>">
+    <div class="bt-gebiet__ringe">
+      <% section.rings.slice().reverse().forEach((ring, index) => { const n = section.rings.length - index; %><span class="bt-gebiet__ring bt-gebiet__ring--<%= n %>" aria-hidden="true"></span><% }) %>
+      <span class="bt-gebiet__mitte"><%= section.center %></span>
+      <% section.rings.forEach((ring, ringIndex) => { %><% ring.places.forEach((place, placeIndex) => { %><span class="bt-gebiet__ort bt-gebiet__ort--<%= ringIndex + 1 %>-<%= placeIndex + 1 %>"><%= place %></span><% }) %><% }) %>
+    </div>
+  </figure>
+  <div class="bt-gebiet__text">
+    <ol class="bt-gebiet__zonen">
+      <% section.rings.forEach((ring, index) => { %>
+      <li class="bt-gebiet__zone--<%= index + 1 %><%= rv %>">
+        <h3><%= ring.name %></h3>
+        <p><%= ring.text %>: <%= ring.places.join(', ') %></p>
+      </li>
+      <% }) %>
+    </ol>
+    <div class="bt-gebiet__punkte<%= rv %>">
+      <h3><%= section.pointsTitle %></h3>
+      <ul class="wd-list wd-list--checks">
+        <% section.points.forEach((point) => { %><li><%= point %></li><% }) %>
+      </ul>
+    </div>
+  </div>
+</div>

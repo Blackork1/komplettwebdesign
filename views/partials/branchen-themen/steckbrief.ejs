@@ -1,0 +1,20 @@
+<div class="bt-steckbrief-layout">
+  <article class="bt-steckbrief<%= rv %>">
+    <header class="bt-steckbrief__kopf">
+      <span class="bt-steckbrief__marke"><%= section.card.tag %></span>
+      <h3><%= section.card.name %></h3>
+    </header>
+    <dl class="bt-steckbrief__felder">
+      <% section.card.fields.forEach(([label, value]) => { %>
+      <div><dt><%= label %></dt><dd><%= value %></dd></div>
+      <% }) %>
+    </dl>
+  </article>
+  <div class="bt-steckbrief__mehr<%= rv %>">
+    <h3><%= section.moreTitle %></h3>
+    <ul>
+      <% section.more.forEach((name) => { %><li><%= name %></li><% }) %>
+    </ul>
+    <p><%= section.moreText %></p>
+  </div>
+</div>

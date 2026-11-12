@@ -1,0 +1,16 @@
+<div class="bt-schilder">
+  <% section.groups.forEach((group) => { %>
+  <article class="bt-schilder__gruppe<%= rv %>">
+    <h3><%= group.title %></h3>
+    <p><%= group.text %></p>
+    <ul>
+      <% group.plates.forEach(([plate, query]) => { %>
+      <li>
+        <span class="bt-schilder__schild" aria-hidden="true"><span class="bt-schilder__eu">D</span><span class="bt-schilder__text">B <%= plate %></span></span>
+        <span class="bt-schilder__suche"><span class="visually-hidden">Suchbeispiel: </span>„<%= query %>“</span>
+      </li>
+      <% }) %>
+    </ul>
+  </article>
+  <% }) %>
+</div>

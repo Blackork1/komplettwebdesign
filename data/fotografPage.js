@@ -130,21 +130,23 @@ export const FOTOGRAF_PAGE = Object.freeze({
       ]
     },
     {
-      type: 'timeline',
-      id: 'weg-zur-buchung',
-      chip: 'Beispiel',
-      title: 'Von der Suche zur Buchung: der Weg eines Paares über deine Website',
-      intro: 'Fotografie wird selten spontan gebucht. Zwischen der ersten Suche und der Zusage liegen mehrere Schritte. Die Website begleitet jeden davon, auch wenn du gerade auf einem Shooting bist.',
-      listLabel: 'Sechs Schritte von der Suche bis zur Buchung',
-      items: [
-        { label: 'Schritt 1', title: 'Die Suche', text: 'Ein Paar sucht „Hochzeitsfotograf Berlin“ und landet auf deiner Seite für Hochzeiten.' },
-        { label: 'Schritt 2', title: 'Das Portfolio', text: 'Zwei ganze Reportagen zeigen, wie du einen Tag begleitest, vom Ankleiden bis zum Tanz.' },
-        { label: 'Schritt 3', title: 'Die Pakete', text: 'Dauer, Zahl der Bilder und Ab-Preis stehen direkt darunter. Das Budget lässt sich einordnen.' },
-        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Datum, Ort und Umfang ab. Du siehst sofort, ob der Tag frei ist.' },
-        { label: 'Schritt 5', title: 'Das Kennenlernen', text: 'Im Gespräch geht es um Wünsche und Ablauf. Die Eckdaten kennst du schon.' },
-        { label: 'Schritt 6', title: 'Die Buchung', text: 'Das Angebot geht raus. Fragen zu Ablauf und Bildlieferung beantwortet die Website.' }
+      type: 'thema',
+      variant: 'kontaktbogen',
+      id: 'shooting-anlaesse',
+      chip: 'Gesucht wird nach Anlass',
+      title: 'Fotoshooting in Berlin: eine Seite für jeden Anlass',
+      intro: 'Kunden suchen nach dem Anlass, nicht nach deinem Stil: „Fotoshooting Berlin Familie“, „Schwangerschaftsshooting Berlin“, „Paarshooting Berlin“, „Fotoshooting Berlin Preise“. Für jeden Anlass, den du wirklich anbietest, lohnt sich eine eigene Seite mit Beispielen, Ablauf, Ort und Preisrahmen.',
+      frames: [
+        { name: 'Familie', query: 'Fotoshooting Berlin Familie', text: 'Ablauf mit Kindern, draußen oder zu Hause, Dauer und Preis.' },
+        { name: 'Schwangerschaft', query: 'Schwangerschaftsshooting Berlin', text: 'Beste Zeit in der Schwangerschaft, Kleidung, Studio oder Park.' },
+        { name: 'Neugeborene', query: 'Neugeborenenshooting Berlin', text: 'Ab wann, wie lange und was du für die Sicherheit des Babys tust.' },
+        { name: 'Paare', query: 'Paarshooting Berlin', text: 'Lieblingsorte in Berlin, Uhrzeit für gutes Licht, Gutschein als Geschenk.' },
+        { name: 'Hochzeit', query: 'Hochzeitsfotograf Berlin', text: 'Pakete nach Stunden, Standesamt und Feier, freie Termine.' },
+        { name: 'Bewerbung und Business', query: 'Bewerbungsfotos Berlin', text: 'Ablauf im Studio, Anzahl der Bilder und wann sie fertig sind.' }
       ],
-      note: 'Bei Bewerbungsfotos oder Business-Porträts ist der Weg kürzer: Preise ansehen, Termin anfragen, vorbeikommen.'
+      marked: 'Fotoshooting Berlin Preise',
+      markedText: 'Eine Preisseite mit Paketen beantwortet die häufigste Frage vor der Anfrage. Ein Preisrahmen reicht, wenn jedes Shooting anders ist.',
+      note: 'Jede Anlassseite zeigt eigene Bilder aus genau diesem Anlass. Dieselbe Galerie auf sechs Seiten bringt weder Kunden noch Google weiter.'
     },
     {
       type: 'feature',
@@ -170,7 +172,7 @@ export const FOTOGRAF_PAGE = Object.freeze({
         src: '/images/branchen/fotograf/fotograf-angebot.webp',
         alt: 'Beispielaufbau einer Portfolio-Übersicht für Fotografen mit sechs Kacheln von Hochzeit bis Produkt',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
@@ -236,9 +238,9 @@ export const FOTOGRAF_PAGE = Object.freeze({
       title: 'So kann deine Fotografen-Website aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Shooting-Anfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und lebt von deinen eigenen Bildern.',
       items: [
-        { src: '/images/branchen/fotograf/fotograf-startseite.webp', alt: 'Beispielaufbau der Startseite eines Fotografen mit Überschrift, Knopf zur Shooting-Anfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Stil, Ort und der Knopf zur Anfrage stehen oben, darunter Portfolio, Preise und Termine.' },
-        { src: '/images/branchen/fotograf/fotograf-anfrage.webp', alt: 'Beispielaufbau einer Shooting-Anfrage auf dem Handy mit Art des Shootings, Datum und Ort', width: 720, height: 540, title: 'Shooting-Anfrage', caption: 'Beispielaufbau: Art des Shootings, Datum und Ort in drei Feldern, dazu ganztags oder halbtags zur Auswahl.' },
-        { src: '/images/branchen/fotograf/fotograf-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Hochzeitsfotografen mit Route, Anruf und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kannst du bei „Hochzeitsfotograf Berlin“ erscheinen, mit Route, Anruf und dem Weg zur Website.' }
+        { src: '/images/branchen/fotograf/fotograf-startseite.webp', alt: 'Beispielaufbau der Startseite eines Fotografen mit Überschrift, Knopf zur Shooting-Anfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Stil, Ort und der Knopf zur Anfrage stehen oben, darunter Portfolio, Preise und Termine.' },
+        { src: '/images/branchen/fotograf/fotograf-anfrage.webp', alt: 'Beispielaufbau einer Shooting-Anfrage auf dem Handy mit Art des Shootings, Datum und Ort', width: 720, height: 480, title: 'Shooting-Anfrage', caption: 'Beispielaufbau: Art des Shootings, Datum und Ort in drei Feldern, dazu ganztags oder halbtags zur Auswahl.' },
+        { src: '/images/branchen/fotograf/fotograf-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Hochzeitsfotografen mit Route, Anruf und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kannst du bei „Hochzeitsfotograf Berlin“ erscheinen, mit Route, Anruf und dem Weg zur Website.' }
       ],
       note: 'Farben, Schriften und Bildauswahl richte ich nach deinem Stil aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

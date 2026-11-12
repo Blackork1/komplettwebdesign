@@ -191,25 +191,26 @@ export const BLUMENLADEN_PAGE = Object.freeze({
         src: '/images/branchen/blumenladen/blumenladen-angebot.webp',
         alt: 'Beispielaufbau einer Shopseite für einen Blumenladen mit sechs Angeboten vom Strauß der Woche bis zum Gutschein',
         width: 720,
-        height: 540
+        height: 1080
       }
     },
     {
-      type: 'timeline',
-      id: 'alltag',
-      chip: 'Beispiel',
-      title: 'Ein Tag mit deiner Blumenladen-Website',
-      intro: 'Eine gute Website arbeitet mit, während du bindest, berätst und auslieferst. So kann ein gewöhnlicher Tag aussehen. Die Zeiten sind ein Beispiel.',
-      listLabel: 'Beispiel für einen Tag mit der Website eines Blumenladens',
-      items: [
-        { time: '07:30', title: 'Vorbestellungen auf einen Blick', text: 'Vor dem Großmarkt siehst du im Postfach, welche Sträuße heute abgeholt werden.' },
-        { time: '09:00', title: 'Strauß der Woche einstellen', text: 'Foto hochladen, Preis eintragen, speichern. Das dauert zwei Minuten.' },
-        { time: '11:30', title: 'Gefunden in der Mittagspause', text: 'Jemand sucht „Blumenladen in der Nähe“ und sieht Öffnungszeiten, Route und deine Sträuße.' },
-        { time: '14:00', title: 'Anfrage für eine Hochzeit', text: 'Das Formular fragt Datum, Farbwelt und Budget ab. Du rufst zurück, wenn es im Laden ruhig ist.' },
-        { time: '16:30', title: 'Lieferung am selben Tag', text: 'Die Seite zeigt den Bestellschluss und die Postleitzahlen, in die du lieferst.' },
-        { time: '20:00', title: 'Bestellen nach Ladenschluss', text: 'Der Strauß für Samstag wird abends auf dem Sofa bestellt. Die Bestätigung geht von allein raus.' }
+      type: 'thema',
+      variant: 'anlasskalender',
+      id: 'anlasskalender',
+      chip: 'SEO für Blumenläden',
+      title: 'SEO für Blumenläden: der Kalender der Anlässe',
+      intro: 'Floristen werden zu festen Terminen gesucht: „Blumen Valentinstag Berlin“, „Muttertag Blumen bestellen“, „Grabgesteck Totensonntag“. Eine neue Anlassseite braucht ein paar Wochen, bis Google sie zuverlässig zeigt. Deshalb steht sie online, bevor die Nachfrage kommt, und bleibt danach für das nächste Jahr stehen.',
+      calendarLabel: 'Sechs Anlässe für Blumenläden im Jahresverlauf',
+      occasions: [
+        { name: 'Valentinstag', date: '14. Februar', months: [2, 2], online: 'Seite online ab Anfang Januar', text: 'Rosen und Sträuße in drei Preisstufen, Bestellschluss und Lieferung am selben Tag.', query: 'Blumen Valentinstag Berlin' },
+        { name: 'Frauentag', date: '8. März', months: [3, 3], online: 'Seite online ab Anfang Februar', text: 'In Berlin ein Feiertag. Sträuße zum Vorbestellen und deine Öffnungszeiten an diesem Tag.', query: 'Blumen Frauentag Berlin' },
+        { name: 'Muttertag', date: 'Zweiter Sonntag im Mai', months: [5, 5], online: 'Seite online ab Anfang April', text: 'Vorbestellung mit Abholzeit oder Lieferung nach Postleitzahl, dazu deine Öffnungszeiten am Wochenende.', query: 'Muttertag Blumen bestellen' },
+        { name: 'Hochzeiten', date: 'Mai bis September', months: [5, 9], lane: 2, online: 'Seite das ganze Jahr online', text: 'Anfragen kommen Monate vorher. Echte Hochzeiten mit Fotos, Preisrahmen und einer Anfrage mit Datum.', query: 'Hochzeitsfloristik Berlin' },
+        { name: 'Totensonntag', date: 'Sonntag vor dem ersten Advent', months: [11, 11], online: 'Seite online ab Anfang Oktober', text: 'Grabgestecke und Kränze mit Preisspanne, Bestellschluss und Lieferung zum Friedhof.', query: 'Grabgesteck Totensonntag' },
+        { name: 'Advent und Weihnachten', date: 'Dezember', months: [12, 12], online: 'Seite online ab Anfang November', text: 'Adventskränze, Weihnachtssträuße und Gutscheine, dazu die Öffnungszeiten zwischen den Feiertagen.', query: 'Adventskranz kaufen Berlin' }
       ],
-      note: 'Du musst nicht mit allem auf einmal starten. Viele Floristen beginnen mit der Bestellanfrage und ergänzen die Vorbestellung zur Abholung vor Valentinstag oder Muttertag.'
+      note: 'Trauerfloristik und Lieferung gehören das ganze Jahr auf die Website. Die Anlassseiten kommen dazu und werden jedes Jahr nur aktualisiert, nicht neu gebaut.'
     },
     {
       type: 'catalog',
@@ -304,9 +305,9 @@ export const BLUMENLADEN_PAGE = Object.freeze({
       title: 'So kann die Website für Floristen aufgebaut sein',
       intro: 'Drei Ansichten zeigen, wie Startseite, Bestellung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben, eigene Texte und Fotos von deinen Sträußen.',
       items: [
-        { src: '/images/branchen/blumenladen/blumenladen-startseite.webp', alt: 'Beispielaufbau der Startseite eines Blumenladens mit Überschrift, Bestellknopf und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Bestellen, darunter Lieferung, Hochzeit und Öffnungszeiten.' },
-        { src: '/images/branchen/blumenladen/blumenladen-anfrage.webp', alt: 'Beispielaufbau eines Bestellformulars auf dem Handy mit Anlass, Budget und Wunschtermin für einen Strauß', width: 720, height: 540, title: 'Bestellung auf dem Handy', caption: 'Beispielaufbau: Anlass, Budget und Wunschtermin in drei Feldern, danach Abholung oder Lieferung.' },
-        { src: '/images/branchen/blumenladen/blumenladen-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Blumenladen mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Laden bei „Blumenladen in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/blumenladen/blumenladen-startseite.webp', alt: 'Beispielaufbau der Startseite eines Blumenladens mit Überschrift, Bestellknopf und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Bestellen, darunter Lieferung, Hochzeit und Öffnungszeiten.' },
+        { src: '/images/branchen/blumenladen/blumenladen-anfrage.webp', alt: 'Beispielaufbau eines Bestellformulars auf dem Handy mit Anlass, Budget und Wunschtermin für einen Strauß', width: 720, height: 480, title: 'Bestellung auf dem Handy', caption: 'Beispielaufbau: Anlass, Budget und Wunschtermin in drei Feldern, danach Abholung oder Lieferung.' },
+        { src: '/images/branchen/blumenladen/blumenladen-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Blumenladen mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Laden bei „Blumenladen in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Laden aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

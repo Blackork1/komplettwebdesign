@@ -20,7 +20,9 @@
   const rvAttr = pg.motion ? ' class="animate-on-scroll"' : '';
   // public/branchen-page.css bringt Farbton (page.tone), Zeitleiste, Bildkarten und die Bewegung mit.
   const toneClass = pg.motion ? ` niche-page--motion niche-page--tone-${pg.tone || 'pastell'}` : '';
-  const pageCss = ['webdesign-berlin.css', ...(pg.motion ? ['branchen-page.css'] : []), ...(Array.isArray(pg.extraCss) ? pg.extraCss : [])];
+  // Eigene Themenabschnitte (type 'thema') bringen je ein kleines Stylesheet mit, damit jede Seite nur ihres lädt.
+  const themaCss = pg.sections.filter((section) => section.type === 'thema').map((section) => `branchen-themen/${section.variant}.css`);
+  const pageCss = ['webdesign-berlin.css', ...(pg.motion ? ['branchen-page.css'] : []), ...themaCss, ...(Array.isArray(pg.extraCss) ? pg.extraCss : [])];
 %>
 <%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: pageCss }) %>
 <body>
@@ -344,6 +346,9 @@
         <% if (section.note) { %><p class="handwerk-page__center-note"><%= section.note %></p><% } %>
       </div>
     </section>
+
+    <% } else if (section.type === 'thema') { %>
+    <%- include('partials/branchen-themen/abschnitt', { section, rv, sectionCls: sectionClass(section) }) %>
 
     <% } else if (section.type === 'feature') { %>
     <section id="<%= section.id %>" class="<%= sectionClass(section) %>" aria-labelledby="<%= titleId %>">
