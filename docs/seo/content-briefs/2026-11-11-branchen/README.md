@@ -1,9 +1,15 @@
 # Branchenseiten: Ausbau vom 11.11.2026
 
 Alle Branchenseiten haben den Aufbau der Kita-Seite bekommen: dezente Einblend-Animationen,
-einen Zeitstrahl, einen vertiefenden Abschnitt mit Bild, einen Beispielaufbau mit drei Ansichten
-und je sechs neue Fragen in der FAQ. Betroffen sind die 16 Seiten unter `/branchen/webdesign-…`
-(ohne Kita, die diesen Aufbau schon hatte) und `/handwerker`.
+einen eigenen Themenabschnitt, einen vertiefenden Abschnitt mit Bild, einen Beispielaufbau mit
+drei Ansichten und je sechs neue Fragen in der FAQ. Betroffen sind die 16 Seiten unter
+`/branchen/webdesign-…` und `/handwerker`.
+
+Am 12.11.2026 kam eine zweite Runde dazu: Der Zeitstrahl, den zuerst alle Seiten hatten, passte
+nicht zu jeder Branche. Jede Seite hat jetzt stattdessen einen eigenen Abschnitt zu einem Thema,
+nach dem in dieser Branche gesucht wird, jeweils mit eigenem Aufbau (Abschnitt 2). Nur die
+Kita-Seite behält ihren Tagesablauf, weil er dort selbst das Thema ist. Die ChatGPT-Prompts für
+alle Bildplätze stehen in [bild-prompts.md](bild-prompts.md).
 
 ## 1. Ausgangslage in der Google Search Console
 
@@ -30,10 +36,33 @@ Handwerker, danach Immobilienmakler und Café, zuletzt die zehn Seiten vom 29.10
 Zum Nachmessen: dieselbe Auswertung frühestens vier Wochen nach dem Livegang wiederholen
 (Tabelle `content_search_metrics`, Spalte `metric_date`).
 
+Suchanfragen seit Mai 2026 mit den meisten Impressionen (Impressionen / mittlere Position),
+Grundlage für die Themen der eigenen Abschnitte:
+
+- Blumenladen: „professionelle website erstellung für blumenläden“ (160 / 10,7),
+  „blumen onlineshop erstellen“ (149 / 20,7), „website erstellen lassen blumenladen“ (105 / 7,7),
+  „seo für blumenladen“ (108 / 59,6)
+- Fitness: „fitnessstudio website erstellen lassen“ (151 / 68,3), „fitnessstudio website agentur“
+  (134 / 77,3), „fitnessstudio website kosten“ (12 / 59,6)
+- Reinigung: „webdesign gebäudeservice“ (119 / 79,2), „webdesign gebäudereinigung“ (29 / 32,8),
+  „seo für reinigungsfirmen“ (4 / 55,8)
+- Handwerker: „webdesign für handwerker berlin“ (111 / 82,0), „website für handwerksbetrieb
+  berlin“ (94 / 90,6)
+- Weitere: „seo für immobilienmakler berlin“ (25 / 37,0), „seo cafes“ (20 / 60,6),
+  „seo friseure“ (6 / 50,7), „seo kfz-werkstätten“ (4 / 86,0), „seo für tätowierer“ (2 / 38,5),
+  „gute webseiten steuerberater“ (5 / 96,8)
+
+Dazu kamen Google-Suchvorschläge aus Kundensicht, zum Beispiel „blumen bestellen valentinstag
+berlin“, „fitnessstudio kursplan“, „gebäudereinigung berlin charlottenburg“, „physiotherapie bei
+bandscheibenvorfall“, „geburtsvorbereitungskurs berlin wochenende“, „freie werkstatt berlin bmw“,
+„friseur berlin ohne termin“, „fotoshooting berlin familie“, „massage gutschein in der nähe“ und
+„immobilienmakler berlin zehlendorf“.
+
 ## 2. Was jede Seite neu hat
 
-- **Zeitstrahl** (`type: 'timeline'`): sechs Stationen, entweder ein Tag mit der Website oder der
-  Weg von der Suche bis zur Anfrage.
+- **Themenabschnitt** (`type: 'thema'`, `variant`): ein Suchthema der Branche mit eigenem
+  Aufbau. Vorlage in `views/partials/branchen-themen/<variante>.ejs`, Aussehen in
+  `public/branchen-themen/<variante>.css`. Jede Seite lädt nur ihr eigenes Stylesheet.
 - **Vertiefung** (`type: 'feature'`): ein Thema, zu dem es Suchanfragen gibt und das die Seite
   vorher nur gestreift hat, mit Text, Stichpunkten und einem Bild.
 - **Beispielaufbau** (`type: 'gallery'`): drei Ansichten mit Bildunterschrift.
@@ -42,54 +71,86 @@ Zum Nachmessen: dieselbe Auswertung frühestens vier Wochen nach dem Livegang wi
 - **Stand**: Das Inhaltsdatum (`…_CONTENT_UPDATED_ISO`) steht auf dem 11.11.2026 und geht in
   die Sitemap und in die sichtbare Angabe „Stand“ am Seitenende ein.
 
-| Seite | Farbton | Zeitstrahl | Vertiefung (mit Bild) | Bild der Vertiefung | Bilder im Beispielaufbau |
+| Seite | Farbton | Themenabschnitt (Variante) | Vertiefung (mit Bild) | Bild der Vertiefung | Bilder im Beispielaufbau |
 |---|---|---|---|---|---|
-| `/branchen/webdesign-reinigung` | frisch | Vom Suchbegriff zum Auftrag: so arbeitet deine Website | Webdesign für Gebäudeservice: mehrere Leistungen auf einer Website | `reinigung-angebot.webp` | `reinigung-startseite.webp`, `reinigung-anfrage.webp`, `reinigung-suche.webp` |
-| `/branchen/webdesign-blumenladen` | floral | Ein Tag mit deiner Blumenladen-Website | Blumen-Onlineshop erstellen lassen: was ein kleiner Shop können muss | `blumenladen-angebot.webp` | `blumenladen-startseite.webp`, `blumenladen-anfrage.webp`, `blumenladen-suche.webp` |
-| `/branchen/webdesign-fitnesscoach` | energie | Ein Tag mit deiner Fitnessstudio-Website | Fitnessstudio-Website: Agentur, Baukasten oder Webdesigner? | `fitnesscoach-startseite.webp` | `fitnesscoach-angebot.webp`, `fitnesscoach-anfrage.webp`, `fitnesscoach-suche.webp` |
-| `/branchen/webdesign-immobilienmakler` | klar | Vom Verkaufsgedanken zum Auftrag: der Weg eines Eigentümers über deine Website | Webdesign für Makler: Objekte zeigen, ohne sie doppelt zu pflegen | `immobilienmakler-angebot.webp` | `immobilienmakler-startseite.webp`, `immobilienmakler-anfrage.webp`, `immobilienmakler-suche.webp` |
-| `/branchen/webdesign-restaurant` | genuss | Ein Tag mit deiner Restaurant-Website | Restaurant-Webseite: warum die Speisekarte die wichtigste Seite ist | `restaurant-angebot.webp` | `restaurant-startseite.webp`, `restaurant-anfrage.webp`, `restaurant-suche.webp` |
-| `/branchen/webdesign-cafe` | genuss | Ein Tag mit deiner Café-Website | Torten über die Café-Website vorbestellen: so klappt es ohne Zettelwirtschaft | `cafe-anfrage.webp` | `cafe-startseite.webp`, `cafe-angebot.webp`, `cafe-suche.webp` |
-| `/branchen/webdesign-arzt` | frisch | Ein Tag mit deiner Praxis-Website | Praxis-Homepage erstellen lassen: was Patienten in den ersten Sekunden suchen | `arzt-startseite.webp` | `arzt-angebot.webp`, `arzt-anfrage.webp`, `arzt-suche.webp` |
-| `/branchen/webdesign-physiotherapie` | frisch | Ein Tag mit deiner Physio-Website | Website für Physiotherapie: jede Therapie verständlich erklärt | `physiotherapie-angebot.webp` | `physiotherapie-startseite.webp`, `physiotherapie-anfrage.webp`, `physiotherapie-suche.webp` |
-| `/branchen/webdesign-hebamme` | pastell | Von der Suche zur Betreuung: der Weg einer Familie über deine Website | Hebammen-Website erstellen lassen: Kurse mit Termin, Ort und freien Plätzen | `hebamme-angebot.webp` | `hebamme-startseite.webp`, `hebamme-anfrage.webp`, `hebamme-suche.webp` |
-| `/branchen/webdesign-steuerberater` | klar | Von der Suche zum Mandat: der Weg eines Mandanten über deine Kanzlei-Website | Kanzlei-Website erstellen lassen: nach Mandantengruppen statt nach Leistungsliste | `steuerberater-angebot.webp` | `steuerberater-startseite.webp`, `steuerberater-anfrage.webp`, `steuerberater-suche.webp` |
-| `/branchen/webdesign-autowerkstatt` | energie | Ein Tag mit deiner Werkstatt-Website | Webdesign für Kfz-Werkstätten: Leistungen so erklären, dass niemand nachfragen muss | `autowerkstatt-angebot.webp` | `autowerkstatt-startseite.webp`, `autowerkstatt-anfrage.webp`, `autowerkstatt-suche.webp` |
-| `/branchen/webdesign-friseur` | floral | Ein Tag mit deiner Salon-Website | Friseur-Website erstellen lassen: eine Preisliste, die auf dem Handy lesbar ist | `friseur-angebot.webp` | `friseur-startseite.webp`, `friseur-anfrage.webp`, `friseur-suche.webp` |
-| `/branchen/webdesign-beautysalon` | floral | Von der Suche zum Termin: der Weg einer Neukundin über deine Website | Kosmetikstudio-Website erstellen lassen: eine Behandlungsübersicht, die schnell zum Termin führt | `beautysalon-angebot.webp` | `beautysalon-startseite.webp`, `beautysalon-anfrage.webp`, `beautysalon-suche.webp` |
-| `/branchen/webdesign-fotograf` | klar | Von der Suche zur Buchung: der Weg eines Paares über deine Website | Webdesign für Fotografen: Portfolio, Pakete und Anfrage auf einer Seite | `fotograf-angebot.webp` | `fotograf-startseite.webp`, `fotograf-anfrage.webp`, `fotograf-suche.webp` |
-| `/branchen/webdesign-tattoo` | energie | Von der Idee zum Termin: der Weg über deine Studio-Website | Webdesign für Tattoo-Studios: Stile, Artists und Wanna-dos auf einen Blick | `tattoo-angebot.webp` | `tattoo-startseite.webp`, `tattoo-anfrage.webp`, `tattoo-suche.webp` |
-| `/branchen/webdesign-wellness` | floral | Vom Geschenk zum Termin: der Weg eines Gutscheins über deine Website | Webdesign für Massagepraxen: Massagen so beschreiben, dass die Wahl leichtfällt | `wellness-angebot.webp` | `wellness-startseite.webp`, `wellness-anfrage.webp`, `wellness-suche.webp` |
-| `/handwerker` | energie | Von der Suche bis zum Auftrag: der Weg eines Kunden über deine Website | Webdesign für Baufirmen und Bauunternehmen in Berlin | `handwerker-angebot.webp` | `handwerker-startseite.webp`, `handwerker-anfrage.webp`, `handwerker-suche.webp` |
+| `/branchen/webdesign-reinigung` | frisch | SEO für Reinigungsfirmen: Jeder Suchbegriff braucht seine Seite (`suchbegriffe`) | Webdesign für Gebäudeservice: mehrere Leistungen auf einer Website | `reinigung-angebot.webp` | `reinigung-startseite.webp`, `reinigung-anfrage.webp`, `reinigung-suche.webp` |
+| `/branchen/webdesign-blumenladen` | floral | SEO für Blumenläden: der Kalender der Anlässe (`anlasskalender`) | Blumen-Onlineshop erstellen lassen: was ein kleiner Shop können muss | `blumenladen-angebot.webp` | `blumenladen-startseite.webp`, `blumenladen-anfrage.webp`, `blumenladen-suche.webp` |
+| `/branchen/webdesign-fitnesscoach` | energie | Kursplan auf der Website: lesbar für Mitglieder und für Google (`kursplan`) | Fitnessstudio-Website: Agentur, Baukasten oder Webdesigner? | `fitnesscoach-startseite.webp` | `fitnesscoach-angebot.webp`, `fitnesscoach-anfrage.webp`, `fitnesscoach-suche.webp` |
+| `/branchen/webdesign-immobilienmakler` | klar | SEO für Immobilienmakler in Berlin: Lagekenntnis pro Bezirk zeigen (`bezirkskarte`) | Webdesign für Makler: Objekte zeigen, ohne sie doppelt zu pflegen | `immobilienmakler-angebot.webp` | `immobilienmakler-startseite.webp`, `immobilienmakler-anfrage.webp`, `immobilienmakler-suche.webp` |
+| `/branchen/webdesign-restaurant` | genuss | Google-Profil und Restaurant-Webseite: was wohin gehört (`profil-website`) | Restaurant-Webseite: warum die Speisekarte die wichtigste Seite ist | `restaurant-angebot.webp` | `restaurant-startseite.webp`, `restaurant-anfrage.webp`, `restaurant-suche.webp` |
+| `/branchen/webdesign-cafe` | genuss | SEO für Cafés: Gäste suchen nach Merkmalen, nicht nach Namen (`bon`) | Torten über die Café-Website vorbestellen: so klappt es ohne Zettelwirtschaft | `cafe-anfrage.webp` | `cafe-startseite.webp`, `cafe-angebot.webp`, `cafe-suche.webp` |
+| `/branchen/webdesign-arzt` | frisch | Das digitale Praxisschild: was Patienten und Google zuerst brauchen (`praxisschild`) | Praxis-Homepage erstellen lassen: was Patienten in den ersten Sekunden suchen | `arzt-startseite.webp` | `arzt-angebot.webp`, `arzt-anfrage.webp`, `arzt-suche.webp` |
+| `/branchen/webdesign-physiotherapie` | frisch | Physiotherapie bei Rücken, Knie, Schulter: Seiten, über die Patienten dich finden (`beschwerden`) | Website für Physiotherapie: jede Therapie verständlich erklärt | `physiotherapie-angebot.webp` | `physiotherapie-startseite.webp`, `physiotherapie-anfrage.webp`, `physiotherapie-suche.webp` |
+| `/branchen/webdesign-hebamme` | pastell | Hebamme finden: wann Familien wonach suchen (`schwangerschaft`) | Hebammen-Website erstellen lassen: Kurse mit Termin, Ort und freien Plätzen | `hebamme-angebot.webp` | `hebamme-startseite.webp`, `hebamme-anfrage.webp`, `hebamme-suche.webp` |
+| `/branchen/webdesign-steuerberater` | klar | Woran man eine gute Steuerberater-Website erkennt (`pruefbogen`) | Kanzlei-Website erstellen lassen: nach Mandantengruppen statt nach Leistungsliste | `steuerberater-angebot.webp` | `steuerberater-startseite.webp`, `steuerberater-anfrage.webp`, `steuerberater-suche.webp` |
+| `/branchen/webdesign-autowerkstatt` | energie | SEO für Kfz-Werkstätten: Marken, Antriebe und Service, nach denen gesucht wird (`kennzeichen`) | Webdesign für Kfz-Werkstätten: Leistungen so erklären, dass niemand nachfragen muss | `autowerkstatt-angebot.webp` | `autowerkstatt-startseite.webp`, `autowerkstatt-anfrage.webp`, `autowerkstatt-suche.webp` |
+| `/branchen/webdesign-friseur` | floral | SEO für Friseure: mit Spezialisierungen gefunden werden (`farbfaecher`) | Friseur-Website erstellen lassen: eine Preisliste, die auf dem Handy lesbar ist | `friseur-angebot.webp` | `friseur-startseite.webp`, `friseur-anfrage.webp`, `friseur-suche.webp` |
+| `/branchen/webdesign-beautysalon` | floral | Eine Seite pro Behandlung: der Steckbrief, den Neukundinnen suchen (`steckbrief`) | Kosmetikstudio-Website erstellen lassen: eine Behandlungsübersicht, die schnell zum Termin führt | `beautysalon-angebot.webp` | `beautysalon-startseite.webp`, `beautysalon-anfrage.webp`, `beautysalon-suche.webp` |
+| `/branchen/webdesign-fotograf` | klar | Fotoshooting in Berlin: eine Seite für jeden Anlass (`kontaktbogen`) | Webdesign für Fotografen: Portfolio, Pakete und Anfrage auf einer Seite | `fotograf-angebot.webp` | `fotograf-startseite.webp`, `fotograf-anfrage.webp`, `fotograf-suche.webp` |
+| `/branchen/webdesign-tattoo` | energie | SEO für Tätowierer: Fragen vor dem ersten Termin als eigene Seiten (`flash`) | Webdesign für Tattoo-Studios: Stile, Artists und Wanna-dos auf einen Blick | `tattoo-angebot.webp` | `tattoo-startseite.webp`, `tattoo-anfrage.webp`, `tattoo-suche.webp` |
+| `/branchen/webdesign-wellness` | floral | Massage-Gutschein online: die Seite, die vor jedem Anlass gesucht wird (`gutschein`) | Webdesign für Massagepraxen: Massagen so beschreiben, dass die Wahl leichtfällt | `wellness-angebot.webp` | `wellness-startseite.webp`, `wellness-anfrage.webp`, `wellness-suche.webp` |
+| `/handwerker` | energie | Einsatzgebiet auf der Website: gefunden werden, wo du arbeitest (`einsatzgebiet`) | Webdesign für Baufirmen und Bauunternehmen in Berlin | `handwerker-angebot.webp` | `handwerker-startseite.webp`, `handwerker-anfrage.webp`, `handwerker-suche.webp` |
 
 `/handwerker` hat ein eigenes Template (`views/handwerker.ejs`). Die Abschnitte heißen dort
-`journey`, `focus` und `gallery` in `data/handwerkerPage.js`.
+`area`, `focus` und `gallery` in `data/handwerkerPage.js`.
+
+Was die Themenabschnitte zeigen:
+
+| Variante | Seite | Aufbau |
+|---|---|---|
+| `anlasskalender` | Blumenladen | Jahresleiste mit sechs Anlässen, darunter Karten mit „Seite online ab“ |
+| `kursplan` | Fitness | Wochenkursplan mit Filter zum Ausprobieren (nur CSS, über `:has`) |
+| `suchbegriffe` | Reinigung | Suchfeld, Pfeil und Suchtreffer der passenden Seite |
+| `profil-website` | Restaurant | Zwei Kreise: Google-Profil, Website und was auf beide gehört |
+| `bon` | Café | Kassenbon mit Merkmalen, nach denen Gäste suchen |
+| `praxisschild` | Arztpraxis | Praxisschild mit nummerierten Angaben und Erklärungen |
+| `beschwerden` | Physiotherapie | Körperskizze mit sechs Bereichen und Karten je Beschwerde |
+| `schwangerschaft` | Hebamme | Maßband von der Schwangerschaft bis nach der Geburt, vier Phasen |
+| `pruefbogen` | Steuerberater | Prüfbogen mit acht Punkten und Stempel |
+| `kennzeichen` | Kfz-Werkstatt | Suchbegriffe als Nummernschilder: Marken, Antriebe, Service |
+| `farbfaecher` | Friseur | Farbfächer, jede Karte eine Spezialisierung |
+| `steckbrief` | Kosmetikstudio | Steckbrief einer Behandlung und weitere als Etiketten |
+| `kontaktbogen` | Fotograf | Kontaktabzug mit Filmrand, je Bild ein Shooting-Anlass |
+| `flash` | Tattoostudio | Flash-Bogen mit Fragen vor dem ersten Termin |
+| `gutschein` | Massage und Wellness | Gutschein mit Abriss und vier Punkten zur Gutscheinseite |
+| `bezirkskarte` | Immobilienmakler | Kachelkarte der zwölf Bezirke, eigene Bezirke hervorgehoben |
+| `einsatzgebiet` | Handwerker | Ringe um den Betrieb: Kerngebiet, regelmäßig, nach Absprache |
 
 ## 3. Bildplätze (Platzhalter)
 
-Je Seite liegen vier Bilder unter `public/images/branchen/<slug>/`, alle als WebP in 720 × 540:
+Je Seite liegen vier Bilder unter `public/images/branchen/<slug>/`, alle als WebP:
 
-| Datei | Zeigt als Platzhalter | Passendes echtes Bild |
-|---|---|---|
-| `<slug>-startseite.webp` | Skizze einer Startseite | Bildschirmfoto der Startseite eines echten Projekts aus der Branche |
-| `<slug>-angebot.webp` | Skizze einer Leistungs-, Karten- oder Preisübersicht | Bildschirmfoto der Leistungsübersicht, Speisekarte oder Preisliste |
-| `<slug>-anfrage.webp` | Skizze eines Formulars auf dem Handy | Bildschirmfoto des Anfrage- oder Buchungsformulars auf dem Handy |
-| `<slug>-suche.webp` | Skizze eines lokalen Suchergebnisses | Bildschirmfoto des Google-Unternehmensprofils eines Kunden, mit dessen Einverständnis |
+- Das Bild neben dem langen Text der Vertiefung ist **hochkant (2:3, 720 × 1080)**. Die Texte daneben
+  sind 960 bis 1.170 Pixel hoch, ein Querformat ließe viel leere Fläche. Auf dem Handy ist es
+  höchstens 340 Pixel breit.
+- Die drei Bilder im Beispielaufbau sind **quer (3:2, 720 × 480)**.
 
-Die Bilder sind gezeichnete Skizzen ohne lesbaren Text. Auf der Seite steht bei jedem Bild
-„Beispielaufbau“, damit niemand sie für ein fertiges Kundenprojekt hält.
+Beide Formate erzeugt ChatGPT direkt (1024 × 1536 und 1536 × 1024). Die Prompts für alle 73 Bildplätze,
+auch die fünf der Kita-Seite, stehen in [bild-prompts.md](bild-prompts.md).
+
+| Datei | Zeigt als Platzhalter |
+|---|---|
+| `<slug>-startseite.webp` | Startseite im Browser, bei Fitness und Arzt als Handy hochkant |
+| `<slug>-angebot.webp` | Leistungs-, Karten- oder Preisübersicht, meist als Handy hochkant |
+| `<slug>-anfrage.webp` | Formular auf dem Handy, beim Café hochkant |
+| `<slug>-suche.webp` | Lokales Suchergebnis mit Karte |
+
+Die Platzhalter sind gezeichnete Skizzen. Auf der Seite steht bei jedem Bild „Beispielaufbau“,
+damit niemand sie für ein fertiges Kundenprojekt hält. Das Wort bleibt auch bei Bildern aus
+ChatGPT stehen, weil sie keine echten Projekte zeigen.
 
 So wird ein Platzhalter ersetzt:
 
-1. Echtes Bild auf 720 × 540 zuschneiden (Seitenverhältnis 4:3) und als WebP speichern,
-   zum Beispiel `cwebp -q 78 -resize 720 540 bild.png -o <slug>-startseite.webp`.
+1. Bild im richtigen Format erzeugen und als WebP speichern, zum Beispiel
+   `cwebp -q 80 -resize 720 1080 bild.png -o blumenladen-angebot.webp` (hochkant) oder
+   `cwebp -q 80 -resize 720 480 bild.png -o blumenladen-startseite.webp` (quer).
 2. Die Datei unter demselben Namen im selben Ordner ablegen.
-3. In `data/<slug>Page.js` (Fitness: `data/fitnessPage.js`) den `alt`-Text und die
-   Bildunterschrift (`caption`) anpassen. Das Wort „Beispielaufbau“ entfällt, sobald das Bild
-   ein echtes Projekt zeigt.
+3. In `data/<slug>Page.js` (Fitness: `data/fitnessPage.js`) den `alt`-Text prüfen und anpassen,
+   falls das Bild etwas anderes zeigt als der Platzhalter.
 4. Bei anderen Maßen auch `width` und `height` in der Datendatei ändern.
 
-Die Platzhalter der Kita-Seite stehen in `docs/seo/content-briefs/2026-11-10-kita/kita.md`.
+Die Platzhalter erzeugt ein Skript aus HTML-Szenen (Puppeteer und `cwebp`). Die Kita-Bilder
+stammen aus SVG-Zeichnungen, siehe `docs/seo/content-briefs/2026-11-10-kita/kita.md`.
 
 ## 4. Technik
 
@@ -101,6 +162,10 @@ Die Platzhalter der Kita-Seite stehen in `docs/seo/content-briefs/2026-11-10-kit
 - Das Hero-Bild reserviert seine Höhe jetzt über `style="aspect-ratio: auto B / H"` im Template.
   Vorher hob die CSS-Regel `aspect-ratio: auto` die Angabe aus `width`/`height` auf, und der
   Hero wuchs erst beim Laden des Bildes (Layoutverschiebung 0,024 auf der Fitness-Seite).
+- Gemeinsame Bausteine der Themenabschnitte stehen in `public/branchen-page.css`: Farben je
+  Karte (`.bt-farbe-1` bis `-4`) und das Suchbeispiel mit Lupe (`.bt-query`). Neigungen und
+  Bewegungen nutzen `rotate`, `scale` und `translate` statt `transform`, damit sie sich nicht mit
+  der Einblend-Animation überschreiben.
 - Handy: Abschnittsüberschriften sind bis 480 px Breite 1,6rem groß, unter 360 px 1,4rem.
   Bis 360 px trennt der Browser sehr lange Wörter im Fließtext mit Trennstrich.
 
@@ -114,6 +179,14 @@ Die Platzhalter der Kita-Seite stehen in `docs/seo/content-briefs/2026-11-10-kit
   Layoutverschiebung 0 (Blumenladen, Fitness, Restaurant, Kita, Handwerker).
 - Tests: 2461 von 2486 bestanden, 19 übersprungen. Die sechs Fehlschläge sind die bekannten,
   die nichts mit den Branchenseiten zu tun haben.
+
+Zweite Runde (12.11.2026, Themenabschnitte und neue Bildformate):
+
+- Alle 18 Seiten in fünf Breiten erneut geprüft: kein seitliches Scrollen, alle Bilder geladen.
+- Jeder Themenabschnitt per Screenshot am PC (1366 px) und am Handy (375 px) angesehen.
+- Lighthouse mobil, lokal gemessen: Fitness, Physiotherapie und Handwerker 100, Café und
+  Blumenladen 99, jeweils SEO 100, Barrierefreiheit 100, Layoutverschiebung 0.
+- Tests: wieder 2461 von 2486 bestanden, dieselben sechs bekannten Fehlschläge.
 
 ## 6. Was offen bleibt
 

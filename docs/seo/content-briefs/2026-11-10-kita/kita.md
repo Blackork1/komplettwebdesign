@@ -86,15 +86,15 @@ Zahlen zum Stichtag 1. März 2026 für Deutschland und Berlin, Berliner Abläufe
 
 ## 10. Bildplätze (Platzhalter)
 
-Alle Bilder liegen unter `public/images/branchen/kita/` und sind gezeichnete Platzhalter ohne Text. Ein echtes Foto ersetzt die Datei unter demselben Namen und im selben Seitenverhältnis, danach den alt-Text in `data/kitaPage.js` anpassen. Keine erkennbaren Kinder ohne Einwilligung der Sorgeberechtigten.
+Alle Bilder liegen unter `public/images/branchen/kita/` und sind gezeichnete Platzhalter ohne Text. Ein echtes Foto ersetzt die Datei unter demselben Namen und im selben Seitenverhältnis, danach den alt-Text in `data/kitaPage.js` anpassen. Keine erkennbaren Kinder ohne Einwilligung der Sorgeberechtigten. Seit 12.11.2026 ist das Bild neben dem Text zur Kindertagespflege hochkant (2:3) und die Einblicke sind quer (3:2), passend zu den Formaten von ChatGPT. Prompts: `docs/seo/content-briefs/2026-11-11-branchen/bild-prompts.md`.
 
 | Datei | Größe | Stelle | Vorschlag für das Motiv |
 |---|---|---|---|
 | `kita-hero.webp` | 960 × 640 | Hero, oben rechts | Außenansicht, Eingang oder heller Gruppenraum |
-| `kita-tagespflege.webp` | 720 × 540 | Abschnitt Kindertagespflege | Spielecke oder Tagesmutter in ihren Räumen |
-| `kita-raeume.webp` | 720 × 540 | Einblicke, Bild 1 | Gruppenraum, Bewegungsraum oder Schlafraum |
-| `kita-garten.webp` | 720 × 540 | Einblicke, Bild 2 | Außengelände oder Spielplatz in der Nähe |
-| `kita-team.webp` | 720 × 540 | Einblicke, Bild 3 | Team oder Detail aus dem Alltag (Garderobe, Basteltisch) |
+| `kita-tagespflege.webp` | 720 × 1080 (hochkant) | Abschnitt Kindertagespflege | Spielecke oder Tagesmutter in ihren Räumen |
+| `kita-raeume.webp` | 720 × 480 | Einblicke, Bild 1 | Gruppenraum, Bewegungsraum oder Schlafraum |
+| `kita-garten.webp` | 720 × 480 | Einblicke, Bild 2 | Außengelände oder Spielplatz in der Nähe |
+| `kita-team.webp` | 720 × 480 | Einblicke, Bild 3 | Team oder Detail aus dem Alltag (Garderobe, Basteltisch) |
 | `kita-hero-720.webp` | 720 × 540 | Karte auf `/branchen` | Ausschnitt des Hero-Bildes im Format 4:3, wird aus `kita-hero.webp` erzeugt |
 
 ## 11. Quellen
