@@ -189,7 +189,7 @@ export const BLUMENLADEN_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/blumenladen/blumenladen-angebot.webp',
-        alt: 'Beispielaufbau einer Shopseite für einen Blumenladen mit sechs Angeboten vom Strauß der Woche bis zum Gutschein',
+        alt: 'Smartphone in der Hand vor Blumeneimern mit Tulpen und Rosen: Beispielaufbau einer Shopseite für einen Blumenladen mit sechs Angeboten vom Strauß der Woche bis zum Gutschein',
         width: 720,
         height: 1080
       }
@@ -303,11 +303,11 @@ export const BLUMENLADEN_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für Floristen aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Bestellung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben, eigene Texte und Fotos von deinen Sträußen.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Bestellung und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben, eigene Texte und Fotos von deinen Sträußen.',
       items: [
-        { src: '/images/branchen/blumenladen/blumenladen-startseite.webp', alt: 'Beispielaufbau der Startseite eines Blumenladens mit Überschrift, Bestellknopf und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Bestellen, darunter Lieferung, Hochzeit und Öffnungszeiten.' },
-        { src: '/images/branchen/blumenladen/blumenladen-anfrage.webp', alt: 'Beispielaufbau eines Bestellformulars auf dem Handy mit Anlass, Budget und Wunschtermin für einen Strauß', width: 720, height: 480, title: 'Bestellung auf dem Handy', caption: 'Beispielaufbau: Anlass, Budget und Wunschtermin in drei Feldern, danach Abholung oder Lieferung.' },
-        { src: '/images/branchen/blumenladen/blumenladen-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Blumenladen mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Laden bei „Blumenladen in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/blumenladen/blumenladen-startseite.webp', alt: 'Laptop zwischen Tulpen, Rosen und Blumeneimern: Beispielaufbau der Startseite eines Blumenladens mit Überschrift, Bestellknopf und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Bestellen, darunter Lieferung, Hochzeit und Öffnungszeiten.' },
+        { src: '/images/branchen/blumenladen/blumenladen-anfrage.webp', alt: 'Smartphone in der Hand vor Blumeneimern mit Tulpen und Rosen: Beispielaufbau eines Bestellformulars mit Anlass, Budget und Wunschtermin für einen Strauß', width: 720, height: 480, title: 'Bestellung auf dem Handy', caption: 'Beispielaufbau: Anlass, Budget und Wunschtermin in drei Feldern, danach Abholung oder Lieferung.' },
+        { src: '/images/branchen/blumenladen/blumenladen-suche.webp', alt: 'Smartphone auf einem Holztisch neben Tulpen: Beispielaufbau eines lokalen Suchergebnisses für einen Blumenladen mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Laden bei „Blumenladen in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Laden aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

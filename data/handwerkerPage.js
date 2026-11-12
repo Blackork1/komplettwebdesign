@@ -155,7 +155,7 @@ export const HANDWERKER_PAGE = Object.freeze({
     ],
     image: {
       src: '/images/branchen/handwerker/handwerker-angebot.webp',
-      alt: 'Beispielaufbau einer Leistungsübersicht mit sechs Kacheln von Badsanierung bis Notdienst',
+      alt: 'Smartphone in der Hand vor einer Werkzeugwand und einem Transporter: Beispielaufbau einer Leistungsübersicht mit sechs Kacheln von Badsanierung bis Notdienst',
       width: 720,
       height: 1080
     }
@@ -262,11 +262,11 @@ export const HANDWERKER_PAGE = Object.freeze({
   gallery: {
     chip: 'Beispielaufbau',
     title: 'So kann die Website für deinen Handwerksbetrieb aufgebaut sein',
-    intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Baustellen.',
+    intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Baustellen.',
     items: [
-      { src: '/images/branchen/handwerker/handwerker-startseite.webp', alt: 'Beispielaufbau der Startseite eines Handwerksbetriebs mit Überschrift, Knopf zur Angebotsanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Gewerk, Einsatzgebiet und der Knopf zur Angebotsanfrage stehen oben, darunter Leistungen, Referenzen und Karriere.' },
-      { src: '/images/branchen/handwerker/handwerker-anfrage.webp', alt: 'Beispielaufbau einer Angebotsanfrage auf dem Handy mit Leistung, Ort und Zeitraum', width: 720, height: 480, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Leistung, Ort und Zeitraum in drei Feldern, dazu Fotos oder Rückruf zur Auswahl.' },
-      { src: '/images/branchen/handwerker/handwerker-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Handwerksbetrieb mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Handwerker Berlin Spandau“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      { src: '/images/branchen/handwerker/handwerker-startseite.webp', alt: 'Laptop auf einer Werkbank vor einer Werkzeugwand: Beispielaufbau der Startseite eines Handwerksbetriebs mit Überschrift, Knopf zur Angebotsanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Gewerk, Einsatzgebiet und der Knopf zur Angebotsanfrage stehen oben, darunter Leistungen, Referenzen und Karriere.' },
+      { src: '/images/branchen/handwerker/handwerker-anfrage.webp', alt: 'Smartphone in der Hand vor einer Werkzeugwand und einem Transporter: Beispielaufbau einer Angebotsanfrage mit Leistung, Ort und Zeitraum', width: 720, height: 480, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Leistung, Ort und Zeitraum in drei Feldern, dazu Fotos oder Rückruf zur Auswahl.' },
+      { src: '/images/branchen/handwerker/handwerker-suche.webp', alt: 'Smartphone auf einer Werkbank neben Zollstock und Bleistift: Beispielaufbau eines lokalen Suchergebnisses für einen Handwerksbetrieb mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Handwerker Berlin Spandau“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
     ],
     note: 'Farben, Schriften und Bilder richte ich nach deinem Betrieb aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
     noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

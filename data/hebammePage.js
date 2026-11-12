@@ -176,7 +176,7 @@ export const HEBAMME_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/hebamme/hebamme-angebot.webp',
-        alt: 'Beispielaufbau einer Übersicht für Hebammen mit sechs Kacheln von Vorsorge über Geburtsvorbereitung bis Babymassage',
+        alt: 'Smartphone in der Hand vor einem Sofa mit gelben Kissen: Beispielaufbau einer Übersicht für Hebammen mit sechs Kacheln von Vorsorge über Geburtsvorbereitung bis Babymassage',
         width: 720,
         height: 1080
       }
@@ -250,11 +250,11 @@ export const HEBAMME_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann deine Hebammen-Website aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Betreuungsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von dir und deinen Kursräumen.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Betreuungsanfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von dir und deinen Kursräumen.',
       items: [
-        { src: '/images/branchen/hebamme/hebamme-startseite.webp', alt: 'Beispielaufbau der Startseite einer Hebamme mit Überschrift, Knopf zur Betreuungsanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Betreuung, Bezirk und der Knopf zur Anfrage stehen oben, darunter Vorsorge, Kurse und Wochenbett.' },
-        { src: '/images/branchen/hebamme/hebamme-anfrage.webp', alt: 'Beispielaufbau einer Betreuungsanfrage auf dem Handy mit Entbindungstermin, Wohnort und gewünschter Leistung', width: 720, height: 480, title: 'Betreuungsanfrage', caption: 'Beispielaufbau: Entbindungstermin, Wohnort und Wunsch in drei Feldern, dazu Vorsorge oder Kurs zur Auswahl.' },
-        { src: '/images/branchen/hebamme/hebamme-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Hebamme mit Terminhinweis, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis oder dein Kursraum bei „Hebamme Berlin Pankow“ erscheinen, mit Terminhinweis, Route und Anruf.' }
+        { src: '/images/branchen/hebamme/hebamme-startseite.webp', alt: 'Laptop auf einem Couchtisch in einem gemütlichen Wohnzimmer: Beispielaufbau der Startseite einer Hebamme mit Überschrift, Knopf zur Betreuungsanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Betreuung, Bezirk und der Knopf zur Anfrage stehen oben, darunter Vorsorge, Kurse und Wochenbett.' },
+        { src: '/images/branchen/hebamme/hebamme-anfrage.webp', alt: 'Smartphone in der Hand vor einem Sofa mit gelben Kissen: Beispielaufbau einer Betreuungsanfrage mit Entbindungstermin, Wohnort und gewünschter Leistung', width: 720, height: 480, title: 'Betreuungsanfrage', caption: 'Beispielaufbau: Entbindungstermin, Wohnort und Wunsch in drei Feldern, dazu Vorsorge oder Kurs zur Auswahl.' },
+        { src: '/images/branchen/hebamme/hebamme-suche.webp', alt: 'Smartphone auf einer Strickdecke neben einer Teetasse: Beispielaufbau eines lokalen Suchergebnisses für eine Hebamme mit Terminhinweis, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis oder dein Kursraum bei „Hebamme Berlin Pankow“ erscheinen, mit Terminhinweis, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach dir und deiner Arbeit aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

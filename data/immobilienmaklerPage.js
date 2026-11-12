@@ -169,7 +169,7 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/immobilienmakler/immobilienmakler-angebot.webp',
-        alt: 'Beispielaufbau einer Objektübersicht mit sechs Kacheln von Wohnung über Einfamilienhaus bis Gewerbe',
+        alt: 'Smartphone in der Hand vor einem Fenster mit Blick auf Berliner Altbauten: Beispielaufbau einer Objektübersicht mit sechs Kacheln von Wohnung über Einfamilienhaus bis Gewerbe',
         width: 720,
         height: 1080
       }
@@ -273,11 +273,11 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für dein Maklerbüro aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Bewertungsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Büro und Objekten.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Bewertungsanfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Büro und Objekten.',
       items: [
-        { src: '/images/branchen/immobilienmakler/immobilienmakler-startseite.webp', alt: 'Beispielaufbau der Startseite eines Maklerbüros mit Überschrift, Knopf zur Immobilienbewertung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Leistung, Stadt und der Knopf zur Bewertung, darunter Wertermittlung, Objekte und Verkauf.' },
-        { src: '/images/branchen/immobilienmakler/immobilienmakler-anfrage.webp', alt: 'Beispielaufbau einer Bewertungsanfrage auf dem Handy mit Objektart, Lage und Wohnfläche', width: 720, height: 480, title: 'Bewertungsanfrage', caption: 'Beispielaufbau: Objektart, Lage und Wohnfläche in drei Feldern, dazu die Wahl zwischen Verkauf und Vermietung.' },
-        { src: '/images/branchen/immobilienmakler/immobilienmakler-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Maklerbüro mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Büro bei „Immobilienmakler Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-startseite.webp', alt: 'Laptop auf einem Schreibtisch vor Fenstern mit Blick auf Berliner Altbauten: Beispielaufbau der Startseite eines Maklerbüros mit Überschrift, Knopf zur Immobilienbewertung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Leistung, Stadt und der Knopf zur Bewertung, darunter Wertermittlung, Objekte und Verkauf.' },
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-anfrage.webp', alt: 'Smartphone in der Hand vor einem Fenster mit Blick auf Berliner Altbauten: Beispielaufbau einer Bewertungsanfrage mit Objektart, Lage und Wohnfläche', width: 720, height: 480, title: 'Bewertungsanfrage', caption: 'Beispielaufbau: Objektart, Lage und Wohnfläche in drei Feldern, dazu die Wahl zwischen Verkauf und Vermietung.' },
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-suche.webp', alt: 'Smartphone auf einem Schreibtisch neben einem Schlüsselbund mit Hausanhänger: Beispielaufbau eines lokalen Suchergebnisses für ein Maklerbüro mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Büro bei „Immobilienmakler Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Büro aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

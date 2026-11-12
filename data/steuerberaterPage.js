@@ -178,7 +178,7 @@ export const STEUERBERATER_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/steuerberater/steuerberater-angebot.webp',
-        alt: 'Beispielaufbau einer Leistungsübersicht für eine Steuerkanzlei mit sechs Kacheln von Buchhaltung bis Beratung',
+        alt: 'Smartphone in der Hand vor Regalen mit Aktenordnern: Beispielaufbau einer Leistungsübersicht für eine Steuerkanzlei mit sechs Kacheln von Buchhaltung bis Beratung',
         width: 720,
         height: 1080
       }
@@ -244,11 +244,11 @@ export const STEUERBERATER_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für deine Kanzlei aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Mandatsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team und Kanzleiräumen.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Mandatsanfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team und Kanzleiräumen.',
       items: [
-        { src: '/images/branchen/steuerberater/steuerberater-startseite.webp', alt: 'Beispielaufbau der Startseite einer Steuerkanzlei mit Überschrift, Knopf zum Erstgespräch und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Zielgruppe, Stadt und der Knopf zum Erstgespräch stehen oben, darunter Buchhaltung, Jahresabschluss und digitale Zusammenarbeit.' },
-        { src: '/images/branchen/steuerberater/steuerberater-anfrage.webp', alt: 'Beispielaufbau einer Mandatsanfrage auf dem Handy mit Rechtsform, Anliegen und gewünschtem Start', width: 720, height: 480, title: 'Mandatsanfrage', caption: 'Beispielaufbau: Rechtsform, Anliegen und Starttermin in drei Feldern, dazu Neugründung oder Wechsel zur Auswahl.' },
-        { src: '/images/branchen/steuerberater/steuerberater-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Steuerkanzlei mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Kanzlei bei „Steuerberater Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/steuerberater/steuerberater-startseite.webp', alt: 'Laptop auf einem Schreibtisch vor Aktenordnern: Beispielaufbau der Startseite einer Steuerkanzlei mit Überschrift, Knopf zum Erstgespräch und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Zielgruppe, Stadt und der Knopf zum Erstgespräch stehen oben, darunter Buchhaltung, Jahresabschluss und digitale Zusammenarbeit.' },
+        { src: '/images/branchen/steuerberater/steuerberater-anfrage.webp', alt: 'Smartphone in der Hand vor Regalen mit Aktenordnern: Beispielaufbau einer Mandatsanfrage mit Rechtsform, Anliegen und gewünschtem Start', width: 720, height: 480, title: 'Mandatsanfrage', caption: 'Beispielaufbau: Rechtsform, Anliegen und Starttermin in drei Feldern, dazu Neugründung oder Wechsel zur Auswahl.' },
+        { src: '/images/branchen/steuerberater/steuerberater-suche.webp', alt: 'Smartphone auf einem Schreibtisch neben Notizbuch und Füller: Beispielaufbau eines lokalen Suchergebnisses für eine Steuerkanzlei mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Kanzlei bei „Steuerberater Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deiner Kanzlei aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

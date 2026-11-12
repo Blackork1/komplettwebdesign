@@ -170,7 +170,7 @@ export const FOTOGRAF_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/fotograf/fotograf-angebot.webp',
-        alt: 'Beispielaufbau einer Portfolio-Übersicht für Fotografen mit sechs Kacheln von Hochzeit bis Produkt',
+        alt: 'Smartphone in der Hand vor Softboxen und einem Fotohintergrund: Beispielaufbau einer Portfolio-Übersicht für Fotografen mit sechs Kacheln von Hochzeit bis Produkt',
         width: 720,
         height: 1080
       }
@@ -236,11 +236,11 @@ export const FOTOGRAF_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann deine Fotografen-Website aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Shooting-Anfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und lebt von deinen eigenen Bildern.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Shooting-Anfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und lebt von deinen eigenen Bildern.',
       items: [
-        { src: '/images/branchen/fotograf/fotograf-startseite.webp', alt: 'Beispielaufbau der Startseite eines Fotografen mit Überschrift, Knopf zur Shooting-Anfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Stil, Ort und der Knopf zur Anfrage stehen oben, darunter Portfolio, Preise und Termine.' },
-        { src: '/images/branchen/fotograf/fotograf-anfrage.webp', alt: 'Beispielaufbau einer Shooting-Anfrage auf dem Handy mit Art des Shootings, Datum und Ort', width: 720, height: 480, title: 'Shooting-Anfrage', caption: 'Beispielaufbau: Art des Shootings, Datum und Ort in drei Feldern, dazu ganztags oder halbtags zur Auswahl.' },
-        { src: '/images/branchen/fotograf/fotograf-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Hochzeitsfotografen mit Route, Anruf und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kannst du bei „Hochzeitsfotograf Berlin“ erscheinen, mit Route, Anruf und dem Weg zur Website.' }
+        { src: '/images/branchen/fotograf/fotograf-startseite.webp', alt: 'Laptop auf einem Schreibtisch im Fotostudio neben einer Kamera: Beispielaufbau der Startseite eines Fotografen mit Überschrift, Knopf zur Shooting-Anfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Stil, Ort und der Knopf zur Anfrage stehen oben, darunter Portfolio, Preise und Termine.' },
+        { src: '/images/branchen/fotograf/fotograf-anfrage.webp', alt: 'Smartphone in der Hand vor Softboxen und einem Fotohintergrund: Beispielaufbau einer Shooting-Anfrage mit Art des Shootings, Datum und Ort', width: 720, height: 480, title: 'Shooting-Anfrage', caption: 'Beispielaufbau: Art des Shootings, Datum und Ort in drei Feldern, dazu ganztags oder halbtags zur Auswahl.' },
+        { src: '/images/branchen/fotograf/fotograf-suche.webp', alt: 'Smartphone auf einem Tisch neben einer Kamera: Beispielaufbau eines lokalen Suchergebnisses für einen Hochzeitsfotografen mit Route, Anruf und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kannst du bei „Hochzeitsfotograf Berlin“ erscheinen, mit Route, Anruf und dem Weg zur Website.' }
       ],
       note: 'Farben, Schriften und Bildauswahl richte ich nach deinem Stil aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

@@ -1,6 +1,6 @@
 # ChatGPT-Prompts für die Bildplätze der Branchenseiten
 
-Stand: 12.11.2026. Für jeden Platzhalter unter `public/images/branchen/` steht hier ein Prompt, den du so in ChatGPT einfügen kannst. Die Prompts beschreiben dieselben Inhalte wie die Platzhalter, damit Bildunterschriften und Alt-Texte weiter passen.
+Stand: 12.11.2026. Für jeden Bildplatz unter `public/images/branchen/` steht hier ein Prompt, den du so in ChatGPT einfügen kannst. Die Prompts beschreiben dieselben Inhalte wie die früheren Platzhalter, damit Bildunterschriften und Alt-Texte weiter passen. Alle 73 Bilder sind am 12.11.2026 erzeugt und eingebaut worden. Wer eines neu erzeugt, verkleinert es wie in [README.md](README.md), Abschnitt 3, beschrieben.
 
 ## Formate
 

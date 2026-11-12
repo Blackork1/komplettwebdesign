@@ -173,7 +173,7 @@ export const TATTOO_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/tattoo/tattoo-angebot.webp',
-        alt: 'Beispielaufbau einer Übersicht mit Stilen und Artists für ein Tattoo-Studio mit sechs Kacheln von Fineline bis Wanna-dos',
+        alt: 'Smartphone in der Hand vor einem Behandlungsstuhl und Tattoo-Skizzen an der Wand: Beispielaufbau einer Übersicht mit Stilen und Artists für ein Tattoo-Studio mit sechs Kacheln von Fineline bis Wanna-dos',
         width: 720,
         height: 1080
       }
@@ -239,11 +239,11 @@ export const TATTOO_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für dein Tattoo-Studio aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Anfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Arbeiten, Studio und Artists.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Anfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Arbeiten, Studio und Artists.',
       items: [
-        { src: '/images/branchen/tattoo/tattoo-startseite.webp', alt: 'Beispielaufbau der Startseite eines Tattoo-Studios mit Überschrift, Knopf zur Terminanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Stil, Stadt und der Knopf zur Anfrage stehen oben, darunter Galerie, Artists und Hygiene.' },
-        { src: '/images/branchen/tattoo/tattoo-anfrage.webp', alt: 'Beispielaufbau einer Tattoo-Anfrage auf dem Handy mit Motiv, Körperstelle und Größe', width: 720, height: 480, title: 'Tattoo-Anfrage', caption: 'Beispielaufbau: Motiv, Körperstelle und Größe in drei Feldern, dazu die Wahl zwischen Beratung und Wanna-do.' },
-        { src: '/images/branchen/tattoo/tattoo-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Tattoo-Studio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Tattoostudio Berlin“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/tattoo/tattoo-startseite.webp', alt: 'Laptop auf einem Tisch vor Tattoo-Skizzen an der Wand: Beispielaufbau der Startseite eines Tattoo-Studios mit Überschrift, Knopf zur Terminanfrage und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Stil, Stadt und der Knopf zur Anfrage stehen oben, darunter Galerie, Artists und Hygiene.' },
+        { src: '/images/branchen/tattoo/tattoo-anfrage.webp', alt: 'Smartphone in der Hand vor einem Behandlungsstuhl und Tattoo-Skizzen an der Wand: Beispielaufbau einer Tattoo-Anfrage mit Motiv, Körperstelle und Größe', width: 720, height: 480, title: 'Tattoo-Anfrage', caption: 'Beispielaufbau: Motiv, Körperstelle und Größe in drei Feldern, dazu die Wahl zwischen Beratung und Wanna-do.' },
+        { src: '/images/branchen/tattoo/tattoo-suche.webp', alt: 'Smartphone auf einem Tisch neben einem Skizzenbuch: Beispielaufbau eines lokalen Suchergebnisses für ein Tattoo-Studio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Tattoostudio Berlin“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

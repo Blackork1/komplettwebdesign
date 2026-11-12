@@ -167,7 +167,7 @@ export const CAFE_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/cafe/cafe-anfrage.webp',
-        alt: 'Beispielaufbau einer Tortenbestellung auf dem Handy mit Sorte, Größe und Abholtermin',
+        alt: 'Smartphone in der Hand vor einer Kuchentheke: Beispielaufbau einer Tortenbestellung mit Sorte, Größe und Abholtermin',
         width: 720,
         height: 1080
       }
@@ -280,11 +280,11 @@ export const CAFE_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für dein Café aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Karte und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Gastraum, Kuchen und Team.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Karte und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Gastraum, Kuchen und Team.',
       items: [
-        { src: '/images/branchen/cafe/cafe-startseite.webp', alt: 'Beispielaufbau der Startseite eines Cafés mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Reservieren, darunter Kaffee, Torten und Öffnungszeiten.' },
-        { src: '/images/branchen/cafe/cafe-angebot.webp', alt: 'Beispielaufbau einer Karte als Text mit den Abschnitten Frühstück sowie Kuchen und Kaffee', width: 720, height: 480, title: 'Karte als Text', caption: 'Beispielaufbau: Frühstück, Kuchen und Getränke stehen als Text auf der Seite und bleiben auf dem Handy lesbar.' },
-        { src: '/images/branchen/cafe/cafe-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Café mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Café bei „Café in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/cafe/cafe-startseite.webp', alt: 'Laptop auf einem Marmortisch vor der Kuchentheke: Beispielaufbau der Startseite eines Cafés mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Reservieren, darunter Kaffee, Torten und Öffnungszeiten.' },
+        { src: '/images/branchen/cafe/cafe-angebot.webp', alt: 'Tablet auf einem Marmortisch vor der Kuchentheke: Beispielaufbau einer Karte als Text mit den Abschnitten Frühstück sowie Kuchen und Kaffee', width: 720, height: 480, title: 'Karte als Text', caption: 'Beispielaufbau: Frühstück, Kuchen und Getränke stehen als Text auf der Seite und bleiben auf dem Handy lesbar.' },
+        { src: '/images/branchen/cafe/cafe-suche.webp', alt: 'Smartphone auf einem Marmortisch neben Erdbeertorte und Cappuccino: Beispielaufbau eines lokalen Suchergebnisses für ein Café mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Café bei „Café in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Café aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

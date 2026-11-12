@@ -6,6 +6,7 @@
   const related = Array.isArray(typeof relatedIndustries !== 'undefined' ? relatedIndustries : null) ? relatedIndustries : [];
   const cards = Array.isArray(typeof packageCards !== 'undefined' ? packageCards : null) ? packageCards : [];
   const heroSize = Array.isArray(pg.hero.imageSize) ? pg.hero.imageSize : [960, 640];
+  const heroSrcsetAttr = typeof heroSrcset === 'string' ? heroSrcset : '';
   const updatedIso = typeof contentUpdatedIso !== 'undefined' ? contentUpdatedIso : '';
   const updatedLabel = updatedIso ? new Date(`${updatedIso}T12:00:00Z`).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
   const rating = typeof googleRating !== 'undefined' ? googleRating : null;
@@ -55,7 +56,7 @@
       </div>
       <figure class="wd-hero__media">
         <%# Seitenverhältnis reservieren: Die Regel „aspect-ratio: auto“ im CSS hebt sonst die Angabe aus width/height auf, und der Hero wächst erst beim Laden des Bildes. %>
-        <img src="<%= pg.hero.image %>" alt="<%= pg.hero.imageAlt %>" width="<%= heroSize[0] %>" height="<%= heroSize[1] %>" style="aspect-ratio: auto <%= heroSize[0] %> / <%= heroSize[1] %>" loading="eager" fetchpriority="high" decoding="async">
+        <img src="<%= pg.hero.image %>"<% if (heroSrcsetAttr) { %> srcset="<%= heroSrcsetAttr %>" sizes="(max-width: 860px) calc(100vw - 32px), <%= heroSize[0] %>px"<% } %> alt="<%= pg.hero.imageAlt %>" width="<%= heroSize[0] %>" height="<%= heroSize[1] %>" style="aspect-ratio: auto <%= heroSize[0] %> / <%= heroSize[1] %>" loading="eager" fetchpriority="high" decoding="async">
       </figure>
     </section>
 

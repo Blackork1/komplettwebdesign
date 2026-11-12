@@ -116,7 +116,7 @@ Was die Themenabschnitte zeigen:
 | `bezirkskarte` | Immobilienmakler | Kachelkarte der zwölf Bezirke, eigene Bezirke hervorgehoben |
 | `einsatzgebiet` | Handwerker | Ringe um den Betrieb: Kerngebiet, regelmäßig, nach Absprache |
 
-## 3. Bildplätze (Platzhalter)
+## 3. Bildplätze
 
 Je Seite liegen vier Bilder unter `public/images/branchen/<slug>/`, alle als WebP:
 
@@ -125,32 +125,42 @@ Je Seite liegen vier Bilder unter `public/images/branchen/<slug>/`, alle als Web
   höchstens 340 Pixel breit.
 - Die drei Bilder im Beispielaufbau sind **quer (3:2, 720 × 480)**.
 
-Beide Formate erzeugt ChatGPT direkt (1024 × 1536 und 1536 × 1024). Die Prompts für alle 73 Bildplätze,
-auch die fünf der Kita-Seite, stehen in [bild-prompts.md](bild-prompts.md).
+Seit 12.11.2026 sind alle 73 Bilder (auch die fünf der Kita-Seite) mit ChatGPT erzeugt. Die Prompts
+stehen in [bild-prompts.md](bild-prompts.md). ChatGPT liefert 1024 × 1536 und 1536 × 1024 als PNG
+(rund 2 MB je Bild). Eingebaut sind sie als WebP mit durchschnittlich 60 KB, das größte hat 130 KB.
 
-| Datei | Zeigt als Platzhalter |
+| Datei | Zeigt |
 |---|---|
-| `<slug>-startseite.webp` | Startseite im Browser, bei Fitness und Arzt als Handy hochkant |
-| `<slug>-angebot.webp` | Leistungs-, Karten- oder Preisübersicht, meist als Handy hochkant |
+| `<slug>-startseite.webp` | Startseite auf einem Laptop, bei Fitness und Arzt auf dem Handy hochkant |
+| `<slug>-angebot.webp` | Leistungs-, Karten- oder Preisübersicht auf dem Handy, bei Fitness, Arzt und Café auf dem Tablet |
 | `<slug>-anfrage.webp` | Formular auf dem Handy, beim Café hochkant |
-| `<slug>-suche.webp` | Lokales Suchergebnis mit Karte |
+| `<slug>-suche.webp` | Lokales Suchergebnis mit Karte auf einem quer liegenden Handy |
 
-Die Platzhalter sind gezeichnete Skizzen. Auf der Seite steht bei jedem Bild „Beispielaufbau“,
-damit niemand sie für ein fertiges Kundenprojekt hält. Das Wort bleibt auch bei Bildern aus
-ChatGPT stehen, weil sie keine echten Projekte zeigen.
+Die Geräte stehen jeweils in einer passenden Umgebung (Blumenladen, Werkstatt, Praxis …). Die
+Alt-Texte nennen Gerät, Umgebung und Bildschirminhalt. Auf der Seite steht bei jedem Bild
+„Beispielaufbau“, weil die Bilder keine echten Kundenprojekte zeigen.
 
-So wird ein Platzhalter ersetzt:
+So wird ein Bild ersetzt:
 
-1. Bild im richtigen Format erzeugen und als WebP speichern, zum Beispiel
-   `cwebp -q 80 -resize 720 1080 bild.png -o blumenladen-angebot.webp` (hochkant) oder
-   `cwebp -q 80 -resize 720 480 bild.png -o blumenladen-startseite.webp` (quer).
-2. Die Datei unter demselben Namen im selben Ordner ablegen.
-3. In `data/<slug>Page.js` (Fitness: `data/fitnessPage.js`) den `alt`-Text prüfen und anpassen,
-   falls das Bild etwas anderes zeigt als der Platzhalter.
-4. Bei anderen Maßen auch `width` und `height` in der Datendatei ändern.
+1. Bild in ChatGPT im richtigen Format erzeugen (Prompt aus `bild-prompts.md`).
+2. Verkleinern und als WebP speichern, so wie bei den jetzigen Bildern:
+   `magick bild.png -filter Lanczos -resize 720x1080^ -gravity center -extent 720x1080 -unsharp 0x0.6+0.6+0.01 -strip bild-klein.png`
+   und dann `cwebp -q 78 -m 6 -sharp_yuv -metadata none bild-klein.png -o blumenladen-angebot.webp`
+   (quer: `720x480`, Kita-Hero: `960x640`).
+3. Die Datei unter demselben Namen im selben Ordner ablegen.
+4. In `data/<slug>Page.js` (Fitness: `data/fitnessPage.js`) den `alt`-Text prüfen und anpassen,
+   falls das Bild etwas anderes zeigt.
+5. Bei anderen Maßen auch `width` und `height` in der Datendatei ändern.
+6. Bei einem neuen Kita-Hero auch die zwei Varianten neu erzeugen: `kita-hero-mobile.webp`
+   (720 × 480, `-q 70`, lädt auf dem Handy über `data/responsiveImages.js`) und
+   `kita-hero-720.webp` für die Karte auf `/branchen` (mittiger 4:3-Ausschnitt, aus 1536 × 1024
+   also 1365 × 1024, verkleinert auf 720 × 540).
 
-Die Platzhalter erzeugt ein Skript aus HTML-Szenen (Puppeteer und `cwebp`). Die Kita-Bilder
-stammen aus SVG-Zeichnungen, siehe `docs/seo/content-briefs/2026-11-10-kita/kita.md`.
+PageSpeed: Das Hero-Foto der Kita-Seite ist ein echtes Foto und damit größer als die frühere
+Zeichnung (86 KB statt 15 KB). Auf dem Handy lädt deshalb die 720er-Variante (51 KB). Lighthouse
+mobil: 99 (LCP 1,8 s, größtes Element ist der Einleitungstext), Desktop: 100. Blumenladen und Café
+liegen mit ihren 40-KB-Hero-Fotos ebenfalls bei 99. Unter etwa 20 KB käme die Seite wieder auf 100,
+das schafft ein Foto in 720 px Breite aber nicht ohne sichtbare Qualitätsverluste.
 
 ## 4. Technik
 

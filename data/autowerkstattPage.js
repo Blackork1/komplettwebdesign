@@ -171,7 +171,7 @@ export const AUTOWERKSTATT_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/autowerkstatt/autowerkstatt-angebot.webp',
-        alt: 'Beispielaufbau einer Leistungsübersicht für eine Kfz-Werkstatt mit sechs Kacheln von Inspektion bis Batterie',
+        alt: 'Smartphone in der Hand vor Hebebühnen mit Autos: Beispielaufbau einer Leistungsübersicht für eine Kfz-Werkstatt mit sechs Kacheln von Inspektion bis Batterie',
         width: 720,
         height: 1080
       }
@@ -242,11 +242,11 @@ export const AUTOWERKSTATT_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für deine Werkstatt aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Terminanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Werkstatt, Annahme und Team.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Terminanfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Werkstatt, Annahme und Team.',
       items: [
-        { src: '/images/branchen/autowerkstatt/autowerkstatt-startseite.webp', alt: 'Beispielaufbau der Startseite einer Kfz-Werkstatt mit Überschrift, Knopf zur Terminanfrage und drei Leistungskacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Werkstatt, Kiez und der Knopf zur Terminanfrage stehen oben, darunter Inspektion, HU/AU und Ölwechsel.' },
-        { src: '/images/branchen/autowerkstatt/autowerkstatt-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage für die Werkstatt auf dem Handy mit Fahrzeug, Anliegen und Wunschtag', width: 720, height: 480, title: 'Terminanfrage', caption: 'Beispielaufbau: Fahrzeug, Anliegen und Wunschtag in drei Feldern, dazu Ersatzwagen oder Rückruf zur Auswahl.' },
-        { src: '/images/branchen/autowerkstatt/autowerkstatt-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Autowerkstatt mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Werkstatt bei „Autowerkstatt in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-startseite.webp', alt: 'Laptop in einer Werkstatt vor Hebebühnen mit Autos: Beispielaufbau der Startseite einer Kfz-Werkstatt mit Überschrift, Knopf zur Terminanfrage und drei Leistungskacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Werkstatt, Kiez und der Knopf zur Terminanfrage stehen oben, darunter Inspektion, HU/AU und Ölwechsel.' },
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-anfrage.webp', alt: 'Smartphone in der Hand vor Hebebühnen mit Autos: Beispielaufbau einer Terminanfrage für die Werkstatt mit Fahrzeug, Anliegen und Wunschtag', width: 720, height: 480, title: 'Terminanfrage', caption: 'Beispielaufbau: Fahrzeug, Anliegen und Wunschtag in drei Feldern, dazu Ersatzwagen oder Rückruf zur Auswahl.' },
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-suche.webp', alt: 'Smartphone auf einer Werkbank neben einem Autoschlüssel: Beispielaufbau eines lokalen Suchergebnisses für eine Autowerkstatt mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Werkstatt bei „Autowerkstatt in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deiner Werkstatt aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

@@ -4,14 +4,16 @@
 // Amt für Statistik Berlin-Brandenburg zum Stichtag 1. März 2026 sowie die Berliner Regeln zu Kita-Gutschein,
 // Kita-Navigator und Kindertagespflege.
 //
-// Bildplätze: Die Bilder unter public/images/branchen/kita/ sind gezeichnete Platzhalter. Ein echtes Foto
-// ersetzt die Datei unter demselben Namen und im selben Seitenverhältnis (WebP), danach hier nur den alt-Text
-// anpassen. Keine erkennbaren Kinder ohne Einwilligung der Sorgeberechtigten.
+// Bildplätze: Die Bilder unter public/images/branchen/kita/ sind mit ChatGPT erzeugte Beispielbilder ohne erkennbare
+// Kinder (Prompts in docs/seo/content-briefs/2026-11-11-branchen/bild-prompts.md). Ein neues Bild ersetzt die Datei
+// unter demselben Namen und im selben Seitenverhältnis (WebP), danach hier den alt-Text anpassen. Echte Fotos mit
+// erkennbaren Kindern nur mit Einwilligung der Sorgeberechtigten.
 //   kita-hero.webp         960 × 640  Hero: Außenansicht, Eingang oder heller Gruppenraum
 //   kita-tagespflege.webp  720 × 1080 Abschnitt Kindertagespflege: Spielecke oder Tagesmutter in ihren Räumen
 //   kita-raeume.webp       720 × 480  Einblicke 1: Gruppenraum, Bewegungsraum oder Schlafraum
 //   kita-garten.webp       720 × 480  Einblicke 2: Außengelände oder Spielplatz in der Nähe
 //   kita-team.webp         720 × 480  Einblicke 3: Team oder Detail aus dem Alltag (Garderobe, Basteltisch)
+//   kita-hero-mobile.webp  720 × 480  Hero auf dem Handy (srcset über data/responsiveImages.js), bei neuem Hero neu erzeugen
 //   kita-hero-720.webp     720 × 540  Karte auf /branchen: 4:3-Ausschnitt des Hero-Bildes, bei neuem Hero neu erzeugen
 
 export const KITA_CONTENT_UPDATED_ISO = '2026-11-10';
@@ -118,7 +120,7 @@ export const KITA_PAGE = Object.freeze({
       'Für Kitas, Kinderläden und Kindertagespflege'
     ],
     image: `${IMAGE_BASE}/kita-hero.webp`,
-    imageAlt: 'Illustration einer Kita-Website im Browserfenster mit Haus, Sonne und Bauklötzen',
+    imageAlt: 'Laptop in einem hellen Gruppenraum mit Regalen, Bauklötzen und Kuscheltier, auf dem Bildschirm eine Kita-Website mit der Überschrift Willkommen in unserer Kita',
     imageSize: [960, 640]
   },
   // Kleinere 4:3-Variante des Hero-Bildes für die Karte auf /branchen.
@@ -222,7 +224,7 @@ export const KITA_PAGE = Object.freeze({
       ],
       image: {
         src: `${IMAGE_BASE}/kita-tagespflege.webp`,
-        alt: 'Illustration einer Spielecke mit Regal, Teppich und Bauklötzen',
+        alt: 'Spielecke mit Bücherregal, Korb und rundem Teppich, zwei Hände bauen einen Turm aus bunten Holzklötzen',
         width: 720,
         height: 1080
       }
@@ -256,9 +258,9 @@ export const KITA_PAGE = Object.freeze({
       title: 'Räume, Garten und Alltag zeigen, ohne Kinder zu zeigen',
       intro: 'Bilder entscheiden mit, ob Eltern eine Besichtigung anfragen. Gute Kita-Fotos kommen ohne erkennbare Kinder aus: helle Räume, das Außengelände, Hände beim Basteln, die Garderobe mit den kleinen Gummistiefeln.',
       items: [
-        { src: `${IMAGE_BASE}/kita-raeume.webp`, alt: 'Illustration eines Gruppenraums mit Tisch, Regal und Fenster', width: 720, height: 480, title: 'Räume', caption: 'Gruppenraum, Bewegungsraum und Schlafraum bei Tageslicht.' },
-        { src: `${IMAGE_BASE}/kita-garten.webp`, alt: 'Illustration eines Kita-Gartens mit Baum, Sandkasten und Rutsche', width: 720, height: 480, title: 'Garten und Umgebung', caption: 'Außengelände, der Spielplatz um die Ecke, der Weg zum Park.' },
-        { src: `${IMAGE_BASE}/kita-team.webp`, alt: 'Illustration einer Kita-Garderobe mit Jacken, Rucksäcken und Gummistiefeln', width: 720, height: 480, title: 'Team und Alltag', caption: 'Porträts des Teams und Details, die vom Alltag erzählen.' }
+        { src: `${IMAGE_BASE}/kita-raeume.webp`, alt: 'Heller Gruppenraum mit kleinen Tischen und Stühlen, Regalen mit Kisten und einer Wimpelkette vor großen Fenstern', width: 720, height: 480, title: 'Räume', caption: 'Gruppenraum, Bewegungsraum und Schlafraum bei Tageslicht.' },
+        { src: `${IMAGE_BASE}/kita-garten.webp`, alt: 'Kita-Garten mit großem Baum, Sandkasten mit Eimer und Schaufel, Spielhaus und Rutsche', width: 720, height: 480, title: 'Garten und Umgebung', caption: 'Außengelände, der Spielplatz um die Ecke, der Weg zum Park.' },
+        { src: `${IMAGE_BASE}/kita-team.webp`, alt: 'Kita-Garderobe mit bunten Regenjacken, kleinen Rucksäcken und Gummistiefeln unter Haken mit Symbolen', width: 720, height: 480, title: 'Team und Alltag', caption: 'Porträts des Teams und Details, die vom Alltag erzählen.' }
       ],
       note: 'Fotos, auf denen Kinder erkennbar sind, brauchen die Einwilligung der Sorgeberechtigten, und die lässt sich jederzeit widerrufen. Maßgeblich sind die DSGVO und § 22 KUG. Die Berliner Datenschutzbeauftragte hat dazu eine eigene Broschüre für Kitas veröffentlicht.'
     },

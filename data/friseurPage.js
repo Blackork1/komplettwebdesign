@@ -174,7 +174,7 @@ export const FRISEUR_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/friseur/friseur-angebot.webp',
-        alt: 'Beispielaufbau einer Preisliste für einen Friseursalon mit den Gruppen Damen sowie Herren und Kinder',
+        alt: 'Smartphone in der Hand vor Frisierplätzen mit Föhn und Bürsten: Beispielaufbau einer Preisliste für einen Friseursalon mit den Gruppen Damen sowie Herren und Kinder',
         width: 720,
         height: 1080
       }
@@ -242,11 +242,11 @@ export const FRISEUR_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für deinen Salon aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Terminbuchung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Salon, Team und deinen Arbeiten.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Terminbuchung und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Salon, Team und deinen Arbeiten.',
       items: [
-        { src: '/images/branchen/friseur/friseur-startseite.webp', alt: 'Beispielaufbau der Startseite eines Friseursalons mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Kiez und der Knopf zum Termin stehen oben, darunter Schnitt, Farbe und Preise.' },
-        { src: '/images/branchen/friseur/friseur-anfrage.webp', alt: 'Beispielaufbau einer Terminbuchung für den Friseur auf dem Handy mit Leistung, Wunschtermin und Stylistin', width: 720, height: 480, title: 'Terminbuchung', caption: 'Beispielaufbau: Leistung, Wunschtermin und Stylistin in drei Feldern, dazu der Hinweis, ob es der erste Besuch ist.' },
-        { src: '/images/branchen/friseur/friseur-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Friseursalon mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Salon bei „Friseur in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/friseur/friseur-startseite.webp', alt: 'Laptop auf einem Salontisch neben Föhn und Bürsten: Beispielaufbau der Startseite eines Friseursalons mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Kiez und der Knopf zum Termin stehen oben, darunter Schnitt, Farbe und Preise.' },
+        { src: '/images/branchen/friseur/friseur-anfrage.webp', alt: 'Smartphone in der Hand vor Frisierplätzen mit Föhn und Bürsten: Beispielaufbau einer Terminbuchung für den Friseur mit Leistung, Wunschtermin und Stylistin', width: 720, height: 480, title: 'Terminbuchung', caption: 'Beispielaufbau: Leistung, Wunschtermin und Stylistin in drei Feldern, dazu der Hinweis, ob es der erste Besuch ist.' },
+        { src: '/images/branchen/friseur/friseur-suche.webp', alt: 'Smartphone auf einem Salontisch neben Föhn und Rundbürste: Beispielaufbau eines lokalen Suchergebnisses für einen Friseursalon mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Salon bei „Friseur in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Salon aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

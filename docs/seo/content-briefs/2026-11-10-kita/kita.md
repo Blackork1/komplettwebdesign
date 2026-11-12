@@ -84,9 +84,9 @@ Kommerziell: Wer „kita website erstellen“ sucht, vergleicht Anbieter, Baukä
 
 Zahlen zum Stichtag 1. März 2026 für Deutschland und Berlin, Berliner Abläufe (Gutschein, Navigator, Kindertagespflege mit bis zu fünf Kindern), ein fertiger Formularaufbau und ein Tagesablauf als Muster. Dazu die Verbindung von Elternsuche und Fachkräftesuche auf einer Website.
 
-## 10. Bildplätze (Platzhalter)
+## 10. Bildplätze
 
-Alle Bilder liegen unter `public/images/branchen/kita/` und sind gezeichnete Platzhalter ohne Text. Ein echtes Foto ersetzt die Datei unter demselben Namen und im selben Seitenverhältnis, danach den alt-Text in `data/kitaPage.js` anpassen. Keine erkennbaren Kinder ohne Einwilligung der Sorgeberechtigten. Seit 12.11.2026 ist das Bild neben dem Text zur Kindertagespflege hochkant (2:3) und die Einblicke sind quer (3:2), passend zu den Formaten von ChatGPT. Prompts: `docs/seo/content-briefs/2026-11-11-branchen/bild-prompts.md`.
+Alle Bilder liegen unter `public/images/branchen/kita/`. Seit 12.11.2026 sind es mit ChatGPT erzeugte Beispielbilder ohne erkennbare Kinder (Prompts: `docs/seo/content-briefs/2026-11-11-branchen/bild-prompts.md`). Das Bild neben dem Text zur Kindertagespflege ist hochkant (2:3), die Einblicke sind quer (3:2). Ein neues Bild oder ein echtes Foto ersetzt die Datei unter demselben Namen und im selben Seitenverhältnis, danach den alt-Text in `data/kitaPage.js` anpassen. Echte Fotos mit erkennbaren Kindern nur mit Einwilligung der Sorgeberechtigten. Wie die Bilder verkleinert werden, steht in `docs/seo/content-briefs/2026-11-11-branchen/README.md`, Abschnitt 3.
 
 | Datei | Größe | Stelle | Vorschlag für das Motiv |
 |---|---|---|---|
@@ -95,6 +95,7 @@ Alle Bilder liegen unter `public/images/branchen/kita/` und sind gezeichnete Pla
 | `kita-raeume.webp` | 720 × 480 | Einblicke, Bild 1 | Gruppenraum, Bewegungsraum oder Schlafraum |
 | `kita-garten.webp` | 720 × 480 | Einblicke, Bild 2 | Außengelände oder Spielplatz in der Nähe |
 | `kita-team.webp` | 720 × 480 | Einblicke, Bild 3 | Team oder Detail aus dem Alltag (Garderobe, Basteltisch) |
+| `kita-hero-mobile.webp` | 720 × 480 | Hero auf dem Handy (srcset) | Kleinere Fassung des Hero-Bildes, wird aus demselben Bild erzeugt |
 | `kita-hero-720.webp` | 720 × 540 | Karte auf `/branchen` | Ausschnitt des Hero-Bildes im Format 4:3, wird aus `kita-hero.webp` erzeugt |
 
 ## 11. Quellen

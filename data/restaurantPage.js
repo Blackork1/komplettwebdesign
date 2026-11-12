@@ -168,7 +168,7 @@ export const RESTAURANT_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/restaurant/restaurant-angebot.webp',
-        alt: 'Beispielaufbau einer Speisekarte als Text mit den Abschnitten Vorspeisen und Hauptgerichte',
+        alt: 'Smartphone in der Hand vor einem gedeckten Tisch bei Kerzenlicht: Beispielaufbau einer Speisekarte als Text mit den Abschnitten Vorspeisen und Hauptgerichte',
         width: 720,
         height: 1080
       }
@@ -247,11 +247,11 @@ export const RESTAURANT_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für dein Restaurant aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Reservierung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Gerichten, Gastraum und Team.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Reservierung und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Gerichten, Gastraum und Team.',
       items: [
-        { src: '/images/branchen/restaurant/restaurant-startseite.webp', alt: 'Beispielaufbau der Startseite eines Restaurants mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Küche, Kiez und der Knopf zum Reservieren stehen oben, darunter Speisekarte, Öffnungszeiten und Feiern.' },
-        { src: '/images/branchen/restaurant/restaurant-anfrage.webp', alt: 'Beispielaufbau einer Tischreservierung auf dem Handy mit Datum, Personenzahl und Anlass', width: 720, height: 480, title: 'Reservierung', caption: 'Beispielaufbau: Datum, Personenzahl und Anlass, dazu die Wahl zwischen Innenraum und Terrasse.' },
-        { src: '/images/branchen/restaurant/restaurant-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Restaurant mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Restaurant bei „Restaurant in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/restaurant/restaurant-startseite.webp', alt: 'Laptop auf einem Restauranttisch bei Kerzenlicht: Beispielaufbau der Startseite eines Restaurants mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Küche, Kiez und der Knopf zum Reservieren stehen oben, darunter Speisekarte, Öffnungszeiten und Feiern.' },
+        { src: '/images/branchen/restaurant/restaurant-anfrage.webp', alt: 'Smartphone in der Hand vor einem gedeckten Tisch bei Kerzenlicht: Beispielaufbau einer Tischreservierung mit Datum, Personenzahl und Anlass', width: 720, height: 480, title: 'Reservierung', caption: 'Beispielaufbau: Datum, Personenzahl und Anlass, dazu die Wahl zwischen Innenraum und Terrasse.' },
+        { src: '/images/branchen/restaurant/restaurant-suche.webp', alt: 'Smartphone auf einem gedeckten Tisch neben Kerze und Weinglas: Beispielaufbau eines lokalen Suchergebnisses für ein Restaurant mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Restaurant bei „Restaurant in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Restaurant aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

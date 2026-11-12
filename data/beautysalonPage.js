@@ -168,7 +168,7 @@ export const BEAUTYSALON_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/beautysalon/beautysalon-angebot.webp',
-        alt: 'Beispielaufbau einer Behandlungsübersicht für ein Kosmetikstudio mit sechs Kacheln von Gesichtsbehandlung bis Gutscheine',
+        alt: 'Smartphone in der Hand vor einer Behandlungsliege mit rosa Handtüchern: Beispielaufbau einer Behandlungsübersicht für ein Kosmetikstudio mit sechs Kacheln von Gesichtsbehandlung bis Gutscheine',
         width: 720,
         height: 1080
       }
@@ -242,11 +242,11 @@ export const BEAUTYSALON_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für dein Kosmetikstudio aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Terminbuchung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Studio, Team und deinen Arbeiten.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Terminbuchung und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Studio, Team und deinen Arbeiten.',
       items: [
-        { src: '/images/branchen/beautysalon/beautysalon-startseite.webp', alt: 'Beispielaufbau der Startseite eines Kosmetikstudios mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Studio, Kiez und der Knopf zum Termin stehen oben, darunter Gesicht, Nägel und Gutscheine.' },
-        { src: '/images/branchen/beautysalon/beautysalon-anfrage.webp', alt: 'Beispielaufbau einer Terminbuchung für das Kosmetikstudio auf dem Handy mit Behandlung, Wunschtermin und Hinweis', width: 720, height: 480, title: 'Terminbuchung', caption: 'Beispielaufbau: Behandlung, Wunschtermin und ein Hinweis wie empfindliche Haut, dazu Erstbesuch oder Gutschein zur Auswahl.' },
-        { src: '/images/branchen/beautysalon/beautysalon-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Kosmetikstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Kosmetikstudio in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/beautysalon/beautysalon-startseite.webp', alt: 'Laptop auf einem Tisch vor einer Behandlungsliege mit rosa Handtüchern: Beispielaufbau der Startseite eines Kosmetikstudios mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Studio, Kiez und der Knopf zum Termin stehen oben, darunter Gesicht, Nägel und Gutscheine.' },
+        { src: '/images/branchen/beautysalon/beautysalon-anfrage.webp', alt: 'Smartphone in der Hand vor einer Behandlungsliege mit rosa Handtüchern: Beispielaufbau einer Terminbuchung für das Kosmetikstudio mit Behandlung, Wunschtermin und Hinweis', width: 720, height: 480, title: 'Terminbuchung', caption: 'Beispielaufbau: Behandlung, Wunschtermin und ein Hinweis wie empfindliche Haut, dazu Erstbesuch oder Gutschein zur Auswahl.' },
+        { src: '/images/branchen/beautysalon/beautysalon-suche.webp', alt: 'Smartphone auf einem Tisch neben Pflegeprodukten und Blumen: Beispielaufbau eines lokalen Suchergebnisses für ein Kosmetikstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Kosmetikstudio in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

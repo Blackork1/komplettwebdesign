@@ -6,6 +6,7 @@ import { interpolatePricingTokens } from '../util/pricingViewModel.js';
 import { buildNichePageSchemas } from '../helpers/pageSchema.js';
 import { SITE_FACTS, formatGoogleRating } from '../helpers/siteFacts.js';
 import { relatedIndustriesFor } from '../data/industryDirectory.js';
+import { srcsetFor } from '../data/responsiveImages.js';
 import { REINIGUNG_PAGE, REINIGUNG_FAQ, REINIGUNG_CONTENT_UPDATED_ISO } from '../data/reinigungPage.js';
 import { BLUMENLADEN_PAGE, BLUMENLADEN_FAQ, BLUMENLADEN_CONTENT_UPDATED_ISO } from '../data/blumenladenPage.js';
 import { FITNESS_PAGE, FITNESS_FAQ, FITNESS_CONTENT_UPDATED_ISO } from '../data/fitnessPage.js';
@@ -80,6 +81,8 @@ export function buildNichePageViewModel(niche, locals = {}) {
     ogImage: /^https?:\/\//.test(nichePage.hero.image)
       ? nichePage.hero.image
       : `${String(locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '')}${nichePage.hero.image}`,
+    // Kleinere Hero-Varianten für Handys, falls in data/responsiveImages.js eingetragen.
+    heroSrcset: srcsetFor(nichePage.hero.image),
     packages: visiblePackages,
     packageCards,
     nichePage,

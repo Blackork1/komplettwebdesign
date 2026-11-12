@@ -182,7 +182,7 @@ export const REINIGUNG_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/reinigung/reinigung-angebot.webp',
-        alt: 'Beispielaufbau einer Leistungsübersicht mit sechs Kacheln von Büroreinigung bis Hausmeisterservice',
+        alt: 'Smartphone in der Hand vor einem hellen Bürofoyer mit Glastüren: Beispielaufbau einer Leistungsübersicht mit sechs Kacheln von Büroreinigung bis Hausmeisterservice',
         width: 720,
         height: 1080
       }
@@ -329,11 +329,11 @@ export const REINIGUNG_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website einer Reinigungsfirma aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Arbeiten.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Arbeiten.',
       items: [
-        { src: '/images/branchen/reinigung/reinigung-startseite.webp', alt: 'Beispielaufbau der Startseite einer Reinigungsfirma mit Überschrift, Knopf zur Angebotsanfrage und drei Leistungskacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Leistung, Stadt und der Knopf zur Angebotsanfrage stehen oben, darunter die wichtigsten Reinigungsarten.' },
-        { src: '/images/branchen/reinigung/reinigung-anfrage.webp', alt: 'Beispielaufbau einer Angebotsanfrage auf dem Handy mit Objektart, Fläche und Turnus', width: 720, height: 480, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Objektart, Fläche und Turnus in drei Feldern, dazu Besichtigung oder Rückruf zur Auswahl.' },
-        { src: '/images/branchen/reinigung/reinigung-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Gebäudereinigung mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Gebäudereinigung“ mit deinem Bezirk erscheinen, mit Route und Anruf.' }
+        { src: '/images/branchen/reinigung/reinigung-startseite.webp', alt: 'Laptop in einem hellen Bürofoyer: Beispielaufbau der Startseite einer Reinigungsfirma mit Überschrift, Knopf zur Angebotsanfrage und drei Leistungskacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Leistung, Stadt und der Knopf zur Angebotsanfrage stehen oben, darunter die wichtigsten Reinigungsarten.' },
+        { src: '/images/branchen/reinigung/reinigung-anfrage.webp', alt: 'Smartphone in der Hand vor einem hellen Bürofoyer mit Glastüren: Beispielaufbau einer Angebotsanfrage mit Objektart, Fläche und Turnus', width: 720, height: 480, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Objektart, Fläche und Turnus in drei Feldern, dazu Besichtigung oder Rückruf zur Auswahl.' },
+        { src: '/images/branchen/reinigung/reinigung-suche.webp', alt: 'Smartphone auf einem Tisch neben Klemmbrett und Schlüsselbund: Beispielaufbau eines lokalen Suchergebnisses für eine Gebäudereinigung mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Gebäudereinigung“ mit deinem Bezirk erscheinen, mit Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Betrieb aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

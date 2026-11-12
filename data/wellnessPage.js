@@ -167,7 +167,7 @@ export const WELLNESS_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/wellness/wellness-angebot.webp',
-        alt: 'Beispielaufbau einer Übersicht mit Massagen und Anwendungen mit sechs Kacheln von Klassischer Massage bis Gutscheine',
+        alt: 'Smartphone in der Hand vor Massageliegen, Kerzen und Handtüchern: Beispielaufbau einer Übersicht mit Massagen und Anwendungen mit sechs Kacheln von Klassischer Massage bis Gutscheine',
         width: 720,
         height: 1080
       }
@@ -235,11 +235,11 @@ export const WELLNESS_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für deine Massagepraxis aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Startseite, Gutscheinbestellung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Räumen, Team und Anwendungen.',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Gutscheinbestellung und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Räumen, Team und Anwendungen.',
       items: [
-        { src: '/images/branchen/wellness/wellness-startseite.webp', alt: 'Beispielaufbau der Startseite einer Massagepraxis mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Stadt und der Knopf zur Buchung stehen oben, darunter Massagen, Gutscheine und Öffnungszeiten.' },
-        { src: '/images/branchen/wellness/wellness-anfrage.webp', alt: 'Beispielaufbau einer Gutscheinbestellung auf dem Handy mit Wert, Anlass und Versand', width: 720, height: 480, title: 'Gutscheinbestellung', caption: 'Beispielaufbau: Wert, Anlass und Versand in drei Feldern, dazu die Wahl zwischen Ausdrucken und Post.' },
-        { src: '/images/branchen/wellness/wellness-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Massagepraxis mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Massage in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+        { src: '/images/branchen/wellness/wellness-startseite.webp', alt: 'Laptop auf einem Tisch vor einer Massageliege: Beispielaufbau der Startseite einer Massagepraxis mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 480, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Stadt und der Knopf zur Buchung stehen oben, darunter Massagen, Gutscheine und Öffnungszeiten.' },
+        { src: '/images/branchen/wellness/wellness-anfrage.webp', alt: 'Smartphone in der Hand vor Massageliegen, Kerzen und Handtüchern: Beispielaufbau einer Gutscheinbestellung mit Wert, Anlass und Versand', width: 720, height: 480, title: 'Gutscheinbestellung', caption: 'Beispielaufbau: Wert, Anlass und Versand in drei Feldern, dazu die Wahl zwischen Ausdrucken und Post.' },
+        { src: '/images/branchen/wellness/wellness-suche.webp', alt: 'Smartphone auf einem Tisch neben Kerzen und gerollten Handtüchern: Beispielaufbau eines lokalen Suchergebnisses für eine Massagepraxis mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Massage in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Studio oder deiner Praxis aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

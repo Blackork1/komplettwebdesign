@@ -188,7 +188,7 @@ export const FITNESS_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/fitnesscoach/fitnesscoach-startseite.webp',
-        alt: 'Beispielaufbau der Startseite eines Fitnessstudios mit Überschrift, Knopf zum Probetraining und drei Themenkacheln',
+        alt: 'Smartphone in der Hand vor Hantelablagen in einem Fitnessstudio: Beispielaufbau der Startseite eines Fitnessstudios mit Überschrift, Knopf zum Probetraining und drei Themenkacheln',
         width: 720,
         height: 1080
       }
@@ -254,11 +254,11 @@ export const FITNESS_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'Webdesign für Fitnessstudios: drei Ansichten als Beispiel',
-      intro: 'So können Kursübersicht, Probetraining und lokale Suche aussehen. Es sind Skizzen, kein fertiges Design. Dein Studio bekommt eigene Farben und echte Fotos von Fläche, Kursen und Team.',
+      intro: 'So können Kursübersicht, Probetraining und lokale Suche aussehen. Es sind Beispielbilder, kein fertiges Design. Dein Studio bekommt eigene Farben und echte Fotos von Fläche, Kursen und Team.',
       items: [
-        { src: '/images/branchen/fitnesscoach/fitnesscoach-angebot.webp', alt: 'Beispielaufbau einer Übersicht mit sechs Kacheln von Gerätetraining über Kurse bis Personal Training', width: 720, height: 480, title: 'Kurse und Training', caption: 'Beispielaufbau: Jede Trainingsart bekommt eine Kachel und führt auf eine eigene Seite.' },
-        { src: '/images/branchen/fitnesscoach/fitnesscoach-anfrage.webp', alt: 'Beispielaufbau eines Formulars für ein Probetraining auf dem Handy mit Name, Wunschtermin und Trainingsziel', width: 720, height: 480, title: 'Probetraining', caption: 'Beispielaufbau: Name, Wunschtermin und Ziel reichen. Die Anfrage landet sofort in deinem Postfach.' },
-        { src: '/images/branchen/fitnesscoach/fitnesscoach-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Fitnessstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Fitnessstudio in der Nähe“ erscheinen, mit Öffnungszeiten und Route.' }
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-angebot.webp', alt: 'Tablet auf einer Trainingsbank vor Hanteln: Beispielaufbau einer Übersicht mit sechs Kacheln von Gerätetraining über Kurse bis Personal Training', width: 720, height: 480, title: 'Kurse und Training', caption: 'Beispielaufbau: Jede Trainingsart bekommt eine Kachel und führt auf eine eigene Seite.' },
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-anfrage.webp', alt: 'Smartphone in der Hand vor Hantelablagen in einem Fitnessstudio: Beispielaufbau eines Formulars für ein Probetraining mit Name, Wunschtermin und Trainingsziel', width: 720, height: 480, title: 'Probetraining', caption: 'Beispielaufbau: Name, Wunschtermin und Ziel reichen. Die Anfrage landet sofort in deinem Postfach.' },
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-suche.webp', alt: 'Smartphone auf einer Trainingsbank neben einer Trinkflasche: Beispielaufbau eines lokalen Suchergebnisses für ein Fitnessstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Fitnessstudio in der Nähe“ erscheinen, mit Öffnungszeiten und Route.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

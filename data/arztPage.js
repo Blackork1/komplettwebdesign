@@ -178,7 +178,7 @@ export const ARZT_PAGE = Object.freeze({
       ],
       image: {
         src: '/images/branchen/arzt/arzt-startseite.webp',
-        alt: 'Beispielaufbau der Startseite einer Hausarztpraxis mit Überschrift, Knopf zur Terminanfrage und den Kacheln Sprechzeiten, Team und Rezepte',
+        alt: 'Smartphone in der Hand vor dem hellen Empfangsbereich einer Praxis: Beispielaufbau der Startseite einer Hausarztpraxis mit Überschrift, Knopf zur Terminanfrage und den Kacheln Sprechzeiten, Team und Rezepte',
         width: 720,
         height: 1080
       }
@@ -255,11 +255,11 @@ export const ARZT_PAGE = Object.freeze({
       soft: true,
       chip: 'Beispielaufbau',
       title: 'So kann die Website für deine Praxis aufgebaut sein',
-      intro: 'Drei Ansichten zeigen, wie Leistungsübersicht, Terminanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Praxisräumen und Team.',
+      intro: 'Drei Ansichten zeigen, wie Leistungsübersicht, Terminanfrage und lokale Suche zusammenspielen. Es sind Beispielbilder, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Praxisräumen und Team.',
       items: [
-        { src: '/images/branchen/arzt/arzt-angebot.webp', alt: 'Beispielaufbau einer Leistungsübersicht einer Arztpraxis mit sechs Kacheln von Vorsorge über Impfungen bis Rezepte', width: 720, height: 480, title: 'Leistungen', caption: 'Beispielaufbau: Vorsorge, Impfungen, Hausbesuche und Videosprechstunde bekommen je eine Kachel mit kurzer Erklärung.' },
-        { src: '/images/branchen/arzt/arzt-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage auf dem Handy mit Anliegen, Versicherung und Wunschzeit', width: 720, height: 480, title: 'Terminanfrage', caption: 'Beispielaufbau: Anliegen, Versicherung und Wunschzeit in drei Feldern, ohne Angaben zu Diagnosen.' },
-        { src: '/images/branchen/arzt/arzt-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Hausarztpraxis mit Sprechzeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Hausarzt Berlin Pankow“ erscheinen, mit Sprechzeiten, Route und Anruf.' }
+        { src: '/images/branchen/arzt/arzt-angebot.webp', alt: 'Tablet auf einem Tresen in einer hellen Praxis: Beispielaufbau einer Leistungsübersicht einer Arztpraxis mit sechs Kacheln von Vorsorge über Impfungen bis Rezepte', width: 720, height: 480, title: 'Leistungen', caption: 'Beispielaufbau: Vorsorge, Impfungen, Hausbesuche und Videosprechstunde bekommen je eine Kachel mit kurzer Erklärung.' },
+        { src: '/images/branchen/arzt/arzt-anfrage.webp', alt: 'Smartphone in der Hand vor dem hellen Empfangsbereich einer Praxis: Beispielaufbau einer Terminanfrage mit Anliegen, Versicherung und Wunschzeit', width: 720, height: 480, title: 'Terminanfrage', caption: 'Beispielaufbau: Anliegen, Versicherung und Wunschzeit in drei Feldern, ohne Angaben zu Diagnosen.' },
+        { src: '/images/branchen/arzt/arzt-suche.webp', alt: 'Smartphone auf einem Tresen neben einer Chipkarte: Beispielaufbau eines lokalen Suchergebnisses für eine Hausarztpraxis mit Sprechzeiten, Route und Karte', width: 720, height: 480, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Hausarzt Berlin Pankow“ erscheinen, mit Sprechzeiten, Route und Anruf.' }
       ],
       note: 'Farben, Schriften und Bilder richte ich nach deiner Praxis aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
       noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }

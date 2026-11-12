@@ -209,6 +209,8 @@ test('Kita-Seite: eigene Inhalte für Kitas und Kindertagespflege, im Index, mit
   }
   assert.equal(allImages.filter((image) => image.includes('fetchpriority="high"')).length, 1, 'nur das Hero-Bild lädt bevorzugt');
   assert.match(images.find((image) => image.includes('kita-hero.webp')), /fetchpriority="high"/);
+  // Auf dem Handy lädt das Hero-Foto in 720 px Breite statt der Desktop-Datei.
+  assert.match(images.find((image) => image.includes('kita-hero.webp')), /srcset="\/images\/branchen\/kita\/kita-hero-mobile\.webp 720w, \/images\/branchen\/kita\/kita-hero\.webp 960w" sizes="\(max-width: 860px\) calc\(100vw - 32px\), 960px"/);
   assert.equal(images.filter((image) => image.includes('loading="lazy"')).length, 4);
 
   // Bewegung: gemeinsames Stylesheet, Einblenden über slideOnScroll, Hero ohne Animation.

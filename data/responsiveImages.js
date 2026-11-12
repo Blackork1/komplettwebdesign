@@ -25,6 +25,11 @@ export const RESPONSIVE_IMAGES = Object.freeze({
   '/images/home-referenz-backstube.webp': [
     [760, '/images/home-referenz-backstube-760.webp'],
     [1840, '/images/home-referenz-backstube.webp']
+  ],
+  // Hero der Kita-Seite: Auf dem Handy ist das Foto rund 380 px breit, 720 px reichen dort.
+  '/images/branchen/kita/kita-hero.webp': [
+    [720, '/images/branchen/kita/kita-hero-mobile.webp'],
+    [960, '/images/branchen/kita/kita-hero.webp']
   ]
 });
 
