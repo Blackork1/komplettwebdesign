@@ -18,13 +18,14 @@
   // Der Hero bleibt ohne Animation, damit das größte Bild sofort sichtbar ist.
   const rv = pg.motion ? ' animate-on-scroll' : '';
   const rvAttr = pg.motion ? ' class="animate-on-scroll"' : '';
-  // Eigene Stylesheets einer Seite (page.extraCss), z. B. public/kita-page.css für Zeitleiste und Bildkarten.
-  const pageCss = ['webdesign-berlin.css', ...(Array.isArray(pg.extraCss) ? pg.extraCss : [])];
+  // public/branchen-page.css bringt Farbton (page.tone), Zeitleiste, Bildkarten und die Bewegung mit.
+  const toneClass = pg.motion ? ` niche-page--motion niche-page--tone-${pg.tone || 'pastell'}` : '';
+  const pageCss = ['webdesign-berlin.css', ...(pg.motion ? ['branchen-page.css'] : []), ...(Array.isArray(pg.extraCss) ? pg.extraCss : [])];
 %>
 <%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: pageCss }) %>
 <body>
   <%- include('partials/header') %>
-  <main class="webdesign-berlin-page webdesign-berlin handwerk-page niche-page niche-page--<%= pg.slug %>" id="content">
+  <main class="webdesign-berlin-page webdesign-berlin handwerk-page niche-page niche-page--<%= pg.slug %><%= toneClass %>" id="content">
     <section id="hero" class="wd-container wd-hero unified-hero" aria-labelledby="niche-hero-title">
       <div class="wd-hero__copy unified-hero__copy">
         <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
@@ -51,7 +52,8 @@
         </div>
       </div>
       <figure class="wd-hero__media">
-        <img src="<%= pg.hero.image %>" alt="<%= pg.hero.imageAlt %>" width="<%= heroSize[0] %>" height="<%= heroSize[1] %>" loading="eager" fetchpriority="high" decoding="async">
+        <%# Seitenverhältnis reservieren: Die Regel „aspect-ratio: auto“ im CSS hebt sonst die Angabe aus width/height auf, und der Hero wächst erst beim Laden des Bildes. %>
+        <img src="<%= pg.hero.image %>" alt="<%= pg.hero.imageAlt %>" width="<%= heroSize[0] %>" height="<%= heroSize[1] %>" style="aspect-ratio: auto <%= heroSize[0] %> / <%= heroSize[1] %>" loading="eager" fetchpriority="high" decoding="async">
       </figure>
     </section>
 
@@ -333,7 +335,7 @@
         <ol class="niche-page__timeline" aria-label="<%= section.listLabel %>">
           <% section.items.forEach((item) => { %>
           <li class="niche-page__timeline-item<%= rv %>">
-            <span class="niche-page__timeline-time"><time datetime="<%= item.time %>"><%= item.time %></time> Uhr</span>
+            <% if (item.time) { %><span class="niche-page__timeline-time"><time datetime="<%= item.time %>"><%= item.time %></time> Uhr</span><% } else { %><span class="niche-page__timeline-time"><%= item.label %></span><% } %>
             <h3><%= item.title %></h3>
             <p><%= item.text %></p>
           </li>

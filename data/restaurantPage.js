@@ -3,7 +3,7 @@
 // „restaurant homepage erstellen“, „gastronomie website erstellen lassen“), der DEHOGA-Zahlenspiegel I/2026
 // und das Referenzprojekt Zur alten Backstube.
 
-export const RESTAURANT_CONTENT_UPDATED_ISO = '2026-10-25';
+export const RESTAURANT_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const DEHOGA_SOURCE = 'DEHOGA-Zahlenspiegel I/2026';
 
@@ -47,6 +47,30 @@ export const RESTAURANT_FAQ = Object.freeze([
   {
     q: 'Kann meine bestehende Restaurant-Website überarbeitet werden?',
     a: 'Ja. Bei einem Relaunch prüfe ich zuerst, welche Inhalte und Seitenadressen bei Google bereits funktionieren. Wichtige Inhalte bleiben erhalten, alte Adressen werden sauber auf die neuen Seiten weitergeleitet.'
+  },
+  {
+    q: 'Welche Seiten braucht eine Restaurant-Webseite mindestens?',
+    a: 'Für den Start reichen drei: eine Startseite mit Küche, Lage und Reservierung, die Speisekarte als Text und eine Kontaktseite mit Öffnungszeiten, Anfahrt und Telefonnummer. Das deckt das Start-Paket ({{price.start}}) ab. Eigene Seiten für Feiern, Catering oder Jobs kommen dazu, wenn du dafür Anfragen bekommen willst.'
+  },
+  {
+    q: 'Für welche Gastronomiebetriebe erstellst du Websites?',
+    a: 'Für Restaurants, Cafés, Bistros, Bars, Imbisse und Cateringbetriebe in Berlin. Der Aufbau richtet sich nach dem Betrieb: Ein Restaurant braucht Karte und Reservierung, ein Catering eine Anfrage mit Datum und Personenzahl, eine Bar Öffnungszeiten und Veranstaltungen.'
+  },
+  {
+    q: 'Reichen für ein Restaurant nicht Instagram und das Google-Profil?',
+    a: 'Beides ist wichtig, ersetzt die Website aber nicht. Im Google-Profil fehlt Platz für die ganze Karte, für Feiern und für eine Reservierung nach deinen Regeln. Instagram zeigt Bilder, aber wer Öffnungszeiten oder Preise sucht, findet sie dort schwer. Die Website bündelt alles an einer Stelle, die dir gehört, und beide Profile verlinken dorthin.'
+  },
+  {
+    q: 'Kann die Speisekarte auch auf Englisch angezeigt werden?',
+    a: 'Ja, eine zweite Sprache ist als Zusatzleistung möglich. In Berlin lohnt sich Englisch vor allem dort, wo viele Gäste aus dem Ausland unterwegs sind. Am saubersten ist eine eigene Sprachversion der wichtigsten Seiten: Startseite, Speisekarte und Reservierung.'
+  },
+  {
+    q: 'Wie gehe ich mit wechselnden Öffnungszeiten und Betriebsferien um?',
+    a: 'Mit einem Hinweis, der an einer Stelle gepflegt wird und oben auf der Seite erscheint. Feiertage, Betriebsferien und geschlossene Gesellschaften lassen sich so schnell ankündigen. Wichtig ist, dieselben Zeiten auch im Google-Unternehmensprofil zu ändern, sonst stehen Gäste vor verschlossener Tür.'
+  },
+  {
+    q: 'Kann ich Gutscheine über die Restaurant-Website verkaufen?',
+    a: 'Ja. Am einfachsten ist eine Gutscheinanfrage per Formular, die du per Rechnung oder vor Ort abwickelst. Das geht in jedem Paket. Ein Gutscheinverkauf mit Bezahlung im Netz und automatischem Versand gehört zum Individuell-Paket ({{price.individuell}}) oder läuft über einen eingebundenen Gutscheinanbieter.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const RESTAURANT_PAGE = Object.freeze({
   path: '/branchen/webdesign-restaurant',
   breadcrumb: 'Restaurants',
   trackPrefix: 'restaurant',
+  motion: true,
+  tone: 'genuss',
   metaTitle: 'Restaurant-Website erstellen lassen in Berlin | Gastronomie',
   metaDescription: 'Webdesign für Restaurants und Gastronomie in Berlin: Speisekarte, Reservierung und Öffnungszeiten klar zeigen und lokal gefunden werden. Pakete {{price.start}}.',
   schema: {
@@ -107,6 +133,50 @@ export const RESTAURANT_PAGE = Object.freeze({
         { icon: 'fa-star', title: 'Bewertungen', text: 'Ausgewählte Google-Bewertungen und ein gepflegtes Unternehmensprofil, verknüpft mit deiner Website.' },
         { icon: 'fa-user-plus', title: 'Jobs', text: 'Offene Stellen für Küche und Service mit einem kurzen Bewerbungsweg per Telefon oder WhatsApp.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'alltag',
+      chip: 'Beispiel',
+      title: 'Ein Tag mit deiner Restaurant-Website',
+      intro: 'Während du in der Küche stehst oder Gäste bedienst, beantwortet die Website die Fragen, die sonst am Telefon landen. Die Zeiten sind ein Beispiel.',
+      listLabel: 'Beispiel für einen Tag mit der Website eines Restaurants',
+      items: [
+        { time: '09:30', title: 'Mittagskarte eintragen', text: 'Zwei Gerichte, zwei Preise, speichern. Die Karte ist aktuell, bevor die ersten Gäste suchen.' },
+        { time: '11:45', title: 'Gefunden zur Mittagszeit', text: 'Jemand sucht „Mittagstisch in der Nähe“ und sieht Gerichte, Preise und den Weg zu dir.' },
+        { time: '15:00', title: 'Reservierung für Samstag', text: 'Die Anfrage für sechs Personen kommt per Formular, obwohl gerade Ruhezeit ist.' },
+        { time: '17:30', title: 'Blick in die Karte', text: 'Gäste lesen die Speisekarte auf dem Handy, ohne ein PDF zu laden oder zu zoomen.' },
+        { time: '20:00', title: 'Anfrage für eine Feier', text: 'Das Formular fragt Datum, Personenzahl und Anlass ab. Du antwortest am nächsten Vormittag.' },
+        { time: '22:30', title: 'Bewertung nach dem Besuch', text: 'Ein Link auf der Seite führt Gäste nach dem Essen direkt zur Bewertung bei Google.' }
+      ],
+      note: 'Die Reservierung muss kein eigenes System sein. Ein vorhandenes Reservierungssystem binde ich ein, für kleine Lokale reicht oft ein Formular oder der Anruf mit einem Tipp.'
+    },
+    {
+      type: 'feature',
+      id: 'speisekarte',
+      soft: true,
+      chip: 'Speisekarte',
+      title: 'Restaurant-Webseite: warum die Speisekarte die wichtigste Seite ist',
+      paragraphs: [
+        'Wer eine Restaurant-Webseite öffnet, will meist zuerst wissen, was es gibt und was es kostet. Die Speisekarte ist deshalb keine Unterseite unter vielen, sondern der Kern der Website. Sie gehört mit einem Tipp erreichbar in die Navigation und als Text auf die Seite. So bleibt sie auf dem Handy lesbar, und Google kann die Gerichte erfassen.',
+        'Eine gute Karte im Netz ist klar gegliedert: Vorspeisen, Hauptgerichte, Desserts und Getränke, dazu die Mittagskarte und saisonale Gerichte als eigener Block. Jedes Gericht bekommt Name, kurze Beschreibung und Preis. Vegetarische und vegane Gerichte sind markiert, Allergene stehen als Kürzel dabei oder in einer Legende am Ende.',
+        'Offen gesagt: Eine Karte, die im Netz nicht stimmt, schadet mehr als gar keine. Auf Wunsch richte ich die Pflege so ein, dass du Gerichte und Preise selbst änderst. Wechselt die Karte täglich, reichen auf der Website eine feste Grundkarte und ein Hinweis auf die Tageskarte vor Ort.'
+      ],
+      pointsTitle: 'So wird die Speisekarte im Netz lesbar',
+      points: [
+        'Als Text statt als Foto oder PDF',
+        'Klare Abschnitte mit Sprungmarken auf dem Handy',
+        'Preise bei jedem Gericht',
+        'Kennzeichnung für vegetarisch, vegan und Allergene',
+        'Mittagskarte und saisonale Gerichte als eigener Block',
+        'Derselbe Link im Google-Unternehmensprofil'
+      ],
+      image: {
+        src: '/images/branchen/restaurant/restaurant-angebot.webp',
+        alt: 'Beispielaufbau einer Speisekarte als Text mit den Abschnitten Vorspeisen und Hauptgerichte',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -175,6 +245,21 @@ export const RESTAURANT_PAGE = Object.freeze({
       ],
       note: 'Feste Platzierungen kann niemand seriös versprechen. Eine Website mit echten Inhalten ist aber die Grundlage, auf der Local SEO aufbaut.',
       noteLink: { href: '/leistungen/local-seo', label: 'Local SEO in Berlin' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für dein Restaurant aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Reservierung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Gerichten, Gastraum und Team.',
+      items: [
+        { src: '/images/branchen/restaurant/restaurant-startseite.webp', alt: 'Beispielaufbau der Startseite eines Restaurants mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Küche, Kiez und der Knopf zum Reservieren stehen oben, darunter Speisekarte, Öffnungszeiten und Feiern.' },
+        { src: '/images/branchen/restaurant/restaurant-anfrage.webp', alt: 'Beispielaufbau einer Tischreservierung auf dem Handy mit Datum, Personenzahl und Anlass', width: 720, height: 540, title: 'Reservierung', caption: 'Beispielaufbau: Datum, Personenzahl und Anlass, dazu die Wahl zwischen Innenraum und Terrasse.' },
+        { src: '/images/branchen/restaurant/restaurant-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Restaurant mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Restaurant bei „Restaurant in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Restaurant aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'pricing',

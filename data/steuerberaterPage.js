@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Kanzleien und Mandanten, Konkurrenzseiten und die Berufsstatistik 2025
 // der Bundessteuerberaterkammer.
 
-export const STEUERBERATER_CONTENT_UPDATED_ISO = '2026-10-29';
+export const STEUERBERATER_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const BSTBK_SOURCE = 'BStBK-Berufsstatistik 2025';
 
@@ -47,6 +47,30 @@ export const STEUERBERATER_FAQ = Object.freeze([
   {
     q: 'Kann meine bestehende Kanzlei-Website überarbeitet werden?',
     a: 'Ja. Bei einem Relaunch prüfe ich zuerst, welche Inhalte und Seitenadressen bei Google bereits funktionieren. Wichtige Inhalte bleiben erhalten, alte Adressen werden sauber auf die neuen Seiten weitergeleitet.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website einer Steuerkanzlei?',
+    a: 'Eine Einzelkanzlei kommt mit drei Seiten aus: Startseite mit Mandantengruppen und Kapazität, Leistungen und Kontakt mit Mandatsanfrage. Das deckt das Start-Paket ({{price.start}}) ab. Mit eigenen Seiten für Mandantengruppen, Team, Karriere und digitale Zusammenarbeit passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Brauche ich eigene Seiten für Gründer, Freiberufler und GmbHs?',
+    a: 'Wenn du diese Gruppen gezielt ansprechen willst, ja. Gesucht wird oft mit der Gruppe im Suchbegriff, etwa „Steuerberater für Selbstständige“ oder „Steuerberater GmbH Berlin“. Eine eigene Seite beantwortet die Fragen dieser Gruppe und passt genau zu der Suche. Zwei oder drei Gruppen reichen. Feste Platzierungen kann niemand seriös garantieren.'
+  },
+  {
+    q: 'Kanzlei-Website: Vorlage vom Software-Anbieter oder eigener Webdesigner?',
+    a: 'Fertige Kanzlei-Homepages von Software- oder Verlagsanbietern sind schnell eingerichtet und bringen oft Steuernews und Rechner mit. Dafür ähneln sich Aufbau und Texte bei vielen Kanzleien, und die Seite läuft meist im Abo. Eine eigene Website beschreibt deine Mandantengruppen in deinen Worten. Du sprichst dabei direkt mit mir und nicht mit wechselnden Ansprechpartnern. Welche Lösung passt, hängt davon ab, wie stark du dich von anderen Kanzleien abheben willst.'
+  },
+  {
+    q: 'Sollte eine Kanzlei-Website einen Blog oder Steuernews haben?',
+    a: 'Nur, wenn jemand den Bereich pflegt. Zugekaufte Steuernews stehen wortgleich auf vielen Kanzleiseiten und heben dich nicht ab. Wirksamer sind wenige eigene Beiträge zu Fragen, die Mandanten wirklich stellen, etwa zur Gründung, zum Wechsel der Kanzlei oder zu Fristen. Ein Bereich, dessen letzter Eintrag zwei Jahre alt ist, wirkt schlechter als gar keiner.'
+  },
+  {
+    q: 'Kann ich Erstgespräche online buchen lassen?',
+    a: 'Ja. Ein vorhandenes Terminbuchungssystem binde ich in jedem Paket als Link oder Einbettung ein. Viele Kanzleien schalten davor eine kurze Mandatsanfrage, damit vor allem passende Fälle einen Termin buchen. Eine eigene Buchung mit Terminverwaltung auf der Website gehört zum Individuell-Paket ({{price.individuell}}).'
+  },
+  {
+    q: 'Wie erkläre ich den Wechsel des Steuerberaters auf der Website?',
+    a: 'Mit einem kurzen Abschnitt, der die Sorge nimmt: wer das alte Mandat kündigt, wie Unterlagen und Daten zur neuen Kanzlei kommen und zu welchem Zeitpunkt der Wechsel sinnvoll ist. Drei bis vier Schritte reichen. Viele Mandanten schieben den Wechsel auf, weil sie den Aufwand überschätzen. Eine klare Beschreibung senkt diese Hürde.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const STEUERBERATER_PAGE = Object.freeze({
   path: '/branchen/webdesign-steuerberater',
   breadcrumb: 'Steuerberater',
   trackPrefix: 'steuerberater',
+  motion: true,
+  tone: 'klar',
   metaTitle: 'Steuerberater-Website erstellen lassen | Kanzlei Berlin',
   metaDescription: 'Website für Steuerkanzleien in Berlin: Mandantengruppen, freie Kapazitäten, Belegaustausch und Karriereseite, berufsrechtlich sauber. Pakete {{price.start}}.',
   schema: {
@@ -110,6 +136,50 @@ export const STEUERBERATER_PAGE = Object.freeze({
       ]
     },
     {
+      type: 'timeline',
+      id: 'weg-zum-mandat',
+      chip: 'Beispiel',
+      title: 'Von der Suche zum Mandat: der Weg eines Mandanten über deine Kanzlei-Website',
+      intro: 'Ein Mandat entsteht selten mit einem Klick. Wer eine Steuerberatung sucht, prüft erst, ob die Kanzlei zum eigenen Fall passt und ob sie überhaupt neue Mandate annimmt. Die Website begleitet jeden dieser Schritte.',
+      listLabel: 'Sechs Schritte von der Suche bis zum Mandat',
+      items: [
+        { label: 'Schritt 1', title: 'Die Suche', text: 'Eine Gründerin sucht „Steuerberater Berlin Pankow“ und stößt auf deine Seite für Selbstständige.' },
+        { label: 'Schritt 2', title: 'Die Einordnung', text: 'Die Startseite sagt in zwei Sätzen, für wen die Kanzlei arbeitet und ob sie neue Mandate annimmt.' },
+        { label: 'Schritt 3', title: 'Die Leistungen', text: 'Buchhaltung, Jahresabschluss und Gründung sind verständlich erklärt, ohne Fachsprache.' },
+        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Rechtsform, Anliegen und Starttermin ab. Unterlagen werden dort nicht hochgeladen.' },
+        { label: 'Schritt 5', title: 'Das Erstgespräch', text: 'Du kennst die Eckdaten schon und sprichst gleich über den konkreten Fall.' },
+        { label: 'Schritt 6', title: 'Das Mandat', text: 'Nach der Vollmacht führt ein Link zum Mandantenportal. Dort beginnt der Belegaustausch.' }
+      ],
+      note: 'Bewerberinnen und Bewerber gehen einen ähnlichen Weg: Karriereseite lesen, Team ansehen, kurz bewerben. Auch das lässt sich auf der Website abbilden.'
+    },
+    {
+      type: 'feature',
+      id: 'mandantengruppen',
+      soft: true,
+      chip: 'Mandantengruppen',
+      title: 'Kanzlei-Website erstellen lassen: nach Mandantengruppen statt nach Leistungsliste',
+      paragraphs: [
+        'Viele Kanzlei-Websites zählen auf, was jede Steuerberatung anbietet: Buchhaltung, Lohn, Jahresabschluss, Steuererklärung. Das ist richtig, hilft bei der Entscheidung aber wenig. Wer eine Kanzlei sucht, fragt sich zuerst: Betreut diese Kanzlei jemanden wie mich? Eine Freiberuflerin, ein Handwerksbetrieb und eine GmbH mit zwölf Angestellten haben verschiedene Fragen und suchen mit verschiedenen Worten.',
+        'Deshalb ordne ich die Website zusätzlich nach Mandantengruppen. Jede Gruppe bekommt einen eigenen Einstieg: typische Anliegen, die passenden Leistungen, der Ablauf der Zusammenarbeit und der Weg zum Erstgespräch. Die Leistungsseiten bleiben bestehen und werden von dort verlinkt. So findet sich eine Gründerin ebenso wieder wie ein Vermieter, und Suchen wie „Steuerberater für Selbstständige“ treffen auf eine Seite, die genau dazu passt.',
+        'Offen gesagt: Zwei oder drei Gruppen reichen. Wer jede denkbare Branche mit einer eigenen Seite bedient, wirkt beliebig, und dünne Seiten helfen auch bei Google nicht. Die Texte bleiben sachlich und kommen ohne Superlative und Erfolgsversprechen aus. Das passt zur sachlichen Werbung, die das Berufsrecht vorsieht, und liest sich glaubwürdiger.'
+      ],
+      pointsTitle: 'Das gehört auf die Seite einer Mandantengruppe',
+      points: [
+        'Für wen die Seite gedacht ist, in einem Satz',
+        'Typische Anliegen dieser Gruppe in ihren eigenen Worten',
+        'Die passenden Leistungen mit Verweis auf die Leistungsseiten',
+        'Ablauf vom Erstgespräch bis zum laufenden Belegaustausch',
+        'Hinweis, ob die Kanzlei für diese Gruppe neue Mandate annimmt',
+        'Erstgespräch anfragen mit Rechtsform und Anliegen'
+      ],
+      image: {
+        src: '/images/branchen/steuerberater/steuerberater-angebot.webp',
+        alt: 'Beispielaufbau einer Leistungsübersicht für eine Steuerkanzlei mit sechs Kacheln von Buchhaltung bis Beratung',
+        width: 720,
+        height: 540
+      }
+    },
+    {
       type: 'catalog',
       id: 'kanzleiarten',
       chip: 'Kanzleiarten',
@@ -163,6 +233,21 @@ export const STEUERBERATER_PAGE = Object.freeze({
       ],
       note: 'Ich setze um und weise auf heikle Stellen hin, ersetze aber keine Rechtsberatung. Verbindlich klären das die Steuerberaterkammer oder eine Anwältin bzw. ein Anwalt.',
       noteLink: { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für deine Kanzlei aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Mandatsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team und Kanzleiräumen.',
+      items: [
+        { src: '/images/branchen/steuerberater/steuerberater-startseite.webp', alt: 'Beispielaufbau der Startseite einer Steuerkanzlei mit Überschrift, Knopf zum Erstgespräch und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Zielgruppe, Stadt und der Knopf zum Erstgespräch stehen oben, darunter Buchhaltung, Jahresabschluss und digitale Zusammenarbeit.' },
+        { src: '/images/branchen/steuerberater/steuerberater-anfrage.webp', alt: 'Beispielaufbau einer Mandatsanfrage auf dem Handy mit Rechtsform, Anliegen und gewünschtem Start', width: 720, height: 540, title: 'Mandatsanfrage', caption: 'Beispielaufbau: Rechtsform, Anliegen und Starttermin in drei Feldern, dazu Neugründung oder Wechsel zur Auswahl.' },
+        { src: '/images/branchen/steuerberater/steuerberater-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Steuerkanzlei mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Kanzlei bei „Steuerberater Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deiner Kanzlei aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

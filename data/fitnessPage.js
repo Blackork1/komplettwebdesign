@@ -3,7 +3,7 @@
 // „fitnessstudio website agentur“, „webdesign fitnessstudio“, „webdesign für personal trainer“) und die
 // DSSV-Eckdaten der deutschen Fitnesswirtschaft 2026. Die Adresse bleibt aus der alten Branchenseite bestehen.
 
-export const FITNESS_CONTENT_UPDATED_ISO = '2026-10-25';
+export const FITNESS_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const DSSV_SOURCE = 'DSSV-Eckdaten 2026';
 
@@ -47,6 +47,30 @@ export const FITNESS_FAQ = Object.freeze([
   {
     q: 'Kann meine bestehende Studio-Website überarbeitet werden?',
     a: 'Ja. Bei einem Relaunch prüfe ich zuerst, welche Inhalte und Seitenadressen bei Google bereits funktionieren. Wichtige Inhalte bleiben erhalten, alte Adressen werden sauber auf die neuen Seiten weitergeleitet.'
+  },
+  {
+    q: 'Brauche ich für meine Fitnessstudio-Website eine Agentur?',
+    a: 'Nicht unbedingt. Eine Agentur lohnt sich für Ketten mit vielen Standorten, eigener App und laufenden Kampagnen. Für inhabergeführte Studios und Personal Trainer reicht meist ein Webdesigner, der Planung, Texte, Gestaltung und Technik übernimmt. Bei Komplett Webdesign arbeitest du direkt mit mir zusammen, ohne Projektleitung dazwischen.'
+  },
+  {
+    q: 'Welche laufenden Kosten hat eine Fitnessstudio-Website?',
+    a: 'Nach dem Start fallen Kosten für Domain und Hosting an, auf Wunsch kommt eine Wartung dazu. Lizenzen für eine Studio-Software oder ein Buchungssystem zahlst du direkt beim jeweiligen Anbieter. Im Angebot stehen einmalige und laufende Kosten getrennt, damit du sie vergleichen kannst.'
+  },
+  {
+    q: 'Kann die Website mehrere Standorte abbilden?',
+    a: 'Ja. Jeder Standort bekommt eine eigene Seite mit Adresse, Öffnungszeiten, Kursplan, Team und Fotos. Das hilft bei der Orientierung und in der lokalen Suche, weil jede Seite zu einem eigenen Google-Unternehmensprofil passt. Bei mehreren Standorten ist meist das Wachstum-Paket ({{price.wachstum}}) die richtige Größe.'
+  },
+  {
+    q: 'Erstellst du auch Websites für Yoga-, Pilates- und EMS-Studios?',
+    a: 'Ja. Bei Kursstudios stehen Kursplan, Einsteigerangebote und die Lehrenden im Mittelpunkt, bei EMS und Personal Training der Ablauf des ersten Termins und der Preisrahmen. Der Aufbau bleibt ähnlich: Wer die Seite öffnet, soll in wenigen Sekunden sehen, was du anbietest, was es kostet und wie das Probetraining abläuft.'
+  },
+  {
+    q: 'Was bringt eine Website, wenn mein Studio schon auf Instagram aktiv ist?',
+    a: 'Instagram zeigt Stimmung, beantwortet aber keine Suchanfrage. Wer „Fitnessstudio“ und deinen Bezirk sucht, bekommt Websites und Google-Profile angezeigt und erwartet dort Preise, Öffnungszeiten, Kursplan und einen Weg zum Probetraining. Beides ergänzt sich: Der Link im Profil führt dann direkt zur Anfrage.'
+  },
+  {
+    q: 'Was sollte auf der Startseite eines Fitnessstudios stehen?',
+    a: 'Ganz oben: was für ein Studio du bist, wo es liegt und ein Knopf zum Probetraining. Darunter folgen Trainingsbereiche oder Kurse, der Preisrahmen, Öffnungszeiten und zwei oder drei echte Fotos. Lange Texte über die Philosophie gehören auf eine eigene Seite.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const FITNESS_PAGE = Object.freeze({
   path: '/branchen/webdesign-fitnesscoach',
   breadcrumb: 'Fitnessstudios',
   trackPrefix: 'fitness',
+  motion: true,
+  tone: 'energie',
   metaTitle: 'Fitnessstudio-Website erstellen lassen | Personal Trainer',
   metaDescription: 'Webdesign für Fitnessstudios, Gyms und Personal Trainer in Berlin: Kurse, Preise, Probetraining und Team klar zeigen. Pakete {{price.start}}.',
   schema: {
@@ -110,6 +136,50 @@ export const FITNESS_PAGE = Object.freeze({
       ]
     },
     {
+      type: 'timeline',
+      id: 'alltag',
+      chip: 'Beispiel',
+      title: 'Ein Tag mit deiner Fitnessstudio-Website',
+      intro: 'Während du auf der Fläche stehst oder einen Kurs gibst, beantwortet die Website die Fragen, die sonst am Tresen oder am Telefon landen. Die Zeiten sind ein Beispiel.',
+      listLabel: 'Beispiel für einen Tag mit der Website eines Fitnessstudios',
+      items: [
+        { time: '06:30', title: 'Kursplan vor dem Frühkurs', text: 'Mitglieder prüfen auf dem Handy, ob der Kurs stattfindet und wer ihn leitet.' },
+        { time: '10:00', title: 'Gefunden in der Nähe', text: 'Jemand sucht „Fitnessstudio in der Nähe“ und landet bei Öffnungszeiten, Preisen und Fotos der Fläche.' },
+        { time: '12:30', title: 'Probetraining angefragt', text: 'In der Mittagspause füllt eine Interessentin das Formular mit Wunschtermin und Trainingsziel aus.' },
+        { time: '16:00', title: 'Rückruf mit allen Angaben', text: 'Du rufst zurück und weißt schon, worum es geht. Das Gespräch dauert drei Minuten.' },
+        { time: '18:30', title: 'Personal Training gefunden', text: 'Die Seite zum Personal Training nennt Ablauf, Preisrahmen und den Weg zum Kennenlerngespräch.' },
+        { time: '21:00', title: 'Fragen nach Feierabend', text: 'Kündigungsfrist, Parkplätze, Duschen: Die Antworten stehen auf der Seite, niemand muss anrufen.' }
+      ],
+      note: 'Kursplan und Buchung müssen nicht neu gebaut werden. Wenn du bereits eine Studio-Software nutzt, binde ich sie ein oder verlinke gezielt dorthin.'
+    },
+    {
+      type: 'feature',
+      id: 'agentur-oder-webdesigner',
+      soft: true,
+      chip: 'Entscheidungshilfe',
+      title: 'Fitnessstudio-Website: Agentur, Baukasten oder Webdesigner?',
+      paragraphs: [
+        'Wer eine Fitnessstudio-Website erstellen lassen will, hat drei Wege. Eine Agentur mit Team passt zu Ketten mit vielen Standorten, eigener App und laufenden Kampagnen. Ein Baukasten passt, wenn du Zeit hast und Texte, Bilder und Technik selbst übernimmst. Dazwischen liegt der Weg, den ich anbiete: ein Webdesigner als fester Ansprechpartner, der plant, schreibt, gestaltet und umsetzt.',
+        'Das passt zu inhabergeführten Studios, Boutique-Studios und Personal Trainern. Du sprichst mit der Person, die deine Website baut. Es gibt keine Projektleitung dazwischen und keine langen Abstimmungsrunden. Die Website bleibt schlank: Kursplan, Preise, Trainer, Probetraining und die Angaben, die Google für die lokale Suche braucht.',
+        'Offen gesagt: Ich bin keine Agentur. Wenn du eine Mitglieder-App, eine eigene Buchungssoftware oder ein Franchise-System mit dutzenden Standortseiten brauchst, bist du bei einer spezialisierten Agentur richtig. Für ein Studio mit einem bis drei Standorten ist das meist mehr, als du brauchst.'
+      ],
+      pointsTitle: 'Das bekommst du bei mir',
+      points: [
+        'Seitenplan, Texte und Gestaltung aus einer Hand',
+        'Einbindung deiner Studio-Software für Kursplan und Buchung',
+        'Kurze Ladezeit, zuerst fürs Handy gebaut',
+        'Angaben für die lokale Suche und dein Google-Unternehmensprofil',
+        'Ein fester Ansprechpartner vor und nach dem Start',
+        'Pakete {{price.start}}, mehrseitige Studio-Websites {{price.business}}'
+      ],
+      image: {
+        src: '/images/branchen/fitnesscoach/fitnesscoach-startseite.webp',
+        alt: 'Beispielaufbau der Startseite eines Fitnessstudios mit Überschrift, Knopf zum Probetraining und drei Themenkacheln',
+        width: 720,
+        height: 540
+      }
+    },
+    {
       type: 'catalog',
       id: 'studioarten',
       chip: 'Studioarten',
@@ -163,6 +233,21 @@ export const FITNESS_PAGE = Object.freeze({
       ],
       note: 'Feste Platzierungen kann niemand seriös versprechen. Eine Website mit echten Inhalten ist aber die Grundlage, auf der Local SEO aufbaut.',
       noteLink: { href: '/leistungen/local-seo', label: 'Local SEO in Berlin' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'Webdesign für Fitnessstudios: drei Ansichten als Beispiel',
+      intro: 'So können Kursübersicht, Probetraining und lokale Suche aussehen. Es sind Skizzen, kein fertiges Design. Dein Studio bekommt eigene Farben und echte Fotos von Fläche, Kursen und Team.',
+      items: [
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-angebot.webp', alt: 'Beispielaufbau einer Übersicht mit sechs Kacheln von Gerätetraining über Kurse bis Personal Training', width: 720, height: 540, title: 'Kurse und Training', caption: 'Beispielaufbau: Jede Trainingsart bekommt eine Kachel und führt auf eine eigene Seite.' },
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-anfrage.webp', alt: 'Beispielaufbau eines Formulars für ein Probetraining auf dem Handy mit Name, Wunschtermin und Trainingsziel', width: 720, height: 540, title: 'Probetraining', caption: 'Beispielaufbau: Name, Wunschtermin und Ziel reichen. Die Anfrage landet sofort in deinem Postfach.' },
+        { src: '/images/branchen/fitnesscoach/fitnesscoach-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Fitnessstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Fitnessstudio in der Nähe“ erscheinen, mit Öffnungszeiten und Route.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'pricing',

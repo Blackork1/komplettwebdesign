@@ -3,7 +3,7 @@
 // „seo cafes“), das Referenzprojekt Zur alten Backstube und die frühere Seite /webdesign-cafe/kosten
 // (4-Wochen-Ablauf), die seit 26.10.2026 hierher weiterleitet.
 
-export const CAFE_CONTENT_UPDATED_ISO = '2026-10-26';
+export const CAFE_CONTENT_UPDATED_ISO = '2026-11-11';
 
 export const CAFE_FAQ = Object.freeze([
   {
@@ -41,6 +41,30 @@ export const CAFE_FAQ = Object.freeze([
   {
     q: 'Wie lange dauert es, bis die Website online ist?',
     a: 'Eine Café-Website ist meist in rund vier Wochen online: Inhalte und Bilder sammeln, Design, Umsetzung und Tests. Liegen Karte und Fotos früh vor, geht es schneller.'
+  },
+  {
+    q: 'Welche Seiten braucht eine Café-Website mindestens?',
+    a: 'Für den Start reichen drei: eine Startseite mit Bildern, Lage und Öffnungszeiten, die Karte als Text und eine Kontaktseite mit Anfahrt und Telefonnummer. Das deckt das Start-Paket ({{price.start}}) ab. Eigene Seiten für Torten, Events oder Jobs kommen dazu, wenn du dafür Anfragen bekommen willst.'
+  },
+  {
+    q: 'Café-Website erstellen lassen oder selbst mit einem Baukasten bauen?',
+    a: 'Ein Baukasten kann für den Anfang reichen, wenn du Zeit hast und Texte, Bilder und Technik selbst übernimmst. Lässt du die Café-Website erstellen, bekommst du Seitenplan, Texte, Gestaltung und Umsetzung aus einer Hand, dazu eine kurze Ladezeit auf dem Handy und saubere Angaben für die lokale Suche. Du sprichst dabei direkt mit mir und nicht mit wechselnden Ansprechpartnern.'
+  },
+  {
+    q: 'Wie viel Vorlauf sollte eine Tortenbestellung über die Website haben?',
+    a: 'Das legst du fest, und die Seite sagt es deutlich. Steht der Vorlauf direkt über dem Formular, kommen weniger Anfragen für morgen früh. Auf Wunsch lässt das Formular nur Abholtage zu, die weit genug in der Zukunft liegen. Für eilige Fälle bleibt die Telefonnummer daneben sichtbar.'
+  },
+  {
+    q: 'Wie zeige ich Feiertage, Betriebsferien und geänderte Öffnungszeiten?',
+    a: 'Mit einem Hinweis oben auf der Seite, der an einer Stelle gepflegt wird. So lassen sich Feiertage, Betriebsferien oder eine geschlossene Gesellschaft schnell ankündigen. Trage dieselben Zeiten auch im Google-Unternehmensprofil ein, sonst stehen Gäste vor verschlossener Tür.'
+  },
+  {
+    q: 'Lohnt sich eine englische Version der Café-Website?',
+    a: 'In Kiezen mit vielen Gästen aus dem Ausland ja. Eine zweite Sprache ist als Zusatzleistung möglich. Meist reicht es, die wichtigsten Seiten zu übersetzen: Startseite, Karte und Kontakt. Die Karte bleibt dabei Text, damit sie auch auf Englisch gefunden wird.'
+  },
+  {
+    q: 'Welche laufenden Kosten hat eine Café-Website?',
+    a: 'Nach dem Start fallen Kosten für Domain und Hosting an, auf Wunsch kommt eine Wartung dazu. Nutzt du ein Reservierungssystem, zahlst du dessen Lizenz direkt beim Anbieter. Im Angebot stehen einmalige und laufende Kosten getrennt, damit du sie vergleichen kannst.'
   }
 ]);
 
@@ -49,6 +73,8 @@ export const CAFE_PAGE = Object.freeze({
   path: '/branchen/webdesign-cafe',
   breadcrumb: 'Cafés',
   trackPrefix: 'cafe',
+  motion: true,
+  tone: 'genuss',
   metaTitle: 'Café-Website erstellen lassen | Webdesign für Cafés Berlin',
   metaDescription: 'Webdesign für Cafés in Berlin: Karte, Öffnungszeiten, Reservierung und Atmosphäre zeigen und lokal gefunden werden. Mit Praxisbeispiel, {{price.start}}.',
   schema: {
@@ -98,6 +124,50 @@ export const CAFE_PAGE = Object.freeze({
         { icon: 'fa-star', title: 'Bewertungen', text: 'Ausgewählte Google-Bewertungen und ein gepflegtes Unternehmensprofil, verknüpft mit deiner Website.' },
         { icon: 'fa-user-plus', title: 'Jobs', text: 'Offene Stellen für Service und Küche mit einem kurzen Bewerbungsweg.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'alltag',
+      chip: 'Beispiel',
+      title: 'Ein Tag mit deiner Café-Website',
+      intro: 'Während du Kaffee machst und Kuchen schneidest, beantwortet die Website die Fragen, die sonst am Tresen oder am Telefon landen. Die Zeiten sind ein Beispiel.',
+      listLabel: 'Beispiel für einen Tag mit der Website eines Cafés',
+      items: [
+        { time: '07:30', title: 'Frühstück vor der Arbeit', text: 'Jemand sucht „Frühstück in der Nähe“ und sieht, dass du schon geöffnet hast.' },
+        { time: '09:30', title: 'Kuchen der Woche', text: 'Der neue Kuchen steht mit Foto und Preis auf der Seite, bevor die ersten Gäste suchen.' },
+        { time: '11:00', title: 'Reservierung fürs Wochenende', text: 'Die Anfrage für das Samstagsfrühstück mit sechs Personen kommt per Formular.' },
+        { time: '14:30', title: 'Blick in die Karte', text: 'Gäste lesen Kuchen und Getränke auf dem Handy, ohne ein PDF zu laden oder zu zoomen.' },
+        { time: '16:00', title: 'Torte für Samstag', text: 'Sorte, Größe und Abholtag stehen in der Anfrage. Du sagst zu, wenn es am Tresen ruhiger wird.' },
+        { time: '19:30', title: 'Fragen nach Ladenschluss', text: 'Öffnungszeiten am Feiertag, Hunde, Kinderwagen: Die Antworten stehen auf der Seite.' }
+      ],
+      note: 'Du musst nicht mit allem starten. Viele Cafés beginnen mit Karte, Öffnungszeiten und Bildern und ergänzen Reservierung oder Tortenanfrage später.'
+    },
+    {
+      type: 'feature',
+      id: 'tortenbestellung',
+      soft: true,
+      chip: 'Tortenbestellung',
+      title: 'Torten über die Café-Website vorbestellen: so klappt es ohne Zettelwirtschaft',
+      paragraphs: [
+        'Für viele Cafés und Konditoreien sind Torten zum Geburtstag, zur Taufe oder zur Hochzeit ein zweites Standbein. Bestellt wird oft am Telefon, mitten im Betrieb, und am Ende fehlt eine Angabe. Eine Tortenanfrage über die Website fragt alles auf einmal ab: Sorte, Größe, Anlass, Abholtag und Sonderwünsche wie einen Schriftzug oder Hinweise zu Allergien.',
+        'Wichtig sind klare Regeln, die auf der Seite stehen: wie viele Tage Vorlauf du brauchst, welche Größen es gibt, was eine Torte ungefähr kostet und wann abgeholt werden kann. Fotos deiner eigenen Torten ersetzen lange Beschreibungen. Die Anfrage landet in deinem Postfach, und du bestätigst sie, sobald Zeit dafür ist.',
+        'Offen gesagt: Für die meisten Cafés reicht die Anfrage per Formular, und die ist in jedem Paket möglich. Eine Bestellung mit Bezahlung im Netz gehört zum Individuell-Paket ({{price.individuell}}) und lohnt sich erst, wenn regelmäßig viele Bestellungen eingehen. Bis dahin ist die Bezahlung bei Abholung der einfachere Weg.'
+      ],
+      pointsTitle: 'Das gehört auf die Seite zur Tortenbestellung',
+      points: [
+        'Sorten und Größen mit Foto und Preisrahmen',
+        'Vorlaufzeit in Tagen, deutlich sichtbar',
+        'Felder für Anlass, Schriftzug und Abholtag',
+        'Hinweis zu Allergenen und Sonderwünschen',
+        'Abholzeiten und Telefonnummer für Rückfragen',
+        'Eingangsbestätigung per E-Mail an den Gast'
+      ],
+      image: {
+        src: '/images/branchen/cafe/cafe-anfrage.webp',
+        alt: 'Beispielaufbau einer Tortenbestellung auf dem Handy mit Sorte, Größe und Abholtermin',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -200,6 +270,21 @@ export const CAFE_PAGE = Object.freeze({
         wachstum: 'Für mehrere Standorte, Café mit Rösterei oder Catering oder den Relaunch einer bestehenden Website.'
       },
       note: 'Ein eigenes Reservierungs-, Bestell- oder Gutscheinsystem ist Teil des Individuell-Pakets {{price.individuell}}. Hosting, Domain, E-Mail und Wartung sind optional und werden separat vereinbart.'
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für dein Café aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Karte und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Gastraum, Kuchen und Team.',
+      items: [
+        { src: '/images/branchen/cafe/cafe-startseite.webp', alt: 'Beispielaufbau der Startseite eines Cafés mit Überschrift, Knopf zur Tischreservierung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Reservieren, darunter Kaffee, Torten und Öffnungszeiten.' },
+        { src: '/images/branchen/cafe/cafe-angebot.webp', alt: 'Beispielaufbau einer Karte als Text mit den Abschnitten Frühstück sowie Kuchen und Kaffee', width: 720, height: 540, title: 'Karte als Text', caption: 'Beispielaufbau: Frühstück, Kuchen und Getränke stehen als Text auf der Seite und bleiben auf dem Handy lesbar.' },
+        { src: '/images/branchen/cafe/cafe-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Café mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Café bei „Café in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Café aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'process',

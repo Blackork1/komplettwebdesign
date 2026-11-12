@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Studios und Kundschaft, Suchergebnisse und das Heilmittelwerbegesetz.
 // Gesucht wird vor allem „Kosmetikstudio“, deshalb steht der Begriff vor „Beautysalon“.
 
-export const BEAUTYSALON_CONTENT_UPDATED_ISO = '2026-10-29';
+export const BEAUTYSALON_CONTENT_UPDATED_ISO = '2026-11-11';
 
 export const BEAUTYSALON_FAQ = Object.freeze([
   {
@@ -45,6 +45,30 @@ export const BEAUTYSALON_FAQ = Object.freeze([
   {
     q: 'Wie lange dauert es, bis meine Studio-Website online ist?',
     a: 'Ein Onepager ist meist in 2 bis 4 Wochen online, eine mehrseitige Website in 4 bis 6 Wochen. Liegen Behandlungsliste, Preise und Fotos deiner Arbeiten früh vor, geht es schneller.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website eines Kosmetikstudios?',
+    a: 'Für ein kleines Studio reicht oft ein Onepager mit Behandlungen, Preisliste, Öffnungszeiten und Buchung. Das deckt das Start-Paket ({{price.start}}) ab. Eigene Seiten für die wichtigsten Behandlungen, dazu Team, Galerie und Gutscheine, lohnen sich, wenn du für einzelne Behandlungen im Bezirk gefunden werden willst. Dafür passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Erstellst du auch Websites für Nagelstudios und Wimpernstudios?',
+    a: 'Ja. Bei Nagelstudios stehen Preise für Neumodellage und Auffüllen, Fotos der Arbeiten und der Weg zum Termin im Mittelpunkt. Bei Wimpern und Brauen kommen Haltbarkeit, Auffülltermine und Pflegehinweise dazu. Der Aufbau bleibt gleich: Wer die Seite öffnet, soll in wenigen Sekunden sehen, was es kostet, wie lange es dauert und wie gebucht wird.'
+  },
+  {
+    q: 'Lohnt sich eine Website für ein Heimstudio oder ein mobiles Kosmetikstudio?',
+    a: 'Ja, gerade dann. Ohne Schaufenster und Laufkundschaft ist die Website der Ort, an dem neue Kundinnen dich finden und einschätzen. Wichtig sind klare Angaben, wie der Besuch abläuft: Lage, Klingel, Parken oder das Gebiet, in das du fährst. Welche Adresse im Impressum stehen muss, klärst du am besten mit deinem Berufsverband oder einer Anwältin.'
+  },
+  {
+    q: 'Wie gehe ich auf der Website mit kurzfristigen Absagen um?',
+    a: 'Am besten mit einer kurzen, freundlichen Regel, die vor der Buchung sichtbar ist: bis wann eine Absage kostenlos ist und was danach gilt. Viele Buchungssysteme verschicken zusätzlich Erinnerungen, das senkt die Ausfälle meist. Ob und in welcher Höhe du eine Ausfallgebühr verlangen darfst, solltest du rechtlich prüfen lassen.'
+  },
+  {
+    q: 'Was sollte auf der Startseite eines Kosmetikstudios stehen?',
+    a: 'Ganz oben: was für ein Studio du führst, wo es liegt und ein Knopf zur Buchung. Darunter folgen die Behandlungsgruppen mit Ab-Preisen, zwei oder drei echte Fotos aus dem Studio, Öffnungszeiten und ein Hinweis auf Gutscheine. Lange Texte über Philosophie und Produkte gehören auf eine eigene Seite.'
+  },
+  {
+    q: 'Brauche ich Fotos vom Studio oder reichen Bilder der Ergebnisse?',
+    a: 'Am besten beides. Ergebnisfotos zeigen, was du kannst. Fotos vom Raum, von der Liege und von dir zeigen, wo die Kundin ankommt, und nehmen die Scheu vor dem ersten Termin. Stockfotos erkennt man schnell, und sie passen selten zum Studio. Für den Start reichen wenige gute Aufnahmen bei Tageslicht. Welche Motive sich lohnen, besprechen wir vorab.'
   }
 ]);
 
@@ -53,6 +77,8 @@ export const BEAUTYSALON_PAGE = Object.freeze({
   path: '/branchen/webdesign-beautysalon',
   breadcrumb: 'Kosmetikstudios',
   trackPrefix: 'beautysalon',
+  motion: true,
+  tone: 'floral',
   metaTitle: 'Kosmetikstudio-Website erstellen lassen | Beautysalon Berlin',
   metaDescription: 'Website für Kosmetik-, Nagel- und Wimpernstudios in Berlin: Behandlungen mit Preisen, Online-Termin, Gutscheine und echte Ergebnisse. Pakete {{price.start}}.',
   schema: {
@@ -102,6 +128,50 @@ export const BEAUTYSALON_PAGE = Object.freeze({
         { icon: 'fa-receipt', title: 'Gutscheine', text: 'Gutscheine für Behandlungen oder Beträge, beliebt zu Geburtstagen und Feiertagen.' },
         { icon: 'fa-certificate', title: 'Qualifikation', text: 'Ausbildung, Fortbildungen und Zertifikate des Teams, sachlich dargestellt und ohne übertriebene Versprechen.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'weg-zum-termin',
+      chip: 'Beispiel',
+      title: 'Von der Suche zum Termin: der Weg einer Neukundin über deine Website',
+      intro: 'Wer ein Studio zum ersten Mal bucht, entscheidet in mehreren kleinen Schritten. Die Website begleitet jeden davon, auch wenn du gerade in der Kabine stehst.',
+      listLabel: 'Sechs Schritte von der Suche bis zum nächsten Termin',
+      items: [
+        { label: 'Schritt 1', title: 'Die Suche', text: 'Eine Neukundin sucht „Wimpernlifting“ mit ihrem Bezirk und landet auf deiner Behandlungsseite.' },
+        { label: 'Schritt 2', title: 'Die Behandlung', text: 'Sie liest Ablauf, Dauer, Haltbarkeit und Preis, ohne eine Nachricht schreiben zu müssen.' },
+        { label: 'Schritt 3', title: 'Der Eindruck', text: 'Echte Fotos, Angaben zur Hygiene und deine Qualifikation zeigen, wie du arbeitest.' },
+        { label: 'Schritt 4', title: 'Die Buchung', text: 'Der Knopf führt ins Buchungssystem, die Behandlung ist schon ausgewählt.' },
+        { label: 'Schritt 5', title: 'Die Vorbereitung', text: 'Was vor dem Termin zu beachten ist, steht auf der Seite. Rückfragen im Chat entfallen meist.' },
+        { label: 'Schritt 6', title: 'Der nächste Termin', text: 'Zum Auffüllen bucht sie über denselben Link. Die Website bleibt die feste Adresse.' }
+      ],
+      note: 'Stammkundinnen gehen den kurzen Weg: Seite öffnen, Termin buchen, fertig. Deshalb bleibt der Buchungsknopf auf dem Handy immer sichtbar.'
+    },
+    {
+      type: 'feature',
+      id: 'behandlungsuebersicht',
+      soft: true,
+      chip: 'Behandlungen',
+      title: 'Kosmetikstudio-Website erstellen lassen: eine Behandlungsübersicht, die schnell zum Termin führt',
+      paragraphs: [
+        'Viele Studios bieten zwanzig oder mehr Behandlungen an. Als lange Liste auf einer Seite wird daraus eine Wand aus Fachbegriffen. Neukundinnen wissen oft nicht, ob sie ein Lash Lifting oder eine Wimpernverlängerung suchen und worin sich ein Peeling von einem Microneedling unterscheidet. Wer sich nicht zurechtfindet, bucht nicht, sondern sucht weiter.',
+        'Eine gute Übersicht sortiert nach Anliegen statt nach Fachbegriffen: Gesicht, Hände und Füße, Wimpern und Brauen, Haarentfernung. Jede Kachel nennt Dauer und Ab-Preis und sagt in einem Satz, für wen die Behandlung passt. Von dort geht es auf die Behandlungsseite und mit einem Tipp weiter zur Buchung. So finden auch Kundinnen den Weg, die nur wissen, was sie stört, und nicht, wie die Behandlung heißt.',
+        'Offen gesagt: Nicht jede Variante braucht eine eigene Seite. Maniküre mit und ohne Lack oder drei Längen bei der Wimpernverlängerung stehen besser als Zeilen in der Preisliste. Die Texte beschreiben, was gemacht wird und wie lange es hält. Versprechen über gesundheitliche Wirkungen gehören nicht auf die Seite.'
+      ],
+      pointsTitle: 'Das gehört in die Behandlungsübersicht',
+      points: [
+        'Gruppen nach Anliegen statt nach Fachbegriffen',
+        'Je Kachel Dauer und Ab-Preis',
+        'Ein Satz dazu, für wen die Behandlung passt',
+        'Hinweis, wann vorher eine Beratung sinnvoll ist',
+        'Knopf zur Buchung mit vorausgewählter Behandlung',
+        'Gutscheine als eigene Kachel'
+      ],
+      image: {
+        src: '/images/branchen/beautysalon/beautysalon-angebot.webp',
+        alt: 'Beispielaufbau einer Behandlungsübersicht für ein Kosmetikstudio mit sechs Kacheln von Gesichtsbehandlung bis Gutscheine',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -165,6 +235,21 @@ export const BEAUTYSALON_PAGE = Object.freeze({
       ],
       note: 'Ich setze um und weise auf heikle Stellen hin, ersetze aber keine Rechtsberatung. Verbindlich klären das dein Berufsverband oder eine Anwältin bzw. ein Anwalt.',
       noteLink: { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für dein Kosmetikstudio aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Terminbuchung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Studio, Team und deinen Arbeiten.',
+      items: [
+        { src: '/images/branchen/beautysalon/beautysalon-startseite.webp', alt: 'Beispielaufbau der Startseite eines Kosmetikstudios mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Studio, Kiez und der Knopf zum Termin stehen oben, darunter Gesicht, Nägel und Gutscheine.' },
+        { src: '/images/branchen/beautysalon/beautysalon-anfrage.webp', alt: 'Beispielaufbau einer Terminbuchung für das Kosmetikstudio auf dem Handy mit Behandlung, Wunschtermin und Hinweis', width: 720, height: 540, title: 'Terminbuchung', caption: 'Beispielaufbau: Behandlung, Wunschtermin und ein Hinweis wie empfindliche Haut, dazu Erstbesuch oder Gutschein zur Auswahl.' },
+        { src: '/images/branchen/beautysalon/beautysalon-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Kosmetikstudio mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Kosmetikstudio in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

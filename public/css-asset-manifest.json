@@ -64,6 +64,13 @@
       "hash": "eba61beeb487",
       "bytes": 4236
     },
+    "branchen-page.css": {
+      "source": "branchen-page.css",
+      "output": "branchen-page.min.css",
+      "href": "/branchen-page.min.css?v=caea4ff4a181",
+      "hash": "caea4ff4a181",
+      "bytes": 14432
+    },
     "branchen.css": {
       "source": "branchen.css",
       "output": "branchen.min.css",
@@ -182,13 +189,6 @@
       "href": "/interaction-polish.min.css?v=5527a5ec4c4f",
       "hash": "5527a5ec4c4f",
       "bytes": 7592
-    },
-    "kita-page.css": {
-      "source": "kita-page.css",
-      "output": "kita-page.min.css",
-      "href": "/kita-page.min.css?v=628dd8f46714",
-      "hash": "628dd8f46714",
-      "bytes": 12605
     },
     "kontakt-noscript.css": {
       "source": "kontakt-noscript.css",

@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Hebammen und Familien, Suchergebnisse, das bifg-Faktenblatt zu Hebammenkapazitäten
 // und § 24d SGB V.
 
-export const HEBAMME_CONTENT_UPDATED_ISO = '2026-10-29';
+export const HEBAMME_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const BIFG_SOURCE = 'bifg-Faktenblatt Hebammen, 2026';
 
@@ -47,6 +47,30 @@ export const HEBAMME_FAQ = Object.freeze([
   {
     q: 'Wie werde ich bei „Hebamme in der Nähe“ gefunden?',
     a: 'Mit deinem Einzugsgebiet als Text auf der Website, gepflegten Einträgen in Hebammen-Portalen und, wenn du Praxis- oder Kursräume hast, einem Google-Unternehmensprofil. Feste Platzierungen kann niemand seriös garantieren.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website einer Hebamme?',
+    a: 'Für eine freiberufliche Hebamme reicht oft ein Onepager oder eine kleine Website mit drei Seiten: Startseite mit freien Plätzen und Einzugsgebiet, Leistungen und Kontakt mit Anfrageformular. Das deckt das Start-Paket ({{price.start}}) ab. Mit eigenen Seiten für Kurse, Wochenbett, Stillberatung und das Team einer Praxis passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Homepage für Hebammen: selbst bauen oder erstellen lassen?',
+    a: 'Ein Baukasten kann reichen, wenn du Zeit hast und Texte, Bilder und Technik selbst übernimmst. Neben Hausbesuchen, Kursen und Rufbereitschaft fehlt diese Zeit oft. Bei mir bekommst du Seitenplan, Texte, Gestaltung und Umsetzung aus einer Hand. Du sprichst dabei direkt mit mir und nicht mit wechselnden Ansprechpartnern. Freie Plätze und Kurstermine kannst du danach auf Wunsch selbst ändern.'
+  },
+  {
+    q: 'Wie zeige ich mein Einzugsgebiet, ohne jede Straße aufzuzählen?',
+    a: 'Am einfachsten mit den Bezirken oder Postleitzahlen, in die du zu Hausbesuchen fährst, als kurze Liste auf der Startseite und im Anfrageformular. Wer außerhalb wohnt, sieht das vor der Anfrage. Für Kurse gilt das Einzugsgebiet meist nicht, das sollte an derselben Stelle stehen. So bekommst du weniger Anfragen, die du absagen musst.'
+  },
+  {
+    q: 'Was passiert mit Anfragen, wenn ich im Urlaub oder ausgebucht bin?',
+    a: 'Dann sagt die Website das, bevor jemand schreibt. Ein Hinweis oben auf der Seite nennt den Zeitraum und ab wann du wieder Anfragen annimmst. Ein kurzer Absatz verweist für ausgebuchte Monate auf die Hebammensuche der Krankenkassen oder auf Kolleginnen. Familien wissen so schneller, woran sie sind, und du musst abends weniger Absagen schreiben.'
+  },
+  {
+    q: 'Kann ich als Hebammenteam oder Praxis mehrere Hebammen vorstellen?',
+    a: 'Ja. Jede Hebamme bekommt ein kurzes Profil mit Foto, Schwerpunkten, Einzugsgebiet und freien Plätzen. Die Anfrage kann an die ganze Praxis gehen oder gezielt an eine Person. Für Praxen mit Kursen und mehreren Hebammen ist meist das Business-Paket ({{price.business}}) die passende Größe.'
+  },
+  {
+    q: 'Kann ich auf der Website zeigen, in welchen Sprachen ich betreue?',
+    a: 'Ja, und in Berlin lohnt sich das. Nenne die Sprachen gut sichtbar bei deinem Profil und im Anfrageformular. Wer Betreuung auf Englisch, Türkisch oder Arabisch sucht, fragt dann gezielt an. Die Angabe der Sprachen gehört in jedes Paket. Eine vollständige zweite Sprachversion der Website ist als Zusatzleistung möglich.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const HEBAMME_PAGE = Object.freeze({
   path: '/branchen/webdesign-hebamme',
   breadcrumb: 'Hebammen',
   trackPrefix: 'hebamme',
+  motion: true,
+  tone: 'pastell',
   metaTitle: 'Hebammen-Website erstellen lassen | Hebammenpraxis Berlin',
   metaDescription: 'Website für Hebammen und Hebammenpraxen in Berlin: freie Plätze nach Geburtstermin, Einzugsgebiet, Kurse und Anfrageformular klar zeigen. Pakete {{price.start}}.',
   schema: {
@@ -108,6 +134,50 @@ export const HEBAMME_PAGE = Object.freeze({
         { icon: 'fa-user', title: 'Über dich', text: 'Foto, Ausbildung, Schwerpunkte und deine Haltung. Bei einer so persönlichen Begleitung zählt der erste Eindruck.' },
         { icon: 'fa-phone', title: 'Erreichbarkeit', text: 'Wann du telefonisch erreichbar bist und wie Familien dich im Wochenbett kontaktieren. So sind die Erwartungen von Anfang an klar.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'weg-zur-betreuung',
+      chip: 'Beispiel',
+      title: 'Von der Suche zur Betreuung: der Weg einer Familie über deine Website',
+      intro: 'Schwangere suchen oft früh und schreiben mehrere Hebammen gleichzeitig an. Die Website sorgt dafür, dass vor allem passende Anfragen bei dir ankommen. So kann der Weg aussehen.',
+      listLabel: 'Sechs Schritte von der Suche bis zur Betreuung',
+      items: [
+        { label: 'Schritt 1', title: 'Die Suche', text: 'Eine Schwangere sucht „Hebamme Berlin Pankow“ und findet deine Seite neben den Portalen.' },
+        { label: 'Schritt 2', title: 'Der Abgleich', text: 'Geburtsmonat und Einzugsgebiet stehen ganz oben. Sie sieht sofort, ob du Plätze hast und zu ihr kommst.' },
+        { label: 'Schritt 3', title: 'Die Leistungen', text: 'Vorsorge, Kurse und Wochenbett sind kurz erklärt, mit einem Hinweis zur Kostenübernahme.' },
+        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt errechneten Termin, Wohnort und Wunsch ab. Die Anfrage landet in deinem Postfach.' },
+        { label: 'Schritt 5', title: 'Die Antwort', text: 'Du antwortest zwischen zwei Hausbesuchen in einem Satz, weil alle Angaben schon vorliegen.' },
+        { label: 'Schritt 6', title: 'Das Kennenlernen', text: 'Im ersten Gespräch geht es um die Familie und nicht mehr um Postleitzahl und Termin.' }
+      ],
+      note: 'Bist du für einen Monat ausgebucht, sagt die Seite das offen. Das erspart Familien das Warten und dir Absagen am Abend.'
+    },
+    {
+      type: 'feature',
+      id: 'kursuebersicht',
+      soft: true,
+      chip: 'Kurse',
+      title: 'Hebammen-Website erstellen lassen: Kurse mit Termin, Ort und freien Plätzen',
+      paragraphs: [
+        'Kurse sind für viele Hebammen das zweite Standbein neben der Betreuung. Auf der Website stehen sie trotzdem oft nur als ein Satz: „Geburtsvorbereitung und Rückbildung auf Anfrage“. Wer einen Kurs sucht, will aber vier Dinge wissen: wann er beginnt, wo er stattfindet, was er kostet und ob noch ein Platz frei ist. Fehlt eine dieser Angaben, folgt eine Mail an dich oder die Anfrage geht an eine Kollegin.',
+        'Besser ist eine Kursübersicht, in der jeder Kurs eine eigene Karte bekommt: Kursart, Starttermin, Wochentag und Uhrzeit, Ort, Zahl der Termine und ein Hinweis zur Kostenübernahme durch die Krankenkasse. Daneben steht der Weg zur Anmeldung. Nutzt du bereits ein Kursbuchungssystem, führt der Knopf direkt dorthin. Sonst reicht ein kurzes Formular, in dem der Kurs schon ausgewählt ist.',
+        'Offen gesagt: Eine Kursübersicht hilft nur, wenn sie stimmt. Ein Kurs, der seit drei Wochen ausgebucht ist und noch als frei erscheint, kostet mehr Zeit als gar keine Übersicht. Deshalb plane ich sie so, dass du Termine und freie Plätze auf Wunsch selbst änderst oder mir kurz Bescheid gibst. Eine eigene Kursverwaltung mit Wartelisten und Bezahlung gehört zum Individuell-Paket ({{price.individuell}}).'
+      ],
+      pointsTitle: 'Das gehört in die Kursübersicht',
+      points: [
+        'Kursart mit einem Satz, für wen der Kurs gedacht ist',
+        'Starttermin, Wochentag, Uhrzeit und Zahl der Termine',
+        'Ort mit Adresse und Hinweis zur Anfahrt',
+        'Kosten und Hinweis zur Kostenübernahme durch die Krankenkasse',
+        'Freie Plätze oder der Vermerk „ausgebucht“',
+        'Anmeldung per Formular oder über dein Kurssystem'
+      ],
+      image: {
+        src: '/images/branchen/hebamme/hebamme-angebot.webp',
+        alt: 'Beispielaufbau einer Übersicht für Hebammen mit sechs Kacheln von Vorsorge über Geburtsvorbereitung bis Babymassage',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -171,6 +241,21 @@ export const HEBAMME_PAGE = Object.freeze({
       ],
       note: 'Feste Platzierungen kann niemand seriös versprechen. Eine Website mit echten Inhalten ist aber die Grundlage, auf der Local SEO aufbaut.',
       noteLink: { href: '/leistungen/local-seo', label: 'Local SEO in Berlin' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann deine Hebammen-Website aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Betreuungsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von dir und deinen Kursräumen.',
+      items: [
+        { src: '/images/branchen/hebamme/hebamme-startseite.webp', alt: 'Beispielaufbau der Startseite einer Hebamme mit Überschrift, Knopf zur Betreuungsanfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Betreuung, Bezirk und der Knopf zur Anfrage stehen oben, darunter Vorsorge, Kurse und Wochenbett.' },
+        { src: '/images/branchen/hebamme/hebamme-anfrage.webp', alt: 'Beispielaufbau einer Betreuungsanfrage auf dem Handy mit Entbindungstermin, Wohnort und gewünschter Leistung', width: 720, height: 540, title: 'Betreuungsanfrage', caption: 'Beispielaufbau: Entbindungstermin, Wohnort und Wunsch in drei Feldern, dazu Vorsorge oder Kurs zur Auswahl.' },
+        { src: '/images/branchen/hebamme/hebamme-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Hebamme mit Terminhinweis, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis oder dein Kursraum bei „Hebamme Berlin Pankow“ erscheinen, mit Terminhinweis, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach dir und deiner Arbeit aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

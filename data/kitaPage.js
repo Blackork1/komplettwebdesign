@@ -92,9 +92,9 @@ export const KITA_PAGE = Object.freeze({
   path: '/branchen/webdesign-kita',
   breadcrumb: 'Kitas und Tagesmütter',
   trackPrefix: 'kita',
-  // Dezente Einblend-Animationen und das eigene Stylesheet gelten nur für diese Seite (siehe views/niche-page.ejs).
+  // Dezente Einblend-Animationen und Farbton aus public/branchen-page.css (siehe views/niche-page.ejs).
   motion: true,
-  extraCss: ['kita-page.css'],
+  tone: 'pastell',
   metaTitle: 'Kita-Website erstellen lassen | Tagesmutter-Homepage Berlin',
   metaDescription: 'Website für Kita, Kindertagesstätte, Kinderladen oder Tagesmutter: Konzept, freie Plätze und Platzanfrage klar zeigen, in Berlin sichtbar. Pakete {{price.start}}.',
   schema: {

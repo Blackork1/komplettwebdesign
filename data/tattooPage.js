@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Studios und Kundschaft, Suchergebnisse und die Bundestagsdrucksache 20/841,
 // die eine YouGov-Umfrage von 2021 zitiert.
 
-export const TATTOO_CONTENT_UPDATED_ISO = '2026-10-29';
+export const TATTOO_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const YOUGOV_SOURCE = 'YouGov 2021, zitiert in BT-Drucksache 20/841';
 
@@ -47,6 +47,30 @@ export const TATTOO_FAQ = Object.freeze([
   {
     q: 'Wie lange dauert es, bis meine Studio-Website online ist?',
     a: 'Ein Onepager ist meist in 2 bis 4 Wochen online, eine mehrseitige Website in 4 bis 6 Wochen. Liegen Portfolio-Auswahl, Regeln und Texte zu den Artists früh vor, geht es schneller.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website eines Tattoo-Studios?',
+    a: 'Für einen einzelnen Artist reichen oft eine Startseite mit Galerie, eine Seite zu Preisen und Ablauf und eine Kontaktseite mit Anfrageformular. Das deckt das Start-Paket mit bis zu drei Seiten ab ({{price.start}}). Ein Studio mit mehreren Artists plant je eine Seite pro Artist oder Stil, dazu Hygiene, Pflege und Walk-in-Tage. Dafür passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Wie kündige ich Guest Artists auf der Website an?',
+    a: 'Mit einem eigenen Abschnitt oder einer eigenen Seite je Gast: Name, Stil, einige Arbeiten, der Zeitraum im Studio und der Weg zur Anfrage. Nach dem Aufenthalt wandert der Eintrag in ein Archiv oder verschwindet. So bleibt die Ankündigung länger sichtbar als in einer Story, und wer nach dem Namen des Artists sucht, kann auf dein Studio stoßen.'
+  },
+  {
+    q: 'Wie zeige ich Wanna-dos und Flash-Motive auf der Website?',
+    a: 'In einem eigenen Bereich mit Bild, Größe, Preis und dem Namen des Artists. Wichtig ist der Status: Ein vergebenes Motiv sollte als vergeben markiert oder entfernt werden. Auf Wunsch richte ich die Pflege so ein, dass du Motive selbst einstellst. Die Anfrage läuft über dasselbe Formular wie bei eigenen Motiven.'
+  },
+  {
+    q: 'Was mache ich mit der Website, wenn meine Bücher geschlossen sind?',
+    a: 'Dann sagt die Website das deutlich, statt Anfragen ins Leere laufen zu lassen. Ein Hinweis oben auf der Seite nennt, ab wann du wieder Anfragen annimmst. Das Formular lässt sich in dieser Zeit ausblenden oder durch einen Eintrag in die Warteliste ersetzen. Galerie, Preise und Pflegehinweise bleiben sichtbar, damit neue Kundschaft dein Studio trotzdem kennenlernt.'
+  },
+  {
+    q: 'Lohnt sich eine englische Version der Studio-Website?',
+    a: 'In Berlin oft ja, weil viele Anfragen von Menschen kommen, die kein Deutsch sprechen oder nur zu Besuch sind. Eine zweite Sprache ist als Zusatzleistung möglich. Am saubersten ist eine eigene Sprachversion der wichtigsten Seiten: Startseite, Galerie, Preise und Anfrage. Die Regeln zu Anzahlung und Absage sollten in beiden Sprachen dasselbe sagen.'
+  },
+  {
+    q: 'Wie zeige ich Cover-ups auf der Website?',
+    a: 'Mit Vorher-Nachher-Bildern echter Arbeiten, für die eine Einwilligung vorliegt, und einer ehrlichen Erklärung des Ablaufs. Ob sich ein altes Tattoo überdecken lässt, hängt von Farbe, Größe und Stelle ab und klärt sich erst in der Beratung. Die Seite verspricht deshalb kein Ergebnis, sondern bittet im Formular um ein Foto des vorhandenen Tattoos.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const TATTOO_PAGE = Object.freeze({
   path: '/branchen/webdesign-tattoo',
   breadcrumb: 'Tattoo-Studios',
   trackPrefix: 'tattoo',
+  motion: true,
+  tone: 'energie',
   metaTitle: 'Tattoo-Studio-Website erstellen lassen | Tattoo Berlin',
   metaDescription: 'Website für Tattoo-Studios und Tätowierer in Berlin: Artists mit Portfolio, Anfrage mit Motiv und Größe, Walk-in-Tage und klare Regeln. Pakete {{price.start}}.',
   schema: {
@@ -107,6 +133,50 @@ export const TATTOO_PAGE = Object.freeze({
         { icon: 'fa-shield-halved', title: 'Hygiene und Farben', text: 'Wie du arbeitest, welche Farben du nutzt und warum. Das gibt gerade beim ersten Tattoo Sicherheit.' },
         { icon: 'fa-circle-info', title: 'Vorbereitung und Pflege', text: 'Was vor dem Termin zu beachten ist und wie das Tattoo danach heilt. Das spart Rückfragen.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'weg-zum-termin',
+      chip: 'Beispiel',
+      title: 'Von der Idee zum Termin: der Weg über deine Studio-Website',
+      intro: 'Ein Tattoo wird selten spontan gebucht. Zwischen der ersten Idee und dem Termin liegen mehrere Schritte. Die Website begleitet jeden davon.',
+      listLabel: 'Sechs Schritte von der Idee bis zum Termin',
+      items: [
+        { label: 'Schritt 1', title: 'Die Suche', text: 'Jemand sucht „Fineline Tattoo Berlin“ und landet auf der Seite zu diesem Stil.' },
+        { label: 'Schritt 2', title: 'Der Stil', text: 'Die Galerie zeigt Arbeiten nach Stil sortiert und nennt den Artist, der sie gestochen hat.' },
+        { label: 'Schritt 3', title: 'Der Preisrahmen', text: 'Mindestpreis und Stundensatz stehen auf der Seite. Dafür muss niemand eine Nachricht schreiben.' },
+        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Motiv, Größe, Körperstelle und Referenzbilder ab.' },
+        { label: 'Schritt 5', title: 'Die Beratung', text: 'Du meldest dich mit einem Vorschlag. Die Regeln zur Anzahlung waren vorher schon nachzulesen.' },
+        { label: 'Schritt 6', title: 'Der Termin', text: 'Vor dem Termin steht auf der Seite, wie die Vorbereitung und die Pflege danach ablaufen.' }
+      ],
+      note: 'Bei Walk-ins ist der Weg kürzer: Tag und Uhrzeit ansehen, Wanna-dos durchblättern, vorbeikommen.'
+    },
+    {
+      type: 'feature',
+      id: 'stiluebersicht',
+      soft: true,
+      chip: 'Stile und Wanna-dos',
+      title: 'Webdesign für Tattoo-Studios: Stile, Artists und Wanna-dos auf einen Blick',
+      paragraphs: [
+        'Wer ein Tattoo plant, sucht selten nach einem Studio allgemein. Gesucht wird ein Stil: Fineline, Blackwork, Realistic oder ein Schriftzug. Eine gute Tattoo-Website beginnt deshalb mit einer Übersicht der Stile. Jede Kachel führt zu einer eigenen Seite mit Arbeiten, dem passenden Artist und dem Weg zur Anfrage. So muss sich niemand durch hunderte Bilder wischen, um zu sehen, ob dein Studio zum Motiv passt.',
+        'Ein eigener Bereich lohnt sich für Wanna-dos. Das sind fertige Motive, die ein Artist gern stechen möchte, oft mit einem Preis, der schon feststeht. Auf Instagram rutschen sie nach wenigen Tagen aus dem Blick. Auf der Website bleiben sie sichtbar, bis sie vergeben sind: mit Bild, Größe, Preis und dem Namen des Artists. Wer ein Motiv will, schickt die Anfrage direkt von dort.',
+        'Offen gesagt: Einen genauen Preis für ein eigenes Motiv kann keine Website vorab nennen. Er hängt von Größe, Körperstelle und Aufwand ab und entsteht erst in der Beratung. Die Seite nennt deshalb Mindestpreis und Stundensatz und erklärt, wie daraus ein Preisrahmen wird. Vergebene Wanna-dos müssen außerdem zeitnah verschwinden, sonst gibt es Enttäuschung. Auf Wunsch richte ich die Pflege so ein, dass du Motive selbst einstellst und entfernst.'
+      ],
+      pointsTitle: 'Das gehört in die Stilübersicht',
+      points: [
+        'Eine Kachel je Stil mit einem starken Beispielbild',
+        'Der Artist, der diesen Stil sticht, mit Verweis auf sein Profil',
+        'Sechs bis zwölf Arbeiten je Stil statt der ganzen Sammlung',
+        'Cover-up als eigener Bereich mit Hinweis auf die Beratung vorab',
+        'Wanna-dos mit Bild, Größe, Preis und Status',
+        'Ein Knopf zur Anfrage auf jeder Stilseite'
+      ],
+      image: {
+        src: '/images/branchen/tattoo/tattoo-angebot.webp',
+        alt: 'Beispielaufbau einer Übersicht mit Stilen und Artists für ein Tattoo-Studio mit sechs Kacheln von Fineline bis Wanna-dos',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -162,6 +232,21 @@ export const TATTOO_PAGE = Object.freeze({
       ],
       note: 'Ich setze um und weise auf heikle Stellen hin, ersetze aber keine Rechtsberatung. Anzahlungs- und Absageregeln lässt du am besten von einer Anwältin oder einem Anwalt prüfen.',
       noteLink: { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für dein Tattoo-Studio aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Anfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Arbeiten, Studio und Artists.',
+      items: [
+        { src: '/images/branchen/tattoo/tattoo-startseite.webp', alt: 'Beispielaufbau der Startseite eines Tattoo-Studios mit Überschrift, Knopf zur Terminanfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Stil, Stadt und der Knopf zur Anfrage stehen oben, darunter Galerie, Artists und Hygiene.' },
+        { src: '/images/branchen/tattoo/tattoo-anfrage.webp', alt: 'Beispielaufbau einer Tattoo-Anfrage auf dem Handy mit Motiv, Körperstelle und Größe', width: 720, height: 540, title: 'Tattoo-Anfrage', caption: 'Beispielaufbau: Motiv, Körperstelle und Größe in drei Feldern, dazu die Wahl zwischen Beratung und Wanna-do.' },
+        { src: '/images/branchen/tattoo/tattoo-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Tattoo-Studio mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Studio bei „Tattoostudio Berlin“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Studio aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

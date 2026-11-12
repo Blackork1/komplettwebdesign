@@ -10,10 +10,10 @@
   const phoneText = typeof phoneDisplay !== 'undefined' ? phoneDisplay : '';
   const blocks = typeof structuredDataBlocks !== 'undefined' ? structuredDataBlocks : [];
 %>
-<%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: ['webdesign-berlin.css'] }) %>
+<%- include('partials/head', { structuredDataBlocks: blocks, extraCssAssets: ['webdesign-berlin.css', 'branchen-page.css'] }) %>
 <body>
   <%- include('partials/header') %>
-  <main class="webdesign-berlin-page webdesign-berlin handwerk-page" id="content">
+  <main class="webdesign-berlin-page webdesign-berlin handwerk-page niche-page--motion niche-page--tone-energie" id="content">
     <section id="hero" class="wd-container wd-hero unified-hero" aria-labelledby="handwerk-hero-title">
       <div class="wd-hero__copy unified-hero__copy">
         <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb">
@@ -46,7 +46,7 @@
 
     <section id="warum" class="wd-section" aria-labelledby="handwerk-why-title">
       <div class="wd-container wd-split">
-        <div class="handwerk-page__why">
+        <div class="handwerk-page__why animate-on-scroll">
           <span class="wd-chip">Ausgangslage</span>
           <h2 id="handwerk-why-title"><%= hw.why.title %></h2>
           <% hw.why.paragraphs.forEach((paragraph) => { %>
@@ -55,7 +55,7 @@
         </div>
         <ul class="handwerk-page__stats" aria-label="Zahlen zum Handwerk">
           <% hw.why.stats.forEach((stat) => { %>
-          <li class="wd-card">
+          <li class="wd-card animate-on-scroll">
             <strong><%= stat.value %></strong>
             <span><%= stat.label %></span>
             <small>Quelle: <%= stat.source %></small>
@@ -67,14 +67,14 @@
 
     <section id="inhalte" class="wd-section wd-section--soft" aria-labelledby="handwerk-essentials-title">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head animate-on-scroll">
           <span class="wd-chip">Inhalte</span>
           <h2 id="handwerk-essentials-title"><%= hw.essentials.title %></h2>
           <p class="wd-lead"><%= hw.essentials.intro %></p>
         </div>
         <div class="wd-grid handwerk-page__essentials">
           <% hw.essentials.items.forEach((item) => { %>
-          <article class="wd-card">
+          <article class="wd-card animate-on-scroll">
             <div class="handwerk-page__card-head">
               <i class="fa-solid <%= item.icon %>" aria-hidden="true"></i>
               <h3><%= item.title %></h3>
@@ -86,16 +86,57 @@
       </div>
     </section>
 
+    <section id="weg-zum-auftrag" class="wd-section" aria-labelledby="handwerk-journey-title">
+      <div class="wd-container">
+        <div class="wd-section-head animate-on-scroll">
+          <span class="wd-chip"><%= hw.journey.chip %></span>
+          <h2 id="handwerk-journey-title"><%= hw.journey.title %></h2>
+          <p class="wd-lead"><%= hw.journey.intro %></p>
+        </div>
+        <ol class="niche-page__timeline" aria-label="<%= hw.journey.listLabel %>">
+          <% hw.journey.items.forEach((item) => { %>
+          <li class="niche-page__timeline-item animate-on-scroll">
+            <span class="niche-page__timeline-time"><%= item.label %></span>
+            <h3><%= item.title %></h3>
+            <p><%= item.text %></p>
+          </li>
+          <% }) %>
+        </ol>
+        <p class="handwerk-page__center-note"><%= hw.journey.note %></p>
+      </div>
+    </section>
+
+    <section id="baufirmen" class="wd-section wd-section--soft" aria-labelledby="handwerk-focus-title">
+      <div class="wd-container wd-split niche-page__feature">
+        <div class="animate-on-scroll">
+          <span class="wd-chip"><%= hw.focus.chip %></span>
+          <h2 id="handwerk-focus-title"><%= hw.focus.title %></h2>
+          <% hw.focus.paragraphs.forEach((paragraph) => { %>
+          <p><%= paragraph %></p>
+          <% }) %>
+          <h3><%= hw.focus.pointsTitle %></h3>
+          <ul class="wd-list wd-list--checks">
+            <% hw.focus.points.forEach((point) => { %>
+            <li><%= point %></li>
+            <% }) %>
+          </ul>
+        </div>
+        <figure class="niche-page__feature-media animate-on-scroll">
+          <img src="<%= hw.focus.image.src %>" alt="<%= hw.focus.image.alt %>" width="<%= hw.focus.image.width %>" height="<%= hw.focus.image.height %>" loading="lazy" decoding="async">
+        </figure>
+      </div>
+    </section>
+
     <section id="gewerke" class="wd-section" aria-labelledby="handwerk-trades-title">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head animate-on-scroll">
           <span class="wd-chip">Gewerke</span>
           <h2 id="handwerk-trades-title"><%= hw.trades.title %></h2>
           <p class="wd-lead"><%= hw.trades.intro %></p>
         </div>
         <div class="wd-grid handwerk-page__trades">
           <% hw.trades.items.forEach((trade) => { %>
-          <article class="wd-card">
+          <article class="wd-card animate-on-scroll">
             <h3><%= trade.name %></h3>
             <p class="handwerk-page__label">Sinnvolle Seiten</p>
             <ul class="wd-list wd-list--checks">
@@ -111,7 +152,7 @@
             </p>
           </article>
           <% }) %>
-          <article class="wd-card handwerk-page__related">
+          <article class="wd-card handwerk-page__related animate-on-scroll">
             <h3><%= hw.trades.related.title %></h3>
             <p><%= hw.trades.related.text %></p>
             <ul class="wd-list">
@@ -126,7 +167,7 @@
 
     <section id="anfrage" class="wd-section wd-section--soft" aria-labelledby="handwerk-inquiry-title">
       <div class="wd-container wd-split">
-        <div>
+        <div class="animate-on-scroll">
           <span class="wd-chip">Anfragen</span>
           <h2 id="handwerk-inquiry-title"><%= hw.inquiry.title %></h2>
           <p><%= hw.inquiry.text %></p>
@@ -134,7 +175,7 @@
           <p class="handwerk-page__note"><%= note %></p>
           <% }) %>
         </div>
-        <div class="wd-card handwerk-page__form" aria-label="Beispiel für ein Anfrageformular">
+        <div class="wd-card handwerk-page__form animate-on-scroll" aria-label="Beispiel für ein Anfrageformular">
           <p class="handwerk-page__label">Beispiel: Felder im Anfrageformular</p>
           <ol>
             <% hw.inquiry.fields.forEach((field) => { %>
@@ -147,13 +188,13 @@
 
     <section id="google" class="wd-section" aria-labelledby="handwerk-local-title">
       <div class="wd-container wd-split">
-        <div>
+        <div class="animate-on-scroll">
           <span class="wd-chip">Local SEO</span>
           <h2 id="handwerk-local-title"><%= hw.local.title %></h2>
           <p><%= hw.local.text %></p>
           <p class="handwerk-page__note"><%= hw.local.note %> <a href="/leistungen/local-seo">Local SEO in Berlin</a></p>
         </div>
-        <article class="wd-card">
+        <article class="wd-card animate-on-scroll">
           <h3>Darauf kommt es an</h3>
           <ul class="wd-list wd-list--checks">
             <% hw.local.checklist.forEach((item) => { %>
@@ -166,12 +207,12 @@
 
     <section id="karriere" class="wd-section wd-section--soft" aria-labelledby="handwerk-careers-title">
       <div class="wd-container wd-split">
-        <div>
+        <div class="animate-on-scroll">
           <span class="wd-chip">Fachkräfte</span>
           <h2 id="handwerk-careers-title"><%= hw.careers.title %></h2>
           <p><%= hw.careers.text %></p>
         </div>
-        <article class="wd-card">
+        <article class="wd-card animate-on-scroll">
           <h3>Das gehört auf die Karriereseite</h3>
           <ul class="wd-list wd-list--checks">
             <% hw.careers.items.forEach((item) => { %>
@@ -184,12 +225,12 @@
 
     <section id="impressum" class="wd-section" aria-labelledby="handwerk-legal-title">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head animate-on-scroll">
           <span class="wd-chip">Pflichtangaben</span>
           <h2 id="handwerk-legal-title"><%= hw.legal.title %></h2>
           <p class="wd-lead"><%= hw.legal.intro %></p>
         </div>
-        <article class="wd-card handwerk-page__legal">
+        <article class="wd-card handwerk-page__legal animate-on-scroll">
           <ul class="wd-list wd-list--checks">
             <% hw.legal.items.forEach((item) => { %>
             <li><%= item %></li>
@@ -202,7 +243,7 @@
 
     <section id="preise" class="wd-section wd-section--soft" aria-labelledby="handwerk-pricing-title">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head animate-on-scroll">
           <span class="wd-chip">Preise</span>
           <h2 id="handwerk-pricing-title"><%= hw.pricing.title %></h2>
           <p class="wd-lead"><%= hw.pricing.lead %></p>
@@ -210,7 +251,7 @@
         <% if (cards.length) { %>
         <div class="wd-grid wd-grid--three handwerk-page__packages">
           <% cards.forEach((pkg) => { %>
-          <article class="wd-card wd-package<%= pkg.featured ? ' wd-package--featured' : '' %>">
+          <article class="wd-card wd-package<%= pkg.featured ? ' wd-package--featured' : '' %> animate-on-scroll">
             <% if (pkg.featured) { %>
             <span class="wd-package__label">Häufig passend</span>
             <% } else { %>
@@ -230,7 +271,7 @@
 
     <section id="ablauf" class="wd-section" aria-labelledby="handwerk-process-title">
       <div class="wd-container wd-split">
-        <div>
+        <div class="animate-on-scroll">
           <span class="wd-chip">Ablauf</span>
           <h2 id="handwerk-process-title"><%= hw.process.title %></h2>
           <p><%= hw.process.duration %></p>
@@ -242,7 +283,7 @@
         </div>
         <ol class="wd-steps">
           <% hw.process.steps.forEach((step) => { %>
-          <li>
+          <li class="animate-on-scroll">
             <h3><%= step.title %></h3>
             <p><%= step.text %></p>
           </li>
@@ -251,9 +292,28 @@
       </div>
     </section>
 
-    <section id="referenz" class="wd-section wd-section--soft" aria-labelledby="handwerk-proof-title">
+    <section id="beispielaufbau" class="wd-section wd-section--soft" aria-labelledby="handwerk-gallery-title">
+      <div class="wd-container">
+        <div class="wd-section-head animate-on-scroll">
+          <span class="wd-chip"><%= hw.gallery.chip %></span>
+          <h2 id="handwerk-gallery-title"><%= hw.gallery.title %></h2>
+          <p class="wd-lead"><%= hw.gallery.intro %></p>
+        </div>
+        <div class="wd-grid wd-grid--three niche-page__gallery">
+          <% hw.gallery.items.forEach((item) => { %>
+          <figure class="wd-card animate-on-scroll">
+            <img src="<%= item.src %>" alt="<%= item.alt %>" width="<%= item.width %>" height="<%= item.height %>" loading="lazy" decoding="async">
+            <figcaption><strong><%= item.title %></strong><span><%= item.caption %></span></figcaption>
+          </figure>
+          <% }) %>
+        </div>
+        <p class="handwerk-page__center-note"><%= hw.gallery.note %> <a href="<%= hw.gallery.noteLink.href %>"><%= hw.gallery.noteLink.label %></a></p>
+      </div>
+    </section>
+
+    <section id="referenz" class="wd-section" aria-labelledby="handwerk-proof-title">
       <div class="wd-container wd-split">
-        <article class="wd-card">
+        <article class="wd-card animate-on-scroll">
           <span class="wd-chip">Referenz</span>
           <h2 id="handwerk-proof-title"><%= hw.proof.title %></h2>
           <p><%= hw.proof.reference.text %></p>
@@ -261,7 +321,7 @@
             <a href="<%= hw.proof.reference.href %>">Projekt <%= hw.proof.reference.name %> ansehen</a>
           </div>
         </article>
-        <article class="wd-card">
+        <article class="wd-card animate-on-scroll">
           <h3>Bewertungen auf Google</h3>
           <p><%= hw.proof.ratingText %></p>
           <% if (rating && rating.href) { %>
@@ -275,11 +335,11 @@
 
     <section id="faq" class="wd-section" aria-labelledby="handwerk-faq-title">
       <div class="wd-container">
-        <div class="wd-section-head">
+        <div class="wd-section-head animate-on-scroll">
           <span class="wd-chip">FAQ</span>
           <h2 id="handwerk-faq-title">Häufige Fragen zur Website für Handwerker</h2>
         </div>
-        <div class="wd-faq">
+        <div class="wd-faq animate-on-scroll">
           <% faqList.forEach((faq, index) => { %>
           <details<%= index === 0 ? ' open' : '' %>>
             <summary><%= faq.q %></summary>
@@ -292,7 +352,7 @@
 
     <section id="kontakt" class="wd-section wd-section--soft" aria-labelledby="handwerk-cta-title">
       <div class="wd-container">
-        <div class="wd-cta">
+        <div class="wd-cta animate-on-scroll">
           <h2 id="handwerk-cta-title"><%= hw.cta.title %></h2>
           <p class="wd-lead"><%= hw.cta.text %></p>
           <div class="wd-actions">

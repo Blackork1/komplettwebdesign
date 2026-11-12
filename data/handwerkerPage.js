@@ -3,7 +3,7 @@
 // vom 24.10.2026, siehe komplettwebdesign.de-audit/handwerker-content-brief.md.
 // Preise kommen als Platzhalter ({{price.start}} usw.) und werden beim Rendern ersetzt.
 
-export const HANDWERKER_CONTENT_UPDATED_ISO = '2026-10-24';
+export const HANDWERKER_CONTENT_UPDATED_ISO = '2026-11-11';
 
 export const HANDWERKER_FAQ = Object.freeze([
   {
@@ -49,14 +49,38 @@ export const HANDWERKER_FAQ = Object.freeze([
   {
     q: 'Gibt es eine Förderung für die Website?',
     a: 'Förderprogramme ändern sich häufig. Ob es aktuell eine passende Förderung für deinen Betrieb gibt, erfährst du bei der Investitionsbank Berlin oder der Handwerkskammer Berlin. Für einen Antrag stelle ich dir gern ein nachvollziehbares Angebot aus.'
+  },
+  {
+    q: 'Erstellst du auch Websites für Baufirmen und Bauunternehmen?',
+    a: 'Ja. Bei Baufirmen stehen Leistungsbereiche wie Neubau, Umbau und Sanierung im Mittelpunkt, dazu Projektberichte mit Ortsteil, Umfang und Fotos. Wichtig sind außerdem Qualifikationen und ein Ansprechpartner für gewerbliche Auftraggeber. Meist passt dafür das Business-Paket ({{price.business}}), bei vielen Leistungsbereichen und einem Karrierebereich das Wachstum-Paket ({{price.wachstum}}).'
+  },
+  {
+    q: 'Homepage für den Handwerksbetrieb: Baukasten oder Webdesigner?',
+    a: 'Mit einem Baukasten baust du die Homepage selbst und kümmerst dich um Texte, Bilder, Technik und Auffindbarkeit. Das kann reichen, wenn du die Zeit dafür hast. Bei mir bekommst du Seitenplan, Texte, Gestaltung und Umsetzung aus einer Hand, dazu eine kurze Ladezeit auf dem Handy und saubere Angaben für die lokale Suche. Du arbeitest direkt mit mir zusammen, ohne Agentur dazwischen.'
+  },
+  {
+    q: 'Lohnt sich eine eigene Website, wenn ich Aufträge über Handwerkerportale bekomme?',
+    a: 'Ja. Auf Portalen stehst du direkt neben Mitbewerbern, und oft kostet jede Anfrage oder jeder Auftrag Geld. Der Kontakt läuft über das Portal und nicht über deinen Betrieb. Über die eigene Website fragen Kunden direkt bei dir an, und du bestimmst, welche Leistungen und Bezirke du zeigst. Beides lässt sich nebeneinander nutzen.'
+  },
+  {
+    q: 'Brauche ich für jeden Berliner Bezirk eine eigene Seite?',
+    a: 'Nein. Seiten, auf denen nur der Bezirksname ausgetauscht ist, helfen weder Kunden noch bei Google. Besser ist eine Seite zum Einsatzgebiet mit den Bezirken, in denen du wirklich arbeitest. Eine eigene Bezirksseite lohnt sich dort, wo du etwas Eigenes zeigen kannst, zum Beispiel Projekte aus dem Ortsteil oder deinen Standort.'
+  },
+  {
+    q: 'Wie zeige ich einen Notdienst auf der Website?',
+    a: 'Mit einer eigenen Notdienst-Seite und einer Telefonnummer, die auf dem Handy immer sichtbar bleibt und sich antippen lässt. Auf der Seite stehen Einsatzgebiet, Zeiten und typische Notfälle wie Rohrbruch, Heizungsausfall oder Stromausfall. Nenne Anfahrtspauschalen und Zuschläge, soweit du sie festlegen kannst. Das schafft Vertrauen, bevor jemand anruft.'
+  },
+  {
+    q: 'Erstellst du auch Websites für Architekten, Planungsbüros und Gebäudeservice?',
+    a: 'Ja. Architektur- und Planungsbüros zeigen vor allem Projekte, Leistungsphasen und das Team. Bei Hausmeisterdienst und Gebäudeservice zählen die Leistungsübersicht, das Einsatzgebiet und ein fester Ansprechpartner für Hausverwaltungen. Der Aufbau ähnelt dem für Handwerksbetriebe: klare Leistungen, echte Arbeiten und ein kurzer Weg zur Anfrage.'
   }
 ]);
 
 export const HANDWERKER_PAGE = Object.freeze({
   metaTitle: 'Website für Handwerker in Berlin erstellen lassen | {{price.start}}',
-  metaDescription: 'Webdesign für Handwerksbetriebe in Berlin: Leistungen, Einsatzgebiet, Projektbilder und Anfragewege klar zeigen. Pakete {{price.start}}. Jetzt anfragen.',
+  metaDescription: 'Webdesign für Handwerker und Baufirmen in Berlin: Leistungen, Einsatzgebiet, Projektbilder und Anfragewege klar zeigen. Pakete {{price.start}}. Jetzt anfragen.',
   hero: {
-    chip: 'Webdesign für Handwerksbetriebe',
+    chip: 'Webdesign für Handwerker und Baufirmen',
     h1: 'Website für Handwerker in Berlin erstellen lassen',
     lead: 'Deine Website für den Handwerksbetrieb zeigt in wenigen Sekunden, welche Arbeiten du übernimmst, in welchen Berliner Bezirken du unterwegs bist und wie Kunden dich erreichen. Ich plane und baue sie persönlich: mit Leistungsseiten, echten Projektbildern und einem Anfrageweg, der brauchbare Anfragen statt Rückfragen bringt.',
     highlights: [
@@ -93,6 +117,45 @@ export const HANDWERKER_PAGE = Object.freeze({
       { icon: 'fa-user-plus', title: 'Karriere und Ausbildung', text: 'Offene Stellen, Ausbildungsplätze und ein einfacher Bewerbungsweg per Telefon, WhatsApp oder Formular.' },
       { icon: 'fa-scale-balanced', title: 'Impressum und Datenschutz', text: 'Beides ist Pflicht. Für Handwerksbetriebe gibt es beim Impressum ein paar Besonderheiten, die du weiter unten findest.' }
     ]
+  },
+  journey: {
+    chip: 'Beispiel',
+    title: 'Von der Suche bis zum Auftrag: der Weg eines Kunden über deine Website',
+    intro: 'Kaum ein Auftrag entsteht mit einem Klick. Zwischen der ersten Suche und dem unterschriebenen Angebot liegen mehrere Schritte, und bei jedem kann ein Interessent abspringen. Das Beispiel zeigt eine Badsanierung.',
+    listLabel: 'Sechs Schritte von der Suche bis zum Auftrag',
+    items: [
+      { label: 'Schritt 1', title: 'Der Anlass', text: 'Das Bad soll im Frühjahr neu werden. Jemand sucht abends auf dem Handy „Badsanierung Spandau“.' },
+      { label: 'Schritt 2', title: 'Der erste Eindruck', text: 'Die Leistungsseite zeigt, was du übernimmst, in welchen Bezirken du arbeitest und Fotos fertiger Bäder.' },
+      { label: 'Schritt 3', title: 'Die Prüfung', text: 'Meisterbrief, Bewertungen und ein Ansprechpartner mit Foto beantworten die Frage, wem man die Wohnung anvertraut.' },
+      { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Leistung, Ort und Zeitraum ab. Fotos vom Ist-Zustand kommen nach Absprache dazu.' },
+      { label: 'Schritt 5', title: 'Der Rückruf', text: 'Du rufst nach Feierabend zurück und weißt schon, worum es geht. Der Termin vor Ort ist schnell vereinbart.' },
+      { label: 'Schritt 6', title: 'Das Angebot', text: 'Nach dem Aufmaß geht das Angebot raus. Wer vergleicht, schaut noch einmal auf deine Referenzen.' }
+    ],
+    note: 'Im Notfall ist der Weg kürzer: Notdienst-Nummer antippen, anrufen, fertig. Deshalb steht sie getrennt vom Formular ganz oben.'
+  },
+  focus: {
+    chip: 'Baufirmen',
+    title: 'Webdesign für Baufirmen und Bauunternehmen in Berlin',
+    paragraphs: [
+      'Eine Baufirma verkauft keine einzelne Reparatur, sondern Projekte über Wochen oder Monate. Wer ein Bauunternehmen sucht, vergleicht deshalb gründlicher. Bauherren, Hausverwaltungen und Architekturbüros wollen sehen, welche Projekte du in welcher Größe umgesetzt hast, welche Gewerke du selbst ausführst und wer auf der Baustelle ansprechbar ist. Webdesign für Baufirmen heißt deshalb vor allem: Referenzen ordnen und Leistungen klar abgrenzen.',
+      'Bewährt hat sich ein Aufbau nach Leistungsbereichen wie Neubau, Umbau, Sanierung und Ausbau. Dazu kommen Projektberichte mit Ortsteil, Umfang, Bauzeit und Fotos. Für gewerbliche Auftraggeber lohnt sich eine Seite mit Qualifikationen: Meisterbetrieb, Mitgliedschaft in Innung oder Verband, Versicherung und vorhandene Nachweise. So überzeugt dieselbe Website die Hausverwaltung genauso wie den privaten Bauherrn.',
+      'Offen gesagt: Projektberichte leben von Fotos. Gibt es von früheren Baustellen kaum Bilder, starten wir mit drei gut beschriebenen Projekten und ergänzen neue, sobald sie fertig sind. Ein Bauportal mit Kundenzugang, Bautagebuch oder Ausschreibungen baue ich nicht. Das ist Software und kein Webdesign.'
+    ],
+    pointsTitle: 'Das gehört auf die Website einer Baufirma',
+    points: [
+      'Leistungsbereiche wie Neubau, Umbau, Sanierung und Ausbau mit eigenen Seiten',
+      'Projektberichte mit Ortsteil, Umfang, Bauzeit und Fotos',
+      'Eigene Gewerke und feste Partnerbetriebe klar benannt',
+      'Qualifikationen, Versicherung und Mitgliedschaften als Belege',
+      'Ansprechpartner für private Bauherren und für gewerbliche Auftraggeber',
+      'Karriereseite für Fachkräfte und Azubis'
+    ],
+    image: {
+      src: '/images/branchen/handwerker/handwerker-angebot.webp',
+      alt: 'Beispielaufbau einer Leistungsübersicht mit sechs Kacheln von Badsanierung bis Notdienst',
+      width: 720,
+      height: 540
+    }
   },
   trades: {
     title: 'Website nach Gewerk: welche Seiten und Suchbegriffe zählen',
@@ -192,6 +255,18 @@ export const HANDWERKER_PAGE = Object.freeze({
       { title: 'Nach dem Start', text: 'Auf Wunsch übernehme ich Wartung, Änderungen und neue Projektbilder.' }
     ],
     duration: 'Ein Onepager ist meist in 2 bis 4 Wochen online, eine mehrseitige Website in 4 bis 6 Wochen, je nachdem wie schnell Inhalte und Rückmeldungen kommen.'
+  },
+  gallery: {
+    chip: 'Beispielaufbau',
+    title: 'So kann die Website für deinen Handwerksbetrieb aufgebaut sein',
+    intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Baustellen.',
+    items: [
+      { src: '/images/branchen/handwerker/handwerker-startseite.webp', alt: 'Beispielaufbau der Startseite eines Handwerksbetriebs mit Überschrift, Knopf zur Angebotsanfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Gewerk, Einsatzgebiet und der Knopf zur Angebotsanfrage stehen oben, darunter Leistungen, Referenzen und Karriere.' },
+      { src: '/images/branchen/handwerker/handwerker-anfrage.webp', alt: 'Beispielaufbau einer Angebotsanfrage auf dem Handy mit Leistung, Ort und Zeitraum', width: 720, height: 540, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Leistung, Ort und Zeitraum in drei Feldern, dazu Fotos oder Rückruf zur Auswahl.' },
+      { src: '/images/branchen/handwerker/handwerker-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Handwerksbetrieb mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Handwerker Berlin Spandau“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+    ],
+    note: 'Farben, Schriften und Bilder richte ich nach deinem Betrieb aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+    noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
   },
   proof: {
     title: 'Referenz und Bewertungen',

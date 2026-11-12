@@ -8,7 +8,7 @@ import { MARKETING_IMAGES } from './marketingImages.js';
 
 const HERO_IMAGE = MARKETING_IMAGES.industryFloristHero;
 
-export const BLUMENLADEN_CONTENT_UPDATED_ISO = '2026-10-25';
+export const BLUMENLADEN_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const DPA_SOURCE = 'Fachverband Deutscher Floristen, 2026';
 
@@ -52,6 +52,30 @@ export const BLUMENLADEN_FAQ = Object.freeze([
   {
     q: 'Ist SEO für Floristen wichtig?',
     a: 'Ja, besonders die lokale Suche. Wer spontan Blumen braucht, sucht auf dem Handy und ruft den ersten passenden Laden an. Wie du dafür sorgst, dass das deiner ist, erkläre ich ausführlich im Blogartikel „SEO für Blumenläden“.'
+  },
+  {
+    q: 'Was kostet es, einen Blumen-Onlineshop erstellen zu lassen?',
+    a: 'Ein kleiner Blumen-Onlineshop mit festen Sträußen, Wunschtermin, Abholung oder Lieferung und Bezahlung im Netz gehört zum Individuell-Paket ({{price.individuell}}). Der genaue Preis hängt von der Zahl der Produkte, den Liefergebieten und der Bezahlart ab. Dazu kommen laufende Gebühren des Zahlungsanbieters. Deutlich günstiger ist eine Bestellanfrage per Formular, die in jedem Paket möglich ist.'
+  },
+  {
+    q: 'Wie viele Produkte braucht ein Onlineshop für einen Blumenladen?',
+    a: 'Weniger, als die meisten denken. Sechs bis zwölf feste Angebote reichen für den Anfang: der Strauß der Woche, zwei oder drei Klassiker in mehreren Größen, ein Gutschein und Sträuße zur Saison. Ein kleines Sortiment lässt sich jeden Tag frisch binden, und du musst nicht jede Blume einzeln als Artikel pflegen.'
+  },
+  {
+    q: 'Lohnt sich eine eigene Website, wenn ich schon über Blumendienste und Portale verkaufe?',
+    a: 'Ja. Vermittlungsdienste behalten eine Provision und geben oft Sortiment und Preise vor. Die Kundin sieht dort die Marke des Portals und nicht deinen Laden. Über die eigene Website bestellt sie direkt bei dir, du behältst den Kontakt und zeigst deine eigenen Sträuße. Beides lässt sich nebeneinander nutzen.'
+  },
+  {
+    q: 'Worin unterscheidet sich eine professionelle Website für Blumenläden von einem Baukasten?',
+    a: 'Mit einem Baukasten baust du die Seite selbst und kümmerst dich um Texte, Bilder, Technik und Auffindbarkeit. Das kann für den Anfang reichen. Bei mir bekommst du Seitenplan, Texte, Gestaltung und Umsetzung aus einer Hand, dazu eine kurze Ladezeit auf dem Handy und saubere Angaben für die lokale Suche. Sträuße, Preise und Öffnungszeiten kannst du danach auf Wunsch selbst ändern.'
+  },
+  {
+    q: 'Wie zeige ich Hochzeitsfloristik und Trauerfloristik auf der Website?',
+    a: 'Am besten mit je einer eigenen Seite. Hochzeitsfloristik lebt von Bildern echter Arbeiten und einer Anfrage mit Datum, Farbwelt und Budget. Bei Trauerfloristik zählen Ruhe und Klarheit: Kränze und Gestecke mit Preisspanne, Lieferung zum Friedhof oder zur Trauerhalle und eine Telefonnummer, unter der schnell jemand erreichbar ist.'
+  },
+  {
+    q: 'Brauche ich eine eigene Seite für die Blumenlieferung?',
+    a: 'Wenn du lieferst, ja. Eine Lieferseite nennt die Bezirke oder Postleitzahlen, die Lieferkosten, den Bestellschluss für denselben Tag und die Zeitfenster. Das beantwortet die häufigste Frage vor einer Bestellung und passt zu Suchen wie „Blumen liefern lassen“ zusammen mit deinem Bezirk. Feste Platzierungen kann dabei niemand seriös garantieren.'
   }
 ]);
 
@@ -60,6 +84,8 @@ export const BLUMENLADEN_PAGE = Object.freeze({
   path: '/branchen/webdesign-blumenladen',
   breadcrumb: 'Blumenläden',
   trackPrefix: 'blumenladen',
+  motion: true,
+  tone: 'floral',
   metaTitle: 'Blumenladen-Website erstellen lassen | Florist & Onlineshop',
   metaDescription: 'Website und Onlineshop für Blumenläden, Floristen und Gärtnereien: Sträuße zeigen, Bestellungen annehmen und lokal gefunden werden. Pakete {{price.start}}.',
   schema: {
@@ -140,6 +166,50 @@ export const BLUMENLADEN_PAGE = Object.freeze({
         }
       ],
       note: 'Für einen Onlineshop brauchst du zusätzlich Rechtstexte wie AGB und Widerrufsinformationen. Ich binde sie technisch ein, die inhaltliche Prüfung übernimmt ein spezialisierter Anbieter oder eine Kanzlei.'
+    },
+    {
+      type: 'feature',
+      id: 'blumen-onlineshop',
+      soft: true,
+      chip: 'Blumen-Onlineshop',
+      title: 'Blumen-Onlineshop erstellen lassen: was ein kleiner Shop können muss',
+      paragraphs: [
+        'Ein Onlineshop für Blumen funktioniert anders als ein Shop für Bücher oder Kleidung. Die Ware ist verderblich, fast jede Bestellung hat einen Anlass und einen festen Termin, und geliefert wird meist nur im eigenen Bezirk. Deshalb entscheidet nicht die Zahl der Produkte, sondern der Ablauf: Wer bestellt, will in einer Minute wissen, was der Strauß kostet, wann er fertig ist und wie er ankommt.',
+        'Für die meisten Blumenläden reichen sechs bis zwölf feste Angebote: der Strauß der Woche, zwei oder drei Klassiker in mehreren Größen, ein Gutschein und Sträuße zur Saison. Dazu kommen Wunschtermin, Abholung oder Lieferung, ein Feld für die Grußkarte und die Bezahlung im Netz. Ein Bestellschluss verhindert, dass um 17 Uhr noch ein Auftrag für denselben Tag eingeht.',
+        'Offen gesagt: Kleine Shops dieser Art gehören zum Individuell-Paket ({{price.individuell}}). Wenn du hunderte Artikel, eine Warenwirtschaft und Versand in ganz Deutschland planst, bist du mit einem eigenen Shopsystem und einem darauf spezialisierten Dienstleister besser beraten. Das sage ich dir im Erstgespräch, bevor Kosten entstehen.'
+      ],
+      pointsTitle: 'Das braucht ein Blumen-Onlineshop',
+      points: [
+        'Feste Sträuße mit Foto, Größen und Preis',
+        'Wunschtermin mit Bestellschluss für denselben Tag',
+        'Abholung im Laden oder Lieferung nach Postleitzahl',
+        'Grußkarte und Hinweis für die Zustellung',
+        'Bezahlung im Netz und Bestätigung per E-Mail',
+        'Saisonhinweise vor Valentinstag, Muttertag und Advent'
+      ],
+      image: {
+        src: '/images/branchen/blumenladen/blumenladen-angebot.webp',
+        alt: 'Beispielaufbau einer Shopseite für einen Blumenladen mit sechs Angeboten vom Strauß der Woche bis zum Gutschein',
+        width: 720,
+        height: 540
+      }
+    },
+    {
+      type: 'timeline',
+      id: 'alltag',
+      chip: 'Beispiel',
+      title: 'Ein Tag mit deiner Blumenladen-Website',
+      intro: 'Eine gute Website arbeitet mit, während du bindest, berätst und auslieferst. So kann ein gewöhnlicher Tag aussehen. Die Zeiten sind ein Beispiel.',
+      listLabel: 'Beispiel für einen Tag mit der Website eines Blumenladens',
+      items: [
+        { time: '07:30', title: 'Vorbestellungen auf einen Blick', text: 'Vor dem Großmarkt siehst du im Postfach, welche Sträuße heute abgeholt werden.' },
+        { time: '09:00', title: 'Strauß der Woche einstellen', text: 'Foto hochladen, Preis eintragen, speichern. Das dauert zwei Minuten.' },
+        { time: '11:30', title: 'Gefunden in der Mittagspause', text: 'Jemand sucht „Blumenladen in der Nähe“ und sieht Öffnungszeiten, Route und deine Sträuße.' },
+        { time: '14:00', title: 'Anfrage für eine Hochzeit', text: 'Das Formular fragt Datum, Farbwelt und Budget ab. Du rufst zurück, wenn es im Laden ruhig ist.' },
+        { time: '16:30', title: 'Lieferung am selben Tag', text: 'Die Seite zeigt den Bestellschluss und die Postleitzahlen, in die du lieferst.' },
+        { time: '20:00', title: 'Bestellen nach Ladenschluss', text: 'Der Strauß für Samstag wird abends auf dem Sofa bestellt. Die Bestätigung geht von allein raus.' }
+      ],
+      note: 'Du musst nicht mit allem auf einmal starten. Viele Floristen beginnen mit der Bestellanfrage und ergänzen die Vorbestellung zur Abholung vor Valentinstag oder Muttertag.'
     },
     {
       type: 'catalog',
@@ -225,6 +295,21 @@ export const BLUMENLADEN_PAGE = Object.freeze({
         wachstum: 'Für Gärtnereien mit großem Sortiment, mehrere Standorte oder den Relaunch einer bestehenden Website mit acht bis zwölf Seiten.'
       },
       note: 'Vorbestellung oder ein kleiner Onlineshop sind Teil des Individuell-Pakets {{price.individuell}}. Hosting, Domain, E-Mail und Wartung sind optional und werden separat vereinbart.'
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für Floristen aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Bestellung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben, eigene Texte und Fotos von deinen Sträußen.',
+      items: [
+        { src: '/images/branchen/blumenladen/blumenladen-startseite.webp', alt: 'Beispielaufbau der Startseite eines Blumenladens mit Überschrift, Bestellknopf und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Angebot, Kiez und der Knopf zum Bestellen, darunter Lieferung, Hochzeit und Öffnungszeiten.' },
+        { src: '/images/branchen/blumenladen/blumenladen-anfrage.webp', alt: 'Beispielaufbau eines Bestellformulars auf dem Handy mit Anlass, Budget und Wunschtermin für einen Strauß', width: 720, height: 540, title: 'Bestellung auf dem Handy', caption: 'Beispielaufbau: Anlass, Budget und Wunschtermin in drei Feldern, danach Abholung oder Lieferung.' },
+        { src: '/images/branchen/blumenladen/blumenladen-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Blumenladen mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Laden bei „Blumenladen in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Laden aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'process',

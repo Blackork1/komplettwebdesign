@@ -99,6 +99,35 @@ test('FAQ-Markup beschreibt genau die sichtbaren Fragen und Antworten mit echten
   assert.match(visible[0].a, /ab 799 €/);
 });
 
+test('Zeitleiste, Baufirmen-Abschnitt und Beispielbilder nutzen das Branchen-Design mit dezenter Bewegung', async () => {
+  const { $ } = await renderPage();
+  const main = $('main');
+  assert.ok(main.hasClass('niche-page--motion') && main.hasClass('niche-page--tone-energie'));
+  assert.ok(!main.hasClass('niche-page'), 'die Hero-Regeln der Branchenseiten gelten hier nicht');
+  assert.equal($('#hero .animate-on-scroll').length, 0);
+  assert.ok($('main .animate-on-scroll').length > 20);
+  assert.equal($('#weg-zum-auftrag .niche-page__timeline-item').length, 6);
+  assert.match($('#baufirmen h2').text(), /Webdesign für Baufirmen/);
+  assert.equal($('#beispielaufbau .niche-page__gallery figure').length, 3);
+  assert.ok($('#beispielaufbau a[href="/referenzen"]').length);
+
+  const images = $('main img[src*="/images/branchen/handwerker/"]');
+  assert.equal(images.length, 4);
+  for (const el of images.get()) {
+    const img = $(el);
+    assert.equal(img.attr('width'), '720');
+    assert.equal(img.attr('height'), '540');
+    assert.equal(img.attr('loading'), 'lazy');
+    assert.ok((img.attr('alt') || '').length >= 20, img.attr('src'));
+    const file = await readFile(new URL(`../public${img.attr('src')}`, import.meta.url));
+    assert.ok(file.length > 1000, img.attr('src'));
+  }
+  assert.equal($('main [fetchpriority="high"]').length, 1);
+  const ids = $('main section[id]').map((_, el) => $(el).attr('id')).get();
+  assert.equal(new Set(ids).size, ids.length);
+  assert.doesNotMatch($('main').text(), /\{\{|undefined|NaN|\[object/);
+});
+
 test('der frühere Handwerker-Ratgeber ist in /handwerker aufgegangen', async () => {
   assert.equal(SEO_RECOVERY_REDIRECTS['/ratgeber/website-fuer-handwerker-berlin'], '/handwerker');
   assert.equal(getSeoRecoveryTarget('/handwerker')?.state, 'active');

@@ -210,22 +210,55 @@ test('Kita-Seite: eigene Inhalte für Kitas und Kindertagespflege, im Index, mit
   assert.match(images.find((image) => image.includes('kita-hero.webp')), /fetchpriority="high"/);
   assert.equal(images.filter((image) => image.includes('loading="lazy"')).length, 4);
 
-  // Bewegung: eigenes Stylesheet, Einblenden über slideOnScroll, Hero ohne Animation.
-  assert.match(html, /<link[^>]+kita-page\.css/);
+  // Bewegung: gemeinsames Stylesheet, Einblenden über slideOnScroll, Hero ohne Animation.
+  assert.match(html, /<link[^>]+branchen-page\.css/);
+  assert.match(main, /<main class="[^"]*niche-page--motion niche-page--tone-pastell"/);
   assert.match(main, /class="wd-section-head animate-on-scroll"/);
   assert.match(main, /<ol class="niche-page__timeline"/);
   assert.equal((main.match(/class="niche-page__timeline-item animate-on-scroll"/g) || []).length, 6);
   assert.doesNotMatch(main.slice(0, main.indexOf('</section>')), /animate-on-scroll/, 'Hero bleibt sofort sichtbar');
-  const css = read('public/kita-page.css');
+  const css = read('public/branchen-page.css');
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
-  assert.match(css, /html:not\(\.kwd-interaction-polish\) \.webdesign-berlin\.niche-page--kita \.animate-on-scroll/);
+  assert.match(css, /html:not\(\.kwd-interaction-polish\) \.webdesign-berlin\.niche-page--motion \.animate-on-scroll/);
   assert.doesNotMatch(css, /font-family|@font-face/);
 
-  // Die übrigen Branchenseiten bleiben ohne Bewegung und ohne das Kita-Stylesheet.
   const hebamme = await render('hebamme');
-  assert.doesNotMatch(hebamme.main, /animate-on-scroll/);
-  assert.doesNotMatch(hebamme.html, /kita-page\.css/);
   assert.ok(hebamme.main.includes('href="/branchen/webdesign-kita"'), 'Hebammen-Seite verlinkt die Kita-Seite');
+});
+
+// Seit November 2026 teilen sich alle Branchenseiten das Design der Kita-Seite: Farbton je Branche,
+// Zeitleiste, Bildkarten und dezente Bewegung (public/branchen-page.css).
+test('Alle Branchenseiten: Farbton, Zeitleiste, Beispielbilder und dezente Bewegung', async () => {
+  const css = read('public/branchen-page.css');
+  for (const [key, { page }] of Object.entries(NICHE_PAGES)) {
+    const { html, main, text } = await render(page.slug);
+    assert.equal(page.motion, true, `${key}: Bewegung aktiv`);
+    assert.ok(css.includes(`.niche-page--tone-${page.tone}`) || page.tone === 'pastell', `${key}: Farbton ${page.tone} ist im Stylesheet definiert`);
+    assert.match(main, new RegExp(`<main class="[^"]*niche-page--motion niche-page--tone-${page.tone}"`), `${key}: Klassen am Hauptbereich`);
+    assert.match(html, /<link[^>]+branchen-page\.css/, `${key}: gemeinsames Stylesheet`);
+    assert.doesNotMatch(main.slice(0, main.indexOf('</section>')), /animate-on-scroll/, `${key}: Hero bleibt sofort sichtbar`);
+
+    const types = page.sections.map((section) => section.type);
+    for (const type of ['timeline', 'feature', 'gallery']) assert.ok(types.includes(type), `${key}: Abschnitt ${type}`);
+    assert.equal(page.sections.find((section) => section.type === 'timeline').items.length, 6, `${key}: sechs Stationen`);
+    assert.equal(page.sections.find((section) => section.type === 'gallery').items.length, 3, `${key}: drei Bildkarten`);
+    assert.equal(new Set(page.sections.map((section) => section.id)).size, page.sections.length, `${key}: Abschnitts-IDs sind eindeutig`);
+
+    // Bildplätze: lokale Dateien mit festen Maßen, damit später echte Fotos an dieselbe Stelle können.
+    const allImages = [...main.matchAll(/<img\b[^>]*>/g)].map((match) => match[0]);
+    const local = allImages.filter((image) => image.includes(`/images/branchen/${page.slug}/`) && !image.includes('-hero'));
+    assert.equal(local.length, 4, `${key}: vier Bildplätze`);
+    for (const tag of local) {
+      const file = tag.match(/src="\/(images\/branchen\/[^"]+\.webp)"/)?.[1];
+      assert.ok(file, `${key}: lokales WebP`);
+      assert.ok(tag.includes('width="720"') && tag.includes('height="540"'), `${file}: Maße`);
+      assert.match(tag, /alt="[^"]{20,}"/, `${file}: Alt-Text`);
+      assert.match(tag, /loading="lazy"/, `${file}: lädt verzögert`);
+      assert.ok(readFileSync(new URL(`../public/${file}`, import.meta.url)).length > 1000, `${file} liegt im Repo`);
+    }
+    assert.equal(allImages.filter((image) => image.includes('fetchpriority="high"')).length, 1, `${key}: nur das Hero-Bild lädt bevorzugt`);
+    assert.doesNotMatch(text, /\{\{|undefined|NaN|\[object/, `${key}: keine Platzhalter im Text`);
+  }
 });
 
 test('Branchenübersicht zeigt die Kita-Seite mit eigener Karte', async () => {

@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Praxen und Patienten, Konkurrenzseiten, Bitkom-Umfrage vom Dezember 2025
 // und das Merkblatt der Ärztekammer Berlin zu Ankündigungsmöglichkeiten einer Arztpraxis.
 
-export const ARZT_CONTENT_UPDATED_ISO = '2026-10-29';
+export const ARZT_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const BITKOM_SOURCE = 'Bitkom, Dezember 2025';
 
@@ -47,6 +47,30 @@ export const ARZT_FAQ = Object.freeze([
   {
     q: 'Kann meine bestehende Praxis-Website überarbeitet werden?',
     a: 'Ja. Bei einem Relaunch prüfe ich zuerst, welche Inhalte und Seitenadressen bei Google bereits funktionieren. Wichtige Inhalte bleiben erhalten, alte Adressen werden sauber auf die neuen Seiten weitergeleitet, damit Patienten über alte Links weiter zu dir finden.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website einer Arztpraxis?',
+    a: 'Für den Start reichen drei: eine Startseite mit Sprechzeiten und Terminweg, eine Seite zu Leistungen und Team und eine Kontaktseite mit Anfahrt. Das deckt das Start-Paket ({{price.start}}) ab. Eigene Seiten für Schwerpunkte, Patienteninfos, Rezeptanfrage und Stellenangebote kommen dazu, wenn die Praxis mehr zeigen will. Dann passt das Business-Paket mit etwa vier bis sieben Seiten.'
+  },
+  {
+    q: 'Praxis-Homepage selbst bauen oder erstellen lassen?',
+    a: 'Ein Baukasten kann reichen, wenn du Zeit hast und Texte, Bilder, Technik und Pflichtangaben selbst im Blick behältst. Lässt du die Praxis-Homepage erstellen, bekommst du Seitenplan, Texte, Gestaltung und Umsetzung aus einer Hand, dazu kurze Ladezeiten auf dem Handy und saubere Angaben für die lokale Suche. Medizinische Aussagen kommen dabei von dir, und du gibst jeden Text frei.'
+  },
+  {
+    q: 'Wie halte ich Sprechzeiten, Urlaub und Vertretung aktuell?',
+    a: 'Mit einem Hinweis, der an einer Stelle gepflegt wird und oben auf jeder Seite erscheint. Auf Wunsch änderst du Zeiten und Hinweise selbst, sonst übernehme ich das für dich. Wichtig ist, dieselben Angaben auch im Google-Unternehmensprofil zu ändern, weil viele Patienten die Zeiten nur dort lesen.'
+  },
+  {
+    q: 'Kann die Website zeigen, dass die Praxis gerade keine neuen Patienten aufnimmt?',
+    a: 'Ja, und das spart viele Anrufe. Ein kurzer Satz auf der Startseite sagt, ob und für wen du aufnimmst, zum Beispiel nur Kinder bereits bekannter Familien oder nur Menschen aus dem eigenen Bezirk. Der Hinweis lässt sich jederzeit umstellen, sobald du wieder aufnimmst.'
+  },
+  {
+    q: 'Lohnt sich eine Praxis-Website in mehreren Sprachen?',
+    a: 'In Berlin oft ja, wenn in der Praxis mehrere Sprachen gesprochen werden. Eine zweite Sprache ist als Zusatzleistung möglich. Meist reicht es, die wichtigsten Seiten zu übersetzen: Startseite, Sprechzeiten, Terminweg und Anfahrt. Welche Sprachen dein Team spricht, steht in jedem Fall auf der Teamseite.'
+  },
+  {
+    q: 'Wie zeige ich die Videosprechstunde auf der Praxis-Website?',
+    a: 'Mit einem eigenen Abschnitt: für welche Anliegen sie sich eignet, was Patienten technisch brauchen und wie sie den Termin bekommen. Die Sprechstunde selbst läuft über deinen Videodienst, die Website verlinkt dorthin. Welche Dienste für Praxen zugelassen sind, erfährst du bei deiner Kassenärztlichen Vereinigung.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const ARZT_PAGE = Object.freeze({
   path: '/branchen/webdesign-arzt',
   breadcrumb: 'Arztpraxen',
   trackPrefix: 'arzt',
+  motion: true,
+  tone: 'frisch',
   metaTitle: 'Arztpraxis-Website erstellen lassen | Praxis-Homepage Berlin',
   metaDescription: 'Website für Arztpraxen in Berlin: Sprechzeiten, Online-Termin, Rezeptanfrage und Pflichtangaben klar umgesetzt, barrierearm und schnell. Pakete {{price.start}}.',
   schema: {
@@ -108,6 +134,50 @@ export const ARZT_PAGE = Object.freeze({
         { icon: 'fa-universal-access', title: 'Anfahrt und Barrierefreiheit', text: 'Etage, Aufzug, stufenloser Zugang, Parkplätze und ÖPNV. Für ältere und mobilitätseingeschränkte Menschen entscheiden diese Angaben.' },
         { icon: 'fa-briefcase', title: 'Stellenangebote', text: 'Medizinische Fachangestellte und Ärztinnen oder Ärzte in Weiterbildung finden dich über eine eigene Karriereseite mit kurzem Bewerbungsweg.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'alltag',
+      chip: 'Beispiel',
+      title: 'Ein Tag mit deiner Praxis-Website',
+      intro: 'Während dein Team am Empfang und im Behandlungszimmer gebraucht wird, beantwortet die Website die Fragen, die sonst das Telefon blockieren. Die Zeiten sind ein Beispiel.',
+      listLabel: 'Beispiel für einen Tag mit der Website einer Arztpraxis',
+      items: [
+        { time: '07:30', title: 'Vor dem ersten Anruf', text: 'Patienten sehen auf dem Handy, wann die offene Sprechstunde beginnt und was sie mitbringen sollen.' },
+        { time: '08:15', title: 'Rezept ohne Warteschleife', text: 'Ein Folgerezept wird per Formular angefragt, während am Empfang alle Leitungen belegt sind.' },
+        { time: '10:30', title: 'Neu im Kiez', text: 'Jemand sucht „Hausarzt Pankow“ und liest sofort, ob du neue Patienten aufnimmst.' },
+        { time: '13:00', title: 'Termin in der Mittagspause', text: 'Die Terminanfrage kommt an, obwohl die Praxis gerade geschlossen ist.' },
+        { time: '16:00', title: 'Anfahrt und Aufzug', text: 'Eine Angehörige prüft, ob die Praxis stufenlos erreichbar ist und wo sie parken kann.' },
+        { time: '20:00', title: 'Fragen nach Praxisschluss', text: 'Urlaub, Vertretung, Bereitschaftsdienst: Die Antworten stehen auf der Seite.' }
+      ],
+      note: 'Du musst nicht mit allem starten. Viele Praxen beginnen mit Sprechzeiten, Terminweg und Anfahrt und ergänzen Rezeptanfrage oder Leistungsseiten später.'
+    },
+    {
+      type: 'feature',
+      id: 'startseite-praxis',
+      soft: true,
+      chip: 'Startseite',
+      title: 'Praxis-Homepage erstellen lassen: was Patienten in den ersten Sekunden suchen',
+      paragraphs: [
+        'Die meisten Besucher einer Praxis-Homepage kommen mit einer von vier Fragen: Wann ist geöffnet? Wie bekomme ich einen Termin? Nimmt die Praxis neue Patienten auf? Wo liegt sie? Steht die Antwort nicht im ersten Bildschirm, greifen sie zum Telefon oder suchen weiter. Die Startseite ist deshalb kein Ort für lange Begrüßungstexte, sondern für die Antworten auf diese Fragen.',
+        'Oben stehen Fachrichtung und Bezirk, die Sprechzeiten und der Weg zum Termin. Direkt darunter folgen drei oder vier Einstiege zu dem, was dein Team am Telefon am häufigsten erklärt: Rezept anfragen, Überweisung, Team und Anfahrt. Ein Hinweis auf Urlaub und Vertretung erscheint nur, wenn er gebraucht wird. So findet auch jemand, der selten im Netz unterwegs ist, schnell die richtige Stelle.',
+        'Offen gesagt: Eine Website nimmt deinem Team nicht jedes Telefonat ab. Akute Beschwerden gehören weiter ans Telefon oder in die Sprechstunde, und das sollte die Seite deutlich sagen. Befunde und Diagnosen gehören nicht in ein Formular. Die Website fängt die Routinefragen ab, damit die Leitung für alles andere frei bleibt.'
+      ],
+      pointsTitle: 'Das gehört in den ersten Bildschirm',
+      points: [
+        'Fachrichtung und Bezirk in der Überschrift',
+        'Sprechzeiten und offene Sprechstunde auf einen Blick',
+        'Ein Knopf zum Termin, auf dem Handy immer sichtbar',
+        'Der Hinweis, ob du neue Patienten aufnimmst',
+        'Telefonnummer zum Antippen',
+        'Vertretung und Bereitschaftsdienst bei Urlaub'
+      ],
+      image: {
+        src: '/images/branchen/arzt/arzt-startseite.webp',
+        alt: 'Beispielaufbau der Startseite einer Hausarztpraxis mit Überschrift, Knopf zur Terminanfrage und den Kacheln Sprechzeiten, Team und Rezepte',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -174,6 +244,21 @@ export const ARZT_PAGE = Object.freeze({
         { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' },
         { href: '/blog/barrierefreie-website-bfsg', label: 'Barrierefreie Website und BFSG' }
       ]
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für deine Praxis aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Leistungsübersicht, Terminanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Praxisräumen und Team.',
+      items: [
+        { src: '/images/branchen/arzt/arzt-angebot.webp', alt: 'Beispielaufbau einer Leistungsübersicht einer Arztpraxis mit sechs Kacheln von Vorsorge über Impfungen bis Rezepte', width: 720, height: 540, title: 'Leistungen', caption: 'Beispielaufbau: Vorsorge, Impfungen, Hausbesuche und Videosprechstunde bekommen je eine Kachel mit kurzer Erklärung.' },
+        { src: '/images/branchen/arzt/arzt-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage auf dem Handy mit Anliegen, Versicherung und Wunschzeit', width: 720, height: 540, title: 'Terminanfrage', caption: 'Beispielaufbau: Anliegen, Versicherung und Wunschzeit in drei Feldern, ohne Angaben zu Diagnosen.' },
+        { src: '/images/branchen/arzt/arzt-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Hausarztpraxis mit Sprechzeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Hausarzt Berlin Pankow“ erscheinen, mit Sprechzeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deiner Praxis aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

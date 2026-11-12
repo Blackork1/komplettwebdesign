@@ -7,7 +7,7 @@ import { MARKETING_IMAGES } from './marketingImages.js';
 
 const HERO_IMAGE = MARKETING_IMAGES.industryRealEstateHero;
 
-export const IMMOBILIENMAKLER_CONTENT_UPDATED_ISO = '2026-10-25';
+export const IMMOBILIENMAKLER_CONTENT_UPDATED_ISO = '2026-11-11';
 
 export const IMMOBILIENMAKLER_FAQ = Object.freeze([
   {
@@ -49,6 +49,30 @@ export const IMMOBILIENMAKLER_FAQ = Object.freeze([
   {
     q: 'Kann meine bestehende Makler-Website überarbeitet werden?',
     a: 'Ja. Bei einem Relaunch prüfe ich zuerst, welche Inhalte und Seitenadressen bei Google bereits funktionieren. Wichtige Inhalte bleiben erhalten, alte Adressen werden sauber auf die neuen Seiten weitergeleitet.'
+  },
+  {
+    q: 'Was ist bei Webdesign für Makler anders als bei einer gewöhnlichen Firmenwebsite?',
+    a: 'Eine Makler-Website spricht zwei Gruppen an: Eigentümer, die einen Makler suchen, und Interessenten, die ein Objekt suchen. Eigentümer brauchen Vorgehen, Referenzen und eine Bewertungsanfrage, Interessenten aktuelle Objekte mit vollständigen Angaben. Dazu kommen Pflichtangaben wie die Erlaubnis nach § 34c Gewerbeordnung und die Werte aus dem Energieausweis. Aufbau und Navigation müssen beide Wege klar trennen.'
+  },
+  {
+    q: 'Wie viele Seiten braucht eine Makler-Website?',
+    a: 'Für den Start reichen eine Startseite, eine Seite zu deinen Leistungen und eine Kontaktseite mit Bewertungsanfrage. Das deckt das Start-Paket mit bis zu drei Seiten ab. Wer Verkauf, Vermietung und Bewertung getrennt zeigen und Team, Referenzen und Lagen ergänzen will, plant etwa vier bis sieben Seiten. Dafür passt das Business-Paket ({{price.business}}).'
+  },
+  {
+    q: 'Lohnt sich ein Online-Rechner für die Immobilienbewertung?',
+    a: 'Das kommt auf dein Büro an. Ein Rechner mit automatischem Ergebnis braucht Marktdaten eines Anbieters und kostet dort meist eine laufende Lizenz. Ein solches Werkzeug kann ich einbinden. Für kleinere Büros reicht oft die kurze Anfrage mit persönlichem Rückruf: Du lernst den Eigentümer kennen, und der Wert stammt von dir statt aus einer Formel.'
+  },
+  {
+    q: 'Brauche ich als Makler eigene Seiten für einzelne Berliner Bezirke?',
+    a: 'Nur für Lagen, zu denen du etwas Eigenes sagen kannst. Kopierte Seiten, in denen nur der Bezirksname wechselt, erkennt Google und sie bringen nichts. Eine Seite zu Steglitz oder Pankow lohnt sich, wenn du dort Objekte vermittelt hast, die Nachfrage einschätzen kannst und typische Fragen von Eigentümern aus dem Bezirk beantwortest.'
+  },
+  {
+    q: 'Darf ich verkaufte Objekte als Referenz auf der Website zeigen?',
+    a: 'Mit Zustimmung der Eigentümer ja. Üblich sind Objektart, Lage ohne genaue Adresse, ein oder zwei Bilder und die Dauer der Vermarktung. Am einfachsten holst du die Zustimmung schon bei der Auftragserteilung ein. Das ist keine Rechtsberatung: Im Zweifel hilft dein Berufsverband.'
+  },
+  {
+    q: 'Makler-Homepage: Vorlage der Maklersoftware oder eigener Webdesigner?',
+    a: 'Viele Maklerprogramme bringen eine Website-Vorlage mit. Das geht schnell, und die Objekte sind sofort eingebunden. Der Nachteil: Aufbau und Texte ähneln vielen anderen Büros, und für Seiten zu Bewertung, Lagen und Referenzen bleibt wenig Spielraum. Bei mir bekommst du Seitenplan, Texte und Gestaltung für dein Büro. Die Objekte kommen trotzdem aus deiner Software.'
   }
 ]);
 
@@ -57,6 +81,8 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
   path: '/branchen/webdesign-immobilienmakler',
   breadcrumb: 'Immobilienmakler',
   trackPrefix: 'makler',
+  motion: true,
+  tone: 'klar',
   metaTitle: 'Website für Immobilienmakler in Berlin | Webdesign & SEO',
   metaDescription: 'Webdesign für Immobilienmakler in Berlin: Eigentümer gewinnen, Objekte zeigen, Bewertungsanfragen erhalten und lokal gefunden werden. Pakete {{price.start}}.',
   schema: {
@@ -106,6 +132,50 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
         { icon: 'fa-file-signature', title: 'Ablauf und Kosten', text: 'Wie ein Auftrag abläuft und wie die Provision geregelt ist. Klare Angaben nehmen Eigentümern die Unsicherheit.' },
         { icon: 'fa-scale-balanced', title: 'Impressum und Pflichtangaben', text: 'Ein vollständiges Impressum mit den Angaben zu deiner Erlaubnis und eine Datenschutzerklärung.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'weg-zum-auftrag',
+      chip: 'Beispiel',
+      title: 'Vom Verkaufsgedanken zum Auftrag: der Weg eines Eigentümers über deine Website',
+      intro: 'Kaum ein Eigentümer beauftragt den ersten Makler, den er findet. Zwischen der ersten Suche und dem Auftrag liegen mehrere Schritte. Die Website begleitet jeden davon. Das Beispiel zeigt den Verkauf einer geerbten Wohnung.',
+      listLabel: 'Sechs Schritte von der Suche bis zum Maklerauftrag',
+      items: [
+        { label: 'Schritt 1', title: 'Der Anlass', text: 'Ein Ehepaar erbt eine Wohnung in Steglitz und sucht „Wohnung verkaufen Steglitz“.' },
+        { label: 'Schritt 2', title: 'Der erste Eindruck', text: 'Deine Seite zum Verkauf erklärt Vorgehen, Dauer und Provision in klaren Worten.' },
+        { label: 'Schritt 3', title: 'Die Prüfung', text: 'Verkaufte Objekte aus dem Bezirk und Bewertungen zeigen, dass du die Lage kennst.' },
+        { label: 'Schritt 4', title: 'Die Bewertungsanfrage', text: 'Objektart, Lage und Wohnfläche reichen. Die Anfrage landet in deinem Postfach.' },
+        { label: 'Schritt 5', title: 'Der Termin', text: 'Du rufst zurück und vereinbarst die Besichtigung. Die Eckdaten kennst du schon vorher.' },
+        { label: 'Schritt 6', title: 'Der Auftrag', text: 'Nach der Wertermittlung entscheiden die Eigentümer. Team und Referenzen auf der Website stützen die Wahl.' }
+      ],
+      note: 'Kaufinteressenten gehen einen kürzeren Weg: Objekt ansehen, Anfrage direkt am Objekt senden, Besichtigung vereinbaren.'
+    },
+    {
+      type: 'feature',
+      id: 'objektseiten',
+      soft: true,
+      chip: 'Objekte',
+      title: 'Webdesign für Makler: Objekte zeigen, ohne sie doppelt zu pflegen',
+      paragraphs: [
+        'Auf vielen Makler-Websites stehen Objekte doppelt: einmal in der Maklersoftware und einmal von Hand eingetippt auf der Homepage. Nach ein paar Wochen zeigt die Website dann Wohnungen, die längst verkauft sind. Besser ist eine einzige Quelle. Die Objekte kommen aus dem Export deiner Software und erscheinen auf der Website im eigenen Design.',
+        'Eine gute Objektseite zeigt mehr als die Anzeige im Portal. Bilder in fester Reihenfolge, Grundriss, Eckdaten und eine Lagebeschreibung in eigenen Worten gehören dazu, außerdem der Ansprechpartner mit Foto und eine Anfrage direkt am Objekt. Verkaufte Objekte bleiben als Referenz sichtbar, wenn die Eigentümer zustimmen. So sehen neue Eigentümer, dass du in ihrer Lage verkaufst.',
+        'Offen gesagt: Bei einer Handvoll Objekten im Jahr reicht eine Liste, die von Hand gepflegt wird. Die Anbindung an die Maklersoftware gehört zum Individuell-Paket ({{price.individuell}}) und hängt vom Anbieter ab. Eine Objektsuche mit Filtern lohnt sich erst bei vielen Angeboten. Was zu deinem Büro passt, klären wir im Erstgespräch, bevor Kosten entstehen.'
+      ],
+      pointsTitle: 'Das gehört auf eine Objektseite',
+      points: [
+        'Fotos in fester Reihenfolge: Außenansicht, Wohnräume, Grundriss',
+        'Eckdaten auf einen Blick: Preis, Fläche, Zimmer und Baujahr',
+        'Angaben aus dem Energieausweis, sobald er vorliegt',
+        'Lagebeschreibung in eigenen Worten statt Textbaustein',
+        'Ansprechpartner mit Foto und Anfrage direkt am Objekt',
+        'Verkaufte Objekte als Referenz, wenn Eigentümer zustimmen'
+      ],
+      image: {
+        src: '/images/branchen/immobilienmakler/immobilienmakler-angebot.webp',
+        alt: 'Beispielaufbau einer Objektübersicht mit sechs Kacheln von Wohnung über Einfamilienhaus bis Gewerbe',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -199,6 +269,21 @@ export const IMMOBILIENMAKLER_PAGE = Object.freeze({
         wachstum: 'Für Büros mit mehreren Schwerpunkten oder Standorten oder den Relaunch einer bestehenden Website mit acht bis zwölf Seiten.'
       },
       note: 'Eine Anbindung an deine Maklersoftware ist Teil des Individuell-Pakets {{price.individuell}}. Hosting, Domain, E-Mail und Wartung sind optional und werden separat vereinbart.'
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für dein Maklerbüro aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Bewertungsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Büro und Objekten.',
+      items: [
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-startseite.webp', alt: 'Beispielaufbau der Startseite eines Maklerbüros mit Überschrift, Knopf zur Immobilienbewertung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Leistung, Stadt und der Knopf zur Bewertung, darunter Wertermittlung, Objekte und Verkauf.' },
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-anfrage.webp', alt: 'Beispielaufbau einer Bewertungsanfrage auf dem Handy mit Objektart, Lage und Wohnfläche', width: 720, height: 540, title: 'Bewertungsanfrage', caption: 'Beispielaufbau: Objektart, Lage und Wohnfläche in drei Feldern, dazu die Wahl zwischen Verkauf und Vermietung.' },
+        { src: '/images/branchen/immobilienmakler/immobilienmakler-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für ein Maklerbüro mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Büro bei „Immobilienmakler Berlin Pankow“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Büro aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'process',

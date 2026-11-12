@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Salons und Kundschaft, Konkurrenzseiten und die Pressemitteilung
 // des Zentralverbands des Deutschen Friseurhandwerks vom 29.06.2026.
 
-export const FRISEUR_CONTENT_UPDATED_ISO = '2026-10-29';
+export const FRISEUR_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const ZV_SOURCE = 'Zentralverband Friseurhandwerk, Juni 2026';
 
@@ -47,6 +47,30 @@ export const FRISEUR_FAQ = Object.freeze([
   {
     q: 'Wie lange dauert es, bis meine Salon-Website online ist?',
     a: 'Ein Onepager ist meist in 2 bis 4 Wochen online, eine mehrseitige Website in 4 bis 6 Wochen. Liegen Preisliste und Fotos deiner Arbeiten früh vor, geht es schneller.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website eines Friseursalons?',
+    a: 'Für einen kleinen Salon reicht oft ein Onepager mit Leistungen, Preisliste, Öffnungszeiten, Team und Buchung. Das deckt das Start-Paket ({{price.start}}) ab. Eigene Seiten für Preise, Galerie, Team, Gutscheine und Jobs lohnen sich, wenn du für einzelne Leistungen wie Balayage oder Locken gefunden werden willst. Dafür passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Erstellst du auch Websites für Barbershops?',
+    a: 'Ja. Bei Barbershops stehen Walk-in-Zeiten, Preise für Schnitt und Bart und Fotos der Arbeiten im Mittelpunkt. Die Gestaltung darf kräftiger sein als bei einem Damensalon, der Aufbau bleibt gleich: Wer die Seite öffnet, soll in wenigen Sekunden sehen, was es kostet, wann geöffnet ist und ob ein Termin nötig ist.'
+  },
+  {
+    q: 'Kann ich Gutscheine über die Salon-Website verkaufen?',
+    a: 'Ja. Am einfachsten ist eine Gutscheinanfrage per Formular: Die Kundin nennt Wert und Anlass, du stellst den Gutschein aus, bezahlt wird im Salon oder per Überweisung. Das geht in jedem Paket. Ein Verkauf mit Bezahlung im Netz und automatischem Versand gehört zum Individuell-Paket ({{price.individuell}}) oder läuft über dein Buchungssystem, wenn es Gutscheine anbietet.'
+  },
+  {
+    q: 'Friseur-Website selbst bauen oder erstellen lassen?',
+    a: 'Ein Baukasten kann für den Anfang reichen, wenn du Texte, Fotos und Technik selbst übernimmst. Oft bleibt die Seite dann halb fertig, weil der Salon vorgeht. Bei mir bekommst du Seitenplan, Texte, Gestaltung und Umsetzung aus einer Hand, dazu eine kurze Ladezeit auf dem Handy und saubere Angaben für die lokale Suche. Du sprichst dabei direkt mit mir und nicht mit wechselnden Ansprechpartnern.'
+  },
+  {
+    q: 'Wie stelle ich mein Team auf der Website vor?',
+    a: 'Mit einem Foto und zwei oder drei Sätzen je Person: Schwerpunkte wie Locken, Balayage oder Fades, Arbeitstage und der direkte Weg zur Buchung bei dieser Person. Viele buchen gezielt bei jemandem, dessen Arbeiten sie gesehen haben. Verlässt jemand den Salon, sollte das Profil zeitnah verschwinden. Auf Wunsch änderst du das selbst.'
+  },
+  {
+    q: 'Soll ich meine Pflegeprodukte auf der Website zeigen?',
+    a: 'Zeigen ja, verkaufen nur mit Bedacht. Ein kurzer Abschnitt nennt die Marken, mit denen du arbeitest, und dass es sie im Salon zu kaufen gibt. Das beantwortet eine häufige Frage und macht kaum Arbeit. Ein Produktshop mit Bezahlung und Versand gehört zum Individuell-Paket ({{price.individuell}}) und lohnt sich erst, wenn du Lager und Versand wirklich betreuen willst.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const FRISEUR_PAGE = Object.freeze({
   path: '/branchen/webdesign-friseur',
   breadcrumb: 'Friseure',
   trackPrefix: 'friseur',
+  motion: true,
+  tone: 'floral',
   metaTitle: 'Friseur-Website erstellen lassen | Friseursalon Berlin',
   metaDescription: 'Website für Friseure und Barbershops in Berlin: Online-Termin, Preisliste, Walk-in-Zeiten und Team klar zeigen und lokal gefunden werden. Pakete {{price.start}}.',
   schema: {
@@ -108,6 +134,50 @@ export const FRISEUR_PAGE = Object.freeze({
         { icon: 'fa-receipt', title: 'Gutscheine', text: 'Gutscheine zum Verschenken, im Salon oder online erhältlich, mit klarem Hinweis, wie sie eingelöst werden.' },
         { icon: 'fa-user-plus', title: 'Jobs und Ausbildung', text: 'Offene Stellen und Ausbildungsplätze mit kurzem Bewerbungsweg. Die Zahl neuer Ausbildungsverträge im Friseurhandwerk steigt wieder.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'alltag',
+      chip: 'Beispiel',
+      title: 'Ein Tag mit deiner Salon-Website',
+      intro: 'Während du schneidest, färbst und berätst, beantwortet die Website die Fragen, die sonst das Telefon am Empfang klingeln lassen. Die Zeiten sind ein Beispiel.',
+      listLabel: 'Beispiel für einen Tag mit der Website eines Friseursalons',
+      items: [
+        { time: '08:30', title: 'Termine vom Vorabend', text: 'Zwei Buchungen sind über Nacht eingegangen. Der Kalender füllt sich, bevor du aufschließt.' },
+        { time: '10:00', title: 'Gefunden im Kiez', text: 'Jemand sucht „Friseur in der Nähe“ und sieht Preise, Öffnungszeiten und den Weg zu dir.' },
+        { time: '12:30', title: 'Preise in der Mittagspause', text: 'Eine Neukundin liest, was Schnitt und Farbe ab welchem Preis kosten, und bucht für Freitag.' },
+        { time: '15:00', title: 'Walk-in ohne Anruf', text: 'Die Seite nennt die Zeiten ohne Termin. Ein Kunde kommt vorbei, statt erst anzurufen.' },
+        { time: '18:00', title: 'Arbeiten ansehen', text: 'Die Galerie zeigt deine Balayage. Der Knopf daneben führt direkt zur Buchung.' },
+        { time: '21:30', title: 'Buchen nach Ladenschluss', text: 'Der Termin für nächste Woche wird abends auf dem Sofa gebucht. Die Erinnerung verschickt das Buchungssystem.' }
+      ],
+      note: 'Ein Buchungssystem musst du dafür nicht neu anschaffen. Nutzt du schon eines, binde ich es ein. Ohne System arbeitet die Seite mit Anruf, WhatsApp und einer kurzen Terminanfrage.'
+    },
+    {
+      type: 'feature',
+      id: 'preisliste',
+      soft: true,
+      chip: 'Preisliste',
+      title: 'Friseur-Website erstellen lassen: eine Preisliste, die auf dem Handy lesbar ist',
+      paragraphs: [
+        'Die Preisliste gehört bei Salons meist zu den Seiten, die am häufigsten geöffnet werden. Trotzdem ist sie oft ein Foto vom Aushang oder ein PDF, das auf dem Handy erst geladen und dann vergrößert werden muss. Google erfasst Text deutlich besser als ein Foto, und wer unterwegs „Friseur Preise“ sucht, gibt nach zwei Versuchen auf. Eine Preisliste als Text löst beides.',
+        'Gut lesbar wird die Liste mit klaren Gruppen: Damen, Herren, Kinder, Farbe und Pflege. Jede Zeile nennt Leistung und Ab-Preis, bei Farbe und langen Haaren mit dem Hinweis, wovon der Endpreis abhängt. Pakete wie Waschen, Schneiden, Föhnen stehen als eine Zeile da, so wie Kundinnen und Kunden danach fragen. Direkt unter jeder Gruppe steht der Knopf zur Buchung.',
+        'Offen gesagt: Bei Farbe lässt sich nicht jeder Preis vorab festlegen. Dann ist eine ehrliche Spanne besser als ein niedriger Lockpreis, der im Salon nicht hält. Die Preise auf der Website sollten außerdem zum Aushang im Salon passen. Auf Wunsch richte ich die Liste so ein, dass du Preise selbst änderst.'
+      ],
+      pointsTitle: 'So wird die Preisliste lesbar',
+      points: [
+        'Als Text statt als Foto oder PDF',
+        'Gruppen für Damen, Herren, Kinder, Farbe und Pflege',
+        'Ab-Preise mit Hinweis, wovon der Endpreis abhängt',
+        'Übliche Dauer bei langen Terminen wie Balayage',
+        'Knopf zur Buchung unter jeder Gruppe',
+        'Dieselben Preise wie im Aushang und im Buchungssystem'
+      ],
+      image: {
+        src: '/images/branchen/friseur/friseur-angebot.webp',
+        alt: 'Beispielaufbau einer Preisliste für einen Friseursalon mit den Gruppen Damen sowie Herren und Kinder',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -165,6 +235,21 @@ export const FRISEUR_PAGE = Object.freeze({
         { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' },
         { href: '/blog/barrierefreie-website-bfsg', label: 'Barrierefreie Website und BFSG' }
       ]
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für deinen Salon aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Terminbuchung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Salon, Team und deinen Arbeiten.',
+      items: [
+        { src: '/images/branchen/friseur/friseur-startseite.webp', alt: 'Beispielaufbau der Startseite eines Friseursalons mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Kiez und der Knopf zum Termin stehen oben, darunter Schnitt, Farbe und Preise.' },
+        { src: '/images/branchen/friseur/friseur-anfrage.webp', alt: 'Beispielaufbau einer Terminbuchung für den Friseur auf dem Handy mit Leistung, Wunschtermin und Stylistin', width: 720, height: 540, title: 'Terminbuchung', caption: 'Beispielaufbau: Leistung, Wunschtermin und Stylistin in drei Feldern, dazu der Hinweis, ob es der erste Besuch ist.' },
+        { src: '/images/branchen/friseur/friseur-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Friseursalon mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Salon bei „Friseur in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Salon aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

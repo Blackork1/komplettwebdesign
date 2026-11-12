@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Fotografen und Kundschaft, Konkurrenzseiten, Kunsturhebergesetz,
 // Urheberrechtsgesetz und Preisangabenverordnung.
 
-export const FOTOGRAF_CONTENT_UPDATED_ISO = '2026-10-29';
+export const FOTOGRAF_CONTENT_UPDATED_ISO = '2026-11-11';
 
 export const FOTOGRAF_FAQ = Object.freeze([
   {
@@ -45,6 +45,30 @@ export const FOTOGRAF_FAQ = Object.freeze([
   {
     q: 'Wie lange dauert es, bis meine Website online ist?',
     a: 'Ein Onepager ist meist in 2 bis 4 Wochen online, eine mehrseitige Website in 4 bis 6 Wochen. Liegt deine Bildauswahl je Genre früh vor, geht es schneller.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website eines Fotografen?',
+    a: 'Für den Start reicht ein Onepager mit Portfolio, Paketen, einem Abschnitt über dich und der Anfrage. Das deckt das Start-Paket ({{price.start}}) ab. Wer mehrere Genres anbietet, plant je eine Seite für Hochzeit, Business oder Familie, dazu Preise und Über mich. Dafür passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Kann ich Kundengalerien mit Passwort über die Website anbieten?',
+    a: 'Ja. Nutzt du schon einen Galerie-Dienst, verlinke ich ihn oder binde ihn ein. Das geht in jedem Paket, die Gebühren zahlst du weiter beim Anbieter. Eine eigene Kundengalerie mit Passwort, Bildauswahl und Download gehört zum Individuell-Paket ({{price.individuell}}). Für die meisten Fotografinnen und Fotografen ist der eingebundene Dienst der einfachere Weg.'
+  },
+  {
+    q: 'Soll ich zeigen, an welchen Terminen ich noch frei bin?',
+    a: 'Ein öffentlicher Kalender ist selten nötig und muss ständig aktuell gehalten werden. Meist reicht ein kurzer Hinweis, der an einer Stelle gepflegt wird, etwa dass für den Sommer nur noch einzelne Samstage frei sind. Die Anfrage mit Wunschdatum bleibt der eigentliche Weg: Du siehst sofort, ob der Tag passt, und antwortest mit einem Angebot.'
+  },
+  {
+    q: 'Lohnt sich ein Blog mit Reportagen für Fotografen?',
+    a: 'Wenn du ihn regelmäßig füllst, ja. Jede Reportage mit Ort und ein paar Sätzen zum Tag ist eine eigene Seite, die bei Suchen nach der Location erscheinen kann. Paare sehen außerdem, wie du einen ganzen Tag begleitest. Wichtig sind die Einwilligung der Abgebildeten und eine Auswahl: lieber sechs starke Reportagen als dreißig mit je fünf Bildern.'
+  },
+  {
+    q: 'Kann eine Website Hochzeitspaare und Firmenkunden gleichzeitig ansprechen?',
+    a: 'Ja, wenn beide Gruppen ihren eigenen Bereich bekommen. Die Startseite dient als Weiche, danach unterscheiden sich Bildauswahl, Ton und Inhalte: Paare suchen Reportagen, Pakete und Stimmen, Firmen suchen Beispiele aus ihrer Branche, Nutzungsrechte und einen schnellen Weg zum Angebot. Vermischt auf einer Seite fühlt sich keine der beiden Gruppen gemeint.'
+  },
+  {
+    q: 'Was gehört auf die Über-mich-Seite eines Fotografen?',
+    a: 'Ein aktuelles Foto von dir, ein paar Sätze dazu, wie du arbeitest, und was Kundinnen und Kunden am Tag des Shootings von dir erwarten können. Ein Lebenslauf mit jeder Station ist nicht nötig. Gerade bei Hochzeiten und Familien wird die Person gebucht, nicht nur der Bildstil. Unter dem Text steht der Weg zur Anfrage.'
   }
 ]);
 
@@ -53,6 +77,8 @@ export const FOTOGRAF_PAGE = Object.freeze({
   path: '/branchen/webdesign-fotograf',
   breadcrumb: 'Fotografen',
   trackPrefix: 'fotograf',
+  motion: true,
+  tone: 'klar',
   metaTitle: 'Fotografen-Website erstellen lassen | Portfolio Berlin',
   metaDescription: 'Website für Fotografinnen und Fotografen in Berlin: Portfolio nach Genre, Pakete und Preise, Verfügbarkeit und schnell ladende Galerien. Pakete {{price.start}}.',
   schema: {
@@ -102,6 +128,50 @@ export const FOTOGRAF_PAGE = Object.freeze({
         { icon: 'fa-star', title: 'Stimmen von Kundinnen und Kunden', text: 'Echte Bewertungen von Paaren und Firmen, mit Einwilligung und Link zur Quelle.' },
         { icon: 'fa-user', title: 'Über dich', text: 'Wer hinter der Kamera steht. Gerade bei Hochzeiten und Familien bucht man die Person, nicht nur den Stil.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'weg-zur-buchung',
+      chip: 'Beispiel',
+      title: 'Von der Suche zur Buchung: der Weg eines Paares über deine Website',
+      intro: 'Fotografie wird selten spontan gebucht. Zwischen der ersten Suche und der Zusage liegen mehrere Schritte. Die Website begleitet jeden davon, auch wenn du gerade auf einem Shooting bist.',
+      listLabel: 'Sechs Schritte von der Suche bis zur Buchung',
+      items: [
+        { label: 'Schritt 1', title: 'Die Suche', text: 'Ein Paar sucht „Hochzeitsfotograf Berlin“ und landet auf deiner Seite für Hochzeiten.' },
+        { label: 'Schritt 2', title: 'Das Portfolio', text: 'Zwei ganze Reportagen zeigen, wie du einen Tag begleitest, vom Ankleiden bis zum Tanz.' },
+        { label: 'Schritt 3', title: 'Die Pakete', text: 'Dauer, Zahl der Bilder und Ab-Preis stehen direkt darunter. Das Budget lässt sich einordnen.' },
+        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Datum, Ort und Umfang ab. Du siehst sofort, ob der Tag frei ist.' },
+        { label: 'Schritt 5', title: 'Das Kennenlernen', text: 'Im Gespräch geht es um Wünsche und Ablauf. Die Eckdaten kennst du schon.' },
+        { label: 'Schritt 6', title: 'Die Buchung', text: 'Das Angebot geht raus. Fragen zu Ablauf und Bildlieferung beantwortet die Website.' }
+      ],
+      note: 'Bei Bewerbungsfotos oder Business-Porträts ist der Weg kürzer: Preise ansehen, Termin anfragen, vorbeikommen.'
+    },
+    {
+      type: 'feature',
+      id: 'genre-seiten',
+      soft: true,
+      chip: 'Portfolio',
+      title: 'Webdesign für Fotografen: Portfolio, Pakete und Anfrage auf einer Seite',
+      paragraphs: [
+        'Viele Fotografen-Websites sind reine Galerien. Die Bilder sind stark, aber wer anfragen will, findet weder Preise noch Ablauf und muss erst eine Nachricht schreiben. Auch Google hat es schwer: Ohne Text ist kaum zu erkennen, ob die Seite zu Hochzeiten, Bewerbungsfotos oder Produktbildern gehört.',
+        'Besser funktioniert eine Seite je Genre, die alles Nötige bündelt. Oben stehen ein starkes Bild und ein Satz dazu, was du anbietest und wo. Darunter folgt eine kuratierte Auswahl, dann die Pakete mit Dauer, Zahl der Bilder und Ab-Preis. Ein kurzer Ablauf und zwei oder drei Stimmen schließen die Seite ab, direkt vor der Anfrage mit Datum. Wer unten ankommt, weiß genug, um zu schreiben.',
+        'Offen gesagt: Nicht jedes Genre braucht eine eigene Seite. Wer fast nur Hochzeiten fotografiert, braucht keine Seite für Produktfotos mit drei Bildern. Zeig, wofür du gebucht werden willst. Ein schmales, klares Portfolio wirkt stärker als eines, das alles ein bisschen zeigt.'
+      ],
+      pointsTitle: 'Das gehört auf die Seite eines Genres',
+      points: [
+        'Ein starkes Bild und ein Satz zu Angebot und Ort ganz oben',
+        'Kuratierte Auswahl statt aller Bilder',
+        'Pakete mit Dauer, Zahl der Bilder und Ab-Preis',
+        'Ablauf vom Vorgespräch bis zur Bildlieferung',
+        'Stimmen von Kundinnen und Kunden mit Einwilligung',
+        'Anfrage mit Datum direkt unter den Paketen'
+      ],
+      image: {
+        src: '/images/branchen/fotograf/fotograf-angebot.webp',
+        alt: 'Beispielaufbau einer Portfolio-Übersicht für Fotografen mit sechs Kacheln von Hochzeit bis Produkt',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -157,6 +227,21 @@ export const FOTOGRAF_PAGE = Object.freeze({
       ],
       note: 'Ich setze um und weise auf heikle Stellen hin, ersetze aber keine Rechtsberatung. Verbindlich klären das dein Berufsverband oder eine Anwältin bzw. ein Anwalt.',
       noteLink: { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann deine Fotografen-Website aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Shooting-Anfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und lebt von deinen eigenen Bildern.',
+      items: [
+        { src: '/images/branchen/fotograf/fotograf-startseite.webp', alt: 'Beispielaufbau der Startseite eines Fotografen mit Überschrift, Knopf zur Shooting-Anfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Stil, Ort und der Knopf zur Anfrage stehen oben, darunter Portfolio, Preise und Termine.' },
+        { src: '/images/branchen/fotograf/fotograf-anfrage.webp', alt: 'Beispielaufbau einer Shooting-Anfrage auf dem Handy mit Art des Shootings, Datum und Ort', width: 720, height: 540, title: 'Shooting-Anfrage', caption: 'Beispielaufbau: Art des Shootings, Datum und Ort in drei Feldern, dazu ganztags oder halbtags zur Auswahl.' },
+        { src: '/images/branchen/fotograf/fotograf-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für einen Hochzeitsfotografen mit Route, Anruf und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kannst du bei „Hochzeitsfotograf Berlin“ erscheinen, mit Route, Anruf und dem Weg zur Website.' }
+      ],
+      note: 'Farben, Schriften und Bildauswahl richte ich nach deinem Stil aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

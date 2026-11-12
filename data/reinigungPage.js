@@ -3,7 +3,7 @@
 // „website reinigungsunternehmen“), das Referenzprojekt TM Sauber & Mehr und die
 // BIV-Konjunkturumfrage vom April 2026. Preise kommen als Platzhalter und werden beim Rendern ersetzt.
 
-export const REINIGUNG_CONTENT_UPDATED_ISO = '2026-10-25';
+export const REINIGUNG_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const BIV_SOURCE = 'BIV-Konjunkturumfrage, Frühjahr 2026';
 
@@ -55,6 +55,30 @@ export const REINIGUNG_FAQ = Object.freeze([
   {
     q: 'Kann meine bestehende Website überarbeitet werden?',
     a: 'Ja. So war es auch bei TM Sauber & Mehr. Bei einem Relaunch prüfe ich zuerst, welche Inhalte und Seitenadressen bei Google bereits funktionieren. Wichtige Inhalte bleiben erhalten, alte Adressen werden sauber auf die neuen Seiten weitergeleitet.'
+  },
+  {
+    q: 'Was ist bei Webdesign für Gebäudereinigung anders als in anderen Branchen?',
+    a: 'Die wichtigsten Auftraggeber sind Unternehmen und Hausverwaltungen. Sie entscheiden nicht spontan, sondern vergleichen Leistungsumfang, Zuverlässigkeit und Nachweise. Die Website muss deshalb weniger werben und mehr belegen: klare Leistungsseiten, Versicherung und Qualifikation, feste Ansprechpartner und eine Anfrage, die Fläche und Turnus abfragt. Dazu kommt die Karriereseite, weil viele Betriebe Personal suchen.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website einer Reinigungsfirma?',
+    a: 'Für den Start reichen eine Startseite, eine Leistungsübersicht und eine Kontaktseite mit Angebotsanfrage. Das deckt das Start-Paket mit bis zu drei Seiten ab. Wer mehrere Reinigungsarten anbietet, plant je eine Seite pro Leistung, dazu Referenzen und Karriere. Dafür passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Wie lange dauert es, bis SEO für eine Reinigungsfirma wirkt?',
+    a: 'Rechne mit Monaten, nicht mit Tagen. Google muss neue Seiten erst erfassen und einordnen. Schneller wirkt meist das Google-Unternehmensprofil mit vollständigen Angaben, Fotos und neuen Bewertungen. Die Leistungsseiten bauen darauf auf und bringen nach und nach Suchanfragen mit Reinigungsart und Bezirk. Feste Platzierungen kann niemand seriös garantieren.'
+  },
+  {
+    q: 'Lohnt sich eine Website, wenn die meisten Aufträge über Empfehlungen kommen?',
+    a: 'Ja, gerade dann. Wer eine Empfehlung bekommt, sucht den Betrieb meist noch einmal im Netz, bevor er anruft. Findet er keine Website oder eine veraltete, kommen Zweifel auf. Eine aktuelle Seite mit Leistungen, Nachweisen und Ansprechpartner bestätigt die Empfehlung und macht den Anruf leichter.'
+  },
+  {
+    q: 'Brauche ich eigene Seiten für jeden Berliner Bezirk?',
+    a: 'Nein, nicht für jeden. Kopierte Seiten, in denen nur der Bezirksname wechselt, erkennt Google und sie bringen nichts. Sinnvoll ist eine Seite für das Einsatzgebiet mit den Bezirken, in denen du wirklich arbeitest. Eigene Bezirksseiten lohnen sich nur dort, wo du etwas Eigenes zeigen kannst: ein Referenzobjekt, eine feste Tour oder einen Standort.'
+  },
+  {
+    q: 'Kann ich Zertifikate und Versicherungsnachweise auf der Website zeigen?',
+    a: 'Ja, und das lohnt sich. Nenne die Betriebshaftpflicht, die Mitgliedschaft in der Innung, den Meisterbrief und vorhandene Zertifikate mit Jahr. Logos und Siegel darfst du nur nutzen, wenn der Herausgeber das erlaubt. Auftraggeber prüfen diese Angaben oft schon vor der ersten Anfrage.'
   }
 ]);
 
@@ -63,6 +87,8 @@ export const REINIGUNG_PAGE = Object.freeze({
   path: '/branchen/webdesign-reinigung',
   breadcrumb: 'Reinigungsfirmen',
   trackPrefix: 'reinigung',
+  motion: true,
+  tone: 'frisch',
   metaTitle: 'Webdesign für Reinigungsfirmen & Gebäudeservice in Berlin',
   metaDescription: 'Website für Gebäudereinigung und Gebäudeservice in Berlin: Leistungen, Einsatzgebiet und Angebotsanfrage klar zeigen. Mit Praxisbeispiel, {{price.start}}.',
   schema: {
@@ -116,6 +142,49 @@ export const REINIGUNG_PAGE = Object.freeze({
         { icon: 'fa-star', title: 'Referenzen und Bewertungen', text: 'Kundenstimmen, Google-Bewertungen und Beispiele betreuter Objekte, auf Wunsch anonymisiert.' },
         { icon: 'fa-user-plus', title: 'Karriere', text: 'Offene Stellen mit Einsatzort und Arbeitszeiten und ein kurzer Bewerbungsweg per Telefon, WhatsApp oder Formular.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'weg-zum-auftrag',
+      chip: 'Beispiel',
+      title: 'Vom Suchbegriff zum Auftrag: so arbeitet deine Website',
+      intro: 'Gewerbliche Aufträge entstehen selten mit einem Klick. Zwischen der ersten Suche und dem unterschriebenen Vertrag liegen mehrere Schritte. Die Website begleitet jeden davon.',
+      listLabel: 'Sechs Schritte von der Suche bis zum Auftrag',
+      items: [
+        { label: 'Schritt 1', title: 'Die Suche', text: 'Eine Hausverwaltung sucht „Treppenhausreinigung Pankow“ und findet deine Leistungsseite.' },
+        { label: 'Schritt 2', title: 'Die Leistungsseite', text: 'Sie nennt Umfang, Objektarten und Einsatzgebiet, ohne dass jemand nachfragen muss.' },
+        { label: 'Schritt 3', title: 'Die Nachweise', text: 'Versicherung, Innungsmitgliedschaft und Ansprechpartner mit Foto stehen direkt daneben.' },
+        { label: 'Schritt 4', title: 'Die Anfrage', text: 'Das Formular fragt Objekt, Fläche und Turnus ab. Die Anfrage landet in deinem Postfach.' },
+        { label: 'Schritt 5', title: 'Die Besichtigung', text: 'Du rufst zurück, vereinbarst einen Termin und kennst die Eckdaten schon vorher.' },
+        { label: 'Schritt 6', title: 'Das Angebot', text: 'Nach der Besichtigung geht das Angebot raus. Referenzen auf der Website stützen die Entscheidung.' }
+      ],
+      note: 'Privatkunden gehen denselben Weg in kürzerer Form: Preisrahmen ansehen, anrufen oder schreiben, Termin vereinbaren.'
+    },
+    {
+      type: 'feature',
+      id: 'gebaeudeservice',
+      soft: true,
+      chip: 'Gebäudeservice',
+      title: 'Webdesign für Gebäudeservice: mehrere Leistungen auf einer Website',
+      paragraphs: [
+        'Viele Betriebe bieten längst mehr als Reinigung: Hausmeisterdienst, Winterdienst, Grünpflege, kleine Reparaturen. Auf der Website steht das oft in einer einzigen langen Liste. Auftraggeber suchen aber nach der einzelnen Leistung, zum Beispiel nach „Winterdienst“ oder „Hausmeisterservice“ mit ihrem Bezirk. Eine Liste beantwortet diese Suche nicht.',
+        'Besser ist eine Seite je Leistung und eine Übersicht, die alles verbindet. Jede Seite nennt Umfang, Objektarten, Turnus und Einsatzgebiet. Die Startseite macht deutlich, dass Hausverwaltungen alles bei einem festen Ansprechpartner bekommen. So entsteht kein Bauchladen, sondern ein klares Angebot mit mehreren Standbeinen.',
+        'Offen gesagt: Nicht jede Nebenleistung braucht eine eigene Seite. Was du nur gelegentlich übernimmst, steht besser als Absatz auf einer verwandten Seite. Eine dünne Seite mit drei Sätzen hilft weder Auftraggebern noch bei Google.'
+      ],
+      pointsTitle: 'Das gehört auf die Website eines Gebäudeservice',
+      points: [
+        'Übersicht aller Leistungen mit Verweis auf die Einzelseiten',
+        'Je Leistung: Umfang, Objektarten, Turnus und Einsatzgebiet',
+        'Winterdienst mit Zeitraum, Bereitschaft und Dokumentation',
+        'Ein Ansprechpartner für alle Leistungen, mit Foto und Durchwahl',
+        'Eine Anfrage, in der sich mehrere Leistungen ankreuzen lassen'
+      ],
+      image: {
+        src: '/images/branchen/reinigung/reinigung-angebot.webp',
+        alt: 'Beispielaufbau einer Leistungsübersicht mit sechs Kacheln von Büroreinigung bis Hausmeisterservice',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -252,6 +321,21 @@ export const REINIGUNG_PAGE = Object.freeze({
         wachstum: 'Für mehrere Zielgruppen, einen Karrierebereich oder den Relaunch einer bestehenden Website mit acht bis zwölf Seiten.'
       },
       note: 'Hosting, Domain, E-Mail und Wartung sind optional und werden separat vereinbart. Ein Bearbeitungssystem (CMS), einen Preisrechner oder Mehrsprachigkeit plane ich als Zusatzleistung.'
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website einer Reinigungsfirma aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Angebotsanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Team, Fahrzeugen und Arbeiten.',
+      items: [
+        { src: '/images/branchen/reinigung/reinigung-startseite.webp', alt: 'Beispielaufbau der Startseite einer Reinigungsfirma mit Überschrift, Knopf zur Angebotsanfrage und drei Leistungskacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Leistung, Stadt und der Knopf zur Angebotsanfrage stehen oben, darunter die wichtigsten Reinigungsarten.' },
+        { src: '/images/branchen/reinigung/reinigung-anfrage.webp', alt: 'Beispielaufbau einer Angebotsanfrage auf dem Handy mit Objektart, Fläche und Turnus', width: 720, height: 540, title: 'Angebotsanfrage', caption: 'Beispielaufbau: Objektart, Fläche und Turnus in drei Feldern, dazu Besichtigung oder Rückruf zur Auswahl.' },
+        { src: '/images/branchen/reinigung/reinigung-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Gebäudereinigung mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann dein Betrieb bei „Gebäudereinigung“ mit deinem Bezirk erscheinen, mit Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Betrieb aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'process',

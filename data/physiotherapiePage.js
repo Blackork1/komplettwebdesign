@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Praxen und Patienten, Konkurrenzseiten, IFK zur Fachkräfteengpassanalyse
 // der Bundesagentur für Arbeit und das BVerwG-Urteil zur sektoralen Heilpraktikererlaubnis.
 
-export const PHYSIOTHERAPIE_CONTENT_UPDATED_ISO = '2026-10-29';
+export const PHYSIOTHERAPIE_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const IFK_SOURCE = 'IFK zur BA-Engpassanalyse, August 2025';
 
@@ -47,6 +47,30 @@ export const PHYSIOTHERAPIE_FAQ = Object.freeze([
   {
     q: 'Kann meine bestehende Praxis-Website überarbeitet werden?',
     a: 'Ja. Bei einem Relaunch prüfe ich zuerst, welche Inhalte und Seitenadressen bei Google bereits funktionieren. Wichtige Inhalte bleiben erhalten, alte Adressen werden sauber auf die neuen Seiten weitergeleitet.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website einer Physiotherapie-Praxis?',
+    a: 'Für den Start reichen drei: eine Startseite, eine Übersicht der Therapien und eine Kontaktseite mit Terminanfrage und Anfahrt. Das deckt das Start-Paket ({{price.start}}) ab. Wer Therapien einzeln erklären und Hausbesuche, Team und Karriere zeigen will, plant etwa vier bis sieben Seiten. Dafür passt das Business-Paket.'
+  },
+  {
+    q: 'Sollte jede Therapie eine eigene Seite bekommen?',
+    a: 'Die wichtigsten ja. Wer „Manuelle Therapie“ oder „Lymphdrainage“ mit seinem Bezirk sucht, landet lieber auf einer Seite, die genau das erklärt, als in einer langen Liste. Was du selten anbietest, bleibt ein Absatz in der Übersicht. Seiten mit nur drei Sätzen helfen weder Patienten noch bei Google.'
+  },
+  {
+    q: 'Physiotherapie-Website selbst bauen oder erstellen lassen?',
+    a: 'Ein Baukasten kann reichen, wenn du Zeit hast und Texte, Bilder und Technik selbst übernimmst. Lässt du die Website erstellen, bekommst du Seitenplan, Texte, Gestaltung und Umsetzung aus einer Hand, dazu kurze Ladezeiten auf dem Handy und saubere Angaben für die lokale Suche. Du sprichst dabei direkt mit mir und nicht mit wechselnden Ansprechpartnern.'
+  },
+  {
+    q: 'Wie zeige ich mehrere Standorte einer Praxis?',
+    a: 'Jeder Standort bekommt eine eigene Seite mit Adresse, Öffnungszeiten, Team, Therapien und Anfahrt. Das hilft bei der Orientierung und in der lokalen Suche, weil jede Seite zu einem eigenen Google-Unternehmensprofil passt. Bei mehreren Standorten ist meist das Wachstum-Paket ({{price.wachstum}}) die richtige Größe.'
+  },
+  {
+    q: 'Kann ich Kurse und Gerätetraining auf der Website zeigen?',
+    a: 'Ja, am besten in einem eigenen Abschnitt mit Zeiten, Kosten und einer Anmeldung per Formular. Die Texte beschreiben Ablauf und Inhalte und versprechen keine Wirkung. Ob eine Krankenkasse einen Kurs bezuschusst, hängt von dessen Zulassung ab. Das steht nur dann auf der Seite, wenn es für den Kurs zutrifft.'
+  },
+  {
+    q: 'Welche Fotos braucht eine Physio-Website?',
+    a: 'Echte Fotos aus deiner Praxis: Empfang, Behandlungsräume, Trainingsfläche und das Team. Sie zeigen, was Patienten erwartet, und wirken glaubwürdiger als gekaufte Bilder. Personen sind nur mit Einwilligung zu sehen. Ein Termin mit einer Fotografin oder einem Fotografen lohnt sich meist, für den Anfang reichen gute Handyfotos bei Tageslicht.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const PHYSIOTHERAPIE_PAGE = Object.freeze({
   path: '/branchen/webdesign-physiotherapie',
   breadcrumb: 'Physiotherapie',
   trackPrefix: 'physiotherapie',
+  motion: true,
+  tone: 'frisch',
   metaTitle: 'Physiotherapie-Website erstellen lassen | Praxis Berlin',
   metaDescription: 'Website für Physiotherapie-Praxen in Berlin: Leistungen, Hausbesuche, Terminanfrage mit Verordnung und eine Karriereseite für Therapeuten. Pakete {{price.start}}.',
   schema: {
@@ -107,6 +133,50 @@ export const PHYSIOTHERAPIE_PAGE = Object.freeze({
         { icon: 'fa-universal-access', title: 'Anfahrt und Zugang', text: 'Etage, Aufzug, stufenloser Eingang, Parkplätze und ÖPNV. Für Menschen nach einer OP oder mit Gehhilfe entscheidend.' },
         { icon: 'fa-user-plus', title: 'Karriere', text: 'Offene Stellen, Arbeitszeiten, Fortbildungsbudget, Team und ein Bewerbungsweg, der auf dem Handy in zwei Minuten erledigt ist.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'alltag',
+      chip: 'Beispiel',
+      title: 'Ein Tag mit deiner Physio-Website',
+      intro: 'Während alle Therapeutinnen und Therapeuten in der Behandlung sind, beantwortet die Website die Fragen, die sonst auf dem Anrufbeantworter landen. Die Zeiten sind ein Beispiel.',
+      listLabel: 'Beispiel für einen Tag mit der Website einer Physiotherapie-Praxis',
+      items: [
+        { time: '07:00', title: 'Termin vor der Arbeit', text: 'Eine Patientin fragt per Formular nach Terminen ab 16 Uhr, bevor die Praxis öffnet.' },
+        { time: '09:30', title: 'Mit Rezept in der Hand', text: 'Jemand kommt vom Orthopäden, sucht „Krankengymnastik in der Nähe“ und findet deine Leistungsseite.' },
+        { time: '11:00', title: 'Hausbesuch für die Mutter', text: 'Ein Angehöriger liest, in welche Bezirke du fährst, und schickt die Anfrage für den Hausbesuch.' },
+        { time: '14:00', title: 'Absage mit Ansage', text: 'Die Absageregel steht auf der Seite. Wer verhindert ist, weiß, bis wann und wie er absagt.' },
+        { time: '17:30', title: 'Bewerbung vom Handy', text: 'Eine Therapeutin liest die Karriereseite und meldet sich in zwei Minuten, ohne Anschreiben.' },
+        { time: '20:30', title: 'Fragen am Abend', text: 'Parkplatz, Aufzug, was zum ersten Termin mitzubringen ist: Die Antworten stehen auf der Seite.' }
+      ],
+      note: 'Du musst nicht mit allem starten. Viele Praxen beginnen mit Therapien, Terminanfrage und Anfahrt und ergänzen die Karriereseite, sobald eine Stelle frei wird.'
+    },
+    {
+      type: 'feature',
+      id: 'therapieseiten',
+      soft: true,
+      chip: 'Therapien',
+      title: 'Website für Physiotherapie: jede Therapie verständlich erklärt',
+      paragraphs: [
+        'Auf der Verordnung steht „KG“, „MT“ oder „MLD“. Viele Patientinnen und Patienten wissen nicht, was sich dahinter verbirgt, und suchen genau danach: „Manuelle Therapie Berlin“ oder „Lymphdrainage in der Nähe“. Eine Liste mit zwölf Fachbegriffen beantwortet diese Suche nicht. Eine kurze Seite je Therapie schon.',
+        'Jede Therapieseite erklärt in einfachen Worten, was bei der Behandlung passiert, wie lange ein Termin dauert und was auf der Verordnung stehen muss. Dazu kommt, was mitzubringen ist und ob die Therapie auch als Hausbesuch möglich ist. Am Ende steht der Weg zur Terminanfrage. Die Texte bleiben sachlich und beschreiben den Ablauf, nicht den Erfolg.',
+        'Offen gesagt: Nicht jede Leistung braucht eine eigene Seite. Was du selten anbietest, steht besser als Absatz in der Übersicht. Die fachlichen Angaben kommen von dir, ich bringe sie in eine verständliche Form, und du gibst jeden Text frei. Aussagen zur Wirkung formuliere ich bewusst zurückhaltend, weil dafür das Heilmittelwerbegesetz gilt.'
+      ],
+      pointsTitle: 'Das gehört auf eine Therapieseite',
+      points: [
+        'Die Therapie in zwei Sätzen, ohne Fachsprache',
+        'Was auf der Verordnung stehen muss',
+        'Dauer eines Termins und Ablauf der ersten Behandlung',
+        'Was Patienten zum Termin mitbringen',
+        'Hinweis, ob ein Hausbesuch möglich ist',
+        'Knopf zur Terminanfrage direkt auf der Seite'
+      ],
+      image: {
+        src: '/images/branchen/physiotherapie/physiotherapie-angebot.webp',
+        alt: 'Beispielaufbau einer Therapieübersicht mit sechs Kacheln von Krankengymnastik über Lymphdrainage bis Gerätetraining',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -173,6 +243,21 @@ export const PHYSIOTHERAPIE_PAGE = Object.freeze({
         { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' },
         { href: '/blog/barrierefreie-website-bfsg', label: 'Barrierefreie Website und BFSG' }
       ]
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für deine Physiopraxis aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Terminanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Praxisräumen und Team.',
+      items: [
+        { src: '/images/branchen/physiotherapie/physiotherapie-startseite.webp', alt: 'Beispielaufbau der Startseite einer Physiotherapie-Praxis mit Überschrift, Knopf zur Terminanfrage und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Oben stehen Leistung, Kiez und der Knopf zum Termin, darunter Therapien, Termine und Rezept.' },
+        { src: '/images/branchen/physiotherapie/physiotherapie-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage auf dem Handy mit Verordnung, Versicherung und Wunschzeit', width: 720, height: 540, title: 'Terminanfrage', caption: 'Beispielaufbau: Verordnung, Versicherung und Wunschzeit in drei Feldern, dazu die Wahl zwischen Rezept und Selbstzahler.' },
+        { src: '/images/branchen/physiotherapie/physiotherapie-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Physiotherapie-Praxis mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Physiotherapie in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deiner Praxis aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

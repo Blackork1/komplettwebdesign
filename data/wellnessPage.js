@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Praxen und Kundschaft, Suchergebnisse, Masseur- und Physiotherapeutengesetz,
 // Heilmittelwerbegesetz und die Verjährungsregeln für Gutscheine.
 
-export const WELLNESS_CONTENT_UPDATED_ISO = '2026-10-29';
+export const WELLNESS_CONTENT_UPDATED_ISO = '2026-11-11';
 
 export const WELLNESS_FAQ = Object.freeze([
   {
@@ -45,6 +45,30 @@ export const WELLNESS_FAQ = Object.freeze([
   {
     q: 'Wie lange dauert es, bis meine Website online ist?',
     a: 'Ein Onepager ist meist in 2 bis 4 Wochen online, eine mehrseitige Website in 4 bis 6 Wochen. Liegen Angebote, Preise und Fotos der Räume früh vor, geht es schneller.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website einer Massagepraxis?',
+    a: 'Für den Start reichen eine Startseite, eine Seite mit Massagen und Preisen und eine Kontaktseite mit Öffnungszeiten, Anfahrt und Buchung. Das deckt das Start-Paket mit bis zu drei Seiten ab ({{price.start}}). Wer viele Anwendungen, Gutscheine und ein Team zeigen will, plant eigene Seiten dafür. Dann passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Wie zeige ich Paarmassagen und Pakete auf der Website?',
+    a: 'Am besten als eigene Angebote mit Namen, Dauer, Preis für zwei Personen und einem Satz zum Ablauf. Wichtig ist, ob beide im selben Raum massiert werden und wie weit im Voraus gebucht werden sollte. Ein Knopf führt zur Buchung, ein zweiter zum Gutschein, weil Paarmassagen oft verschenkt werden.'
+  },
+  {
+    q: 'Wie bereite ich die Website auf Weihnachten, Valentinstag und Muttertag vor?',
+    a: 'Mit einem Hinweis auf Gutscheine, der einige Wochen vorher oben auf der Startseite erscheint. Nenne den letzten Tag, an dem ein Gutschein per Post noch rechtzeitig ankommt, und biete daneben den Gutschein zum Ausdrucken an. Nach dem Anlass verschwindet der Hinweis wieder. Auf Wunsch richte ich das so ein, dass du ihn selbst ein- und ausschaltest.'
+  },
+  {
+    q: 'Lohnt sich eine Website für mobile Massage oder Firmenmassage?',
+    a: 'Ja, gerade weil es keinen Laden gibt, an dem jemand vorbeiläuft. Die Website nennt Einsatzgebiet, Anfahrtskosten, Platzbedarf und was du mitbringst. Für Firmen lohnt sich eine eigene Seite mit Ablauf, Dauer je Person und einer Anfrage, die Datum, Ort und Zahl der Teilnehmenden abfragt.'
+  },
+  {
+    q: 'Brauche ich eine englische Version der Website?',
+    a: 'In Berlin kann sich das lohnen, vor allem in Bezirken mit vielen Gästen aus dem Ausland und in der Nähe von Hotels. Eine zweite Sprache ist als Zusatzleistung möglich. Am saubersten ist eine eigene Sprachversion der wichtigsten Seiten: Startseite, Massagen und Preise, Buchung und Gutscheine.'
+  },
+  {
+    q: 'Reicht für eine Massagepraxis nicht ein Buchungsportal?',
+    a: 'Ein Portal bringt Buchungen, zeigt dich aber neben deinen Mitbewerbern und behält je nach Anbieter eine Gebühr. Die Kundin sieht dort vor allem das Portal und weniger deine Praxis. Auf der eigenen Website erklärst du deine Massagen in Ruhe, zeigst Räume und Team und bietest Gutscheine nach deinen Regeln an. Die Buchung kann weiter über das Portal laufen, das ich einbinde oder verlinke.'
   }
 ]);
 
@@ -53,6 +77,8 @@ export const WELLNESS_PAGE = Object.freeze({
   path: '/branchen/webdesign-wellness',
   breadcrumb: 'Massage und Wellness',
   trackPrefix: 'wellness',
+  motion: true,
+  tone: 'floral',
   metaTitle: 'Massage-Website erstellen lassen | Wellness & Spa Berlin',
   metaDescription: 'Website für Massagepraxen, Wellness-Studios und Day Spas in Berlin: Massagen mit Preisen, Online-Buchung und Gutscheinverkauf. Pakete {{price.start}}.',
   schema: {
@@ -102,6 +128,50 @@ export const WELLNESS_PAGE = Object.freeze({
         { icon: 'fa-circle-info', title: 'Vor dem ersten Termin', text: 'Was man mitbringen sollte, wann man besser absagt und wie früh man da sein sollte.' },
         { icon: 'fa-clock', title: 'Öffnungszeiten und Anfahrt', text: 'Zeiten inklusive Abende und Wochenenden, Adresse, ÖPNV und Parkmöglichkeiten.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'weg-zum-gutschein',
+      chip: 'Beispiel',
+      title: 'Vom Geschenk zum Termin: der Weg eines Gutscheins über deine Website',
+      intro: 'Gutscheine werden oft abends und kurz vor einem Anlass gesucht. Zwischen der ersten Suche und der eingelösten Massage liegen sechs Schritte. Die Website begleitet jeden davon.',
+      listLabel: 'Sechs Schritte von der Geschenksuche bis zur eingelösten Massage',
+      items: [
+        { label: 'Schritt 1', title: 'Die Suche', text: 'Jemand sucht kurz vor einem Geburtstag „Massage Gutschein Berlin“ und findet deine Gutscheinseite.' },
+        { label: 'Schritt 2', title: 'Die Auswahl', text: 'Die Seite zeigt Wertgutscheine und Gutscheine für eine bestimmte Massage mit Dauer und Preis.' },
+        { label: 'Schritt 3', title: 'Die Bestellung', text: 'Das Formular fragt Wert, Anlass und Versand ab. Die Bestellung landet in deinem Postfach.' },
+        { label: 'Schritt 4', title: 'Der Gutschein', text: 'Er kommt per E-Mail zum Ausdrucken oder per Post. Gültigkeit und Einlösung stehen darauf.' },
+        { label: 'Schritt 5', title: 'Die Buchung', text: 'Die beschenkte Person bucht ihren Termin über die Website und nennt den Gutscheincode.' },
+        { label: 'Schritt 6', title: 'Der Besuch', text: 'Vorher liest sie, was sie mitbringt und wie der Termin abläuft. Der nächste lässt sich genauso buchen.' }
+      ],
+      note: 'Wer für sich selbst bucht, geht einen kürzeren Weg: Massage auswählen, Dauer und Preis ansehen, Termin buchen.'
+    },
+    {
+      type: 'feature',
+      id: 'massage-beschreibungen',
+      soft: true,
+      chip: 'Massagen',
+      title: 'Webdesign für Massagepraxen: Massagen so beschreiben, dass die Wahl leichtfällt',
+      paragraphs: [
+        'Auf vielen Websites von Massagepraxen steht eine lange Liste mit Namen: Lomi Lomi, Hot Stone, Abhyanga, Tuina. Wer zum ersten Mal bucht, kann damit wenig anfangen. Hilfreicher ist eine kurze Beschreibung in Alltagssprache. Was passiert bei dieser Massage? Wie fest ist der Druck? Wird mit Öl gearbeitet? Für wen passt sie, und wie lange dauert sie?',
+        'Jede Massage bekommt deshalb eine Kachel in der Übersicht und einen eigenen Abschnitt mit denselben Angaben: Ablauf, Dauer, Preis je Dauer und ein Hinweis, was vorher zu beachten ist. Ein Knopf führt direkt zur Buchung oder zum Gutschein. So vergleicht die Kundin zwei Anwendungen in einer Minute, statt anzurufen und nachzufragen.',
+        'Offen gesagt: Beschreibe, was bei der Massage geschieht, und nicht, was sie heilen soll. Aussagen zu Beschwerden und Krankheiten sind bei Wellness-Massagen heikel und sollten rechtlich geprüft werden. Und nicht jede Variante braucht eine eigene Seite. Unterscheiden sich zwei Massagen nur in der Dauer, reicht ein gemeinsamer Abschnitt mit mehreren Preisen.'
+      ],
+      pointsTitle: 'Das gehört in jede Massage-Beschreibung',
+      points: [
+        'Ein Satz dazu, was bei der Massage geschieht',
+        'Druck und Technik in einfachen Worten',
+        'Dauer und Preis je Dauer, zum Beispiel 30, 60 und 90 Minuten',
+        'Für wen sie passt, etwa für Einsteiger oder zu zweit',
+        'Hinweise vor dem Termin, etwa zu Kleidung und Ankunft',
+        'Ein Knopf zur Buchung und einer zum Gutschein'
+      ],
+      image: {
+        src: '/images/branchen/wellness/wellness-angebot.webp',
+        alt: 'Beispielaufbau einer Übersicht mit Massagen und Anwendungen mit sechs Kacheln von Klassischer Massage bis Gutscheine',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -159,6 +229,21 @@ export const WELLNESS_PAGE = Object.freeze({
       ],
       note: 'Ich setze um und weise auf heikle Stellen hin, ersetze aber keine Rechtsberatung. Verbindlich klären das dein Berufsverband oder eine Anwältin bzw. ein Anwalt.',
       noteLink: { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für deine Massagepraxis aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Gutscheinbestellung und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Räumen, Team und Anwendungen.',
+      items: [
+        { src: '/images/branchen/wellness/wellness-startseite.webp', alt: 'Beispielaufbau der Startseite einer Massagepraxis mit Überschrift, Knopf zur Terminbuchung und drei Themenkacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Angebot, Stadt und der Knopf zur Buchung stehen oben, darunter Massagen, Gutscheine und Öffnungszeiten.' },
+        { src: '/images/branchen/wellness/wellness-anfrage.webp', alt: 'Beispielaufbau einer Gutscheinbestellung auf dem Handy mit Wert, Anlass und Versand', width: 720, height: 540, title: 'Gutscheinbestellung', caption: 'Beispielaufbau: Wert, Anlass und Versand in drei Feldern, dazu die Wahl zwischen Ausdrucken und Post.' },
+        { src: '/images/branchen/wellness/wellness-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Massagepraxis mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Praxis bei „Massage in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deinem Studio oder deiner Praxis aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',

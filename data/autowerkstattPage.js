@@ -3,7 +3,7 @@
 // Google-Suchvorschläge von Werkstätten und Autofahrern, Suchergebnisse und der Fahrzeugbestand
 // am 1. Januar 2026 laut Kraftfahrt-Bundesamt.
 
-export const AUTOWERKSTATT_CONTENT_UPDATED_ISO = '2026-10-29';
+export const AUTOWERKSTATT_CONTENT_UPDATED_ISO = '2026-11-11';
 
 const KBA_SOURCE = 'Kraftfahrt-Bundesamt, März 2026';
 
@@ -47,6 +47,30 @@ export const AUTOWERKSTATT_FAQ = Object.freeze([
   {
     q: 'Kann meine bestehende Werkstatt-Website überarbeitet werden?',
     a: 'Ja. Bei einem Relaunch prüfe ich zuerst, welche Inhalte und Seitenadressen bei Google bereits funktionieren. Wichtige Inhalte bleiben erhalten, alte Adressen werden sauber auf die neuen Seiten weitergeleitet.'
+  },
+  {
+    q: 'Wie viele Seiten braucht die Website einer Autowerkstatt?',
+    a: 'Für eine kleine freie Werkstatt reichen eine Startseite, eine Leistungsseite mit Richtpreisen und eine Kontaktseite mit Terminanfrage und Anfahrt. Das deckt das Start-Paket ({{price.start}}) ab. Wer Inspektion, Reifenservice, HU/AU und Karosserie getrennt zeigen will, plant je eine Seite pro Bereich. Dafür passt das Business-Paket mit etwa vier bis sieben Seiten ({{price.business}}).'
+  },
+  {
+    q: 'Lohnt sich eine eigene Website, wenn ich schon auf Werkstattportalen stehe?',
+    a: 'Ja. Portale bringen Anfragen, zeigen dich aber direkt neben dem Wettbewerb und rechnen oft je Auftrag oder im Abo ab. Auf der eigenen Website gibt es nur deine Werkstatt, mit deinen Leistungen, Preisen und Fotos. Viele Kunden suchen den Betrieb nach dem Portal noch einmal bei Google. Finden sie dann eine aktuelle Seite, rufen sie eher direkt an. Beides lässt sich nebeneinander nutzen.'
+  },
+  {
+    q: 'Wie zeige ich den saisonalen Reifenwechsel auf der Website?',
+    a: 'Mit einem Hinweis, der zweimal im Jahr oben auf der Seite erscheint: ab wann Termine frei sind, was der Wechsel kostet und ob du Reifen einlagerst. Dazu passt eine Terminanfrage, in der der Reifenwechsel schon ausgewählt ist. Nach der Saison verschwindet der Hinweis wieder. So kommen die Anfragen gebündelt und mit allen Angaben an, statt einzeln am Telefon.'
+  },
+  {
+    q: 'Kann ich zeigen, dass meine Werkstatt Hybrid- und Elektroautos wartet?',
+    a: 'Ja, und das lohnt sich, weil danach gezielt gesucht wird. Ein eigener Abschnitt nennt, welche Arbeiten du an Hybrid- und Elektroautos übernimmst und welche Qualifikation dafür im Betrieb vorhanden ist. Schreib nur, was du wirklich anbietest. Wer für Arbeiten am Hochvoltsystem an einen Partner verweist, sagt das offen.'
+  },
+  {
+    q: 'Hilft die Website bei der Suche nach Kfz-Mechatronikern und Azubis?',
+    a: 'Sie kann dabei helfen. Wer sich bewerben will, sieht sich den Betrieb vorher im Netz an. Eine kurze Karriereseite zeigt Werkstatt, Team, Arbeitszeiten und was du bietest, dazu einen Bewerbungsweg ohne Anschreiben: Name, Telefonnummer, Ausbildung. Das bleibt dauerhaft sichtbar und kostet keine Anzeigengebühr. Eine Garantie für Bewerbungen gibt es damit nicht.'
+  },
+  {
+    q: 'Reicht für eine Werkstatt nicht das Google-Unternehmensprofil?',
+    a: 'Das Profil ist wichtig, hat aber Grenzen. Dort stehen Öffnungszeiten, Fotos und Bewertungen. Für Leistungen mit Ablauf, Richtpreisen und HU-Tagen fehlt der Platz. Die Website liefert genau diese Inhalte und gehört dir. Passen Name, Adresse und Leistungen in Profil und Website zusammen, stützt das die lokale Suche. Am besten arbeiten beide zusammen: Das Profil verlinkt auf die Website.'
   }
 ]);
 
@@ -55,6 +79,8 @@ export const AUTOWERKSTATT_PAGE = Object.freeze({
   path: '/branchen/webdesign-autowerkstatt',
   breadcrumb: 'Kfz-Werkstätten',
   trackPrefix: 'autowerkstatt',
+  motion: true,
+  tone: 'energie',
   metaTitle: 'Kfz-Werkstatt-Website erstellen lassen | Werkstatt Berlin',
   metaDescription: 'Website für Kfz-Werkstätten in Berlin: Leistungen, Terminanfrage mit Fahrzeugdaten, Richtpreise und Öffnungszeiten klar zeigen. Pakete {{price.start}}.',
   schema: {
@@ -108,6 +134,50 @@ export const AUTOWERKSTATT_PAGE = Object.freeze({
         { icon: 'fa-truck', title: 'Hol- und Bringservice', text: 'Ob du Autos abholst, einen Ersatzwagen anbietest und wie die Schlüsselübergabe außerhalb der Öffnungszeiten funktioniert.' },
         { icon: 'fa-star', title: 'Bewertungen', text: 'Ausgewählte Google-Bewertungen und ein gepflegtes Unternehmensprofil. Bei Werkstätten entscheidet Vertrauen.' }
       ]
+    },
+    {
+      type: 'timeline',
+      id: 'alltag',
+      chip: 'Beispiel',
+      title: 'Ein Tag mit deiner Werkstatt-Website',
+      intro: 'Während du unter der Hebebühne stehst, beantwortet die Website die Fragen, die sonst das Telefon klingeln lassen. Die Zeiten sind ein Beispiel.',
+      listLabel: 'Beispiel für einen Tag mit der Website einer Autowerkstatt',
+      items: [
+        { time: '07:00', title: 'Anfragen vor der Annahme', text: 'Im Postfach liegen zwei Terminanfragen von gestern Abend, mit Modell, Baujahr und Anliegen.' },
+        { time: '09:30', title: 'Gefunden nach der Warnleuchte', text: 'Jemand sucht „Autowerkstatt in der Nähe“ und sieht Leistungen, Öffnungszeiten und den Weg zu dir.' },
+        { time: '11:00', title: 'Richtpreis statt Anruf', text: 'Die Seite nennt den Ab-Preis für die Inspektion. Nach den Kosten muss niemand am Telefon fragen.' },
+        { time: '13:30', title: 'HU-Termin geklärt', text: 'Ein Kunde liest, an welchen Tagen die Prüforganisation im Haus ist, und fragt den Donnerstag an.' },
+        { time: '16:00', title: 'Rückruf mit Fahrzeugdaten', text: 'Du rufst zurück, die Teile sind schon geprüft. Der Termin steht in zwei Minuten.' },
+        { time: '20:30', title: 'Anfrage nach Feierabend', text: 'Der Reifenwechsel wird abends vom Sofa angefragt. Die Bestätigung geht von allein raus.' }
+      ],
+      note: 'Ein Buchungssystem ist dafür kein Muss. Viele Werkstätten arbeiten mit Terminanfrage und Rückruf, weil Teile und Arbeitszeit vom Fahrzeug abhängen.'
+    },
+    {
+      type: 'feature',
+      id: 'leistungsabschnitte',
+      soft: true,
+      chip: 'Leistungen',
+      title: 'Webdesign für Kfz-Werkstätten: Leistungen so erklären, dass niemand nachfragen muss',
+      paragraphs: [
+        'Auf vielen Werkstatt-Websites stehen die Leistungen als Stichwortliste: Inspektion, Bremsen, Klima, HU. Wer sein Auto abgeben will, hat aber konkrete Fragen. Wie lange dauert das? Was kostet es ungefähr? Muss das Auto den ganzen Tag dableiben? Bekomme ich vorher Bescheid, wenn mehr zu tun ist? Eine Liste beantwortet davon nichts, und es bleibt beim Griff zum Telefon.',
+        'Besser ist ein kurzer Abschnitt je Leistung, immer im gleichen Aufbau: was gemacht wird, wie lange es meist dauert, was es ab welchem Preis kostet und was mitzubringen ist. Dazu kommt ein Satz zum Ablauf, zum Beispiel dass du vor zusätzlichen Arbeiten anrufst. Das schafft Vertrauen, bevor das Auto auf der Bühne steht, und passt zu Suchen wie „Bremsen wechseln Kosten“ oder „Klimaservice“ mit deinem Bezirk.',
+        'Offen gesagt: Du musst nicht für jede Arbeit einen Preis nennen. Bei Diagnose, Unfallschäden oder Elektrik hängt der Aufwand vom Fahrzeug ab. Dort reicht der Hinweis, dass es nach der Durchsicht einen Kostenvoranschlag gibt. Richtpreise, die du nennst, sollten zum Aushang in der Werkstatt passen.'
+      ],
+      pointsTitle: 'Das gehört in jeden Leistungsabschnitt',
+      points: [
+        'Was gemacht wird, in zwei oder drei Sätzen',
+        'Übliche Dauer und ob das Auto über Nacht bleibt',
+        'Ab-Preis als Endpreis oder Hinweis auf den Kostenvoranschlag',
+        'Was mitzubringen ist, etwa Serviceheft oder Felgenschlüssel',
+        'Ersatzwagen, Hol- und Bringservice oder Wartebereich',
+        'Knopf zur Terminanfrage mit vorausgewählter Leistung'
+      ],
+      image: {
+        src: '/images/branchen/autowerkstatt/autowerkstatt-angebot.webp',
+        alt: 'Beispielaufbau einer Leistungsübersicht für eine Kfz-Werkstatt mit sechs Kacheln von Inspektion bis Batterie',
+        width: 720,
+        height: 540
+      }
     },
     {
       type: 'catalog',
@@ -168,6 +238,21 @@ export const AUTOWERKSTATT_PAGE = Object.freeze({
       ],
       note: 'Ich setze um und weise auf heikle Stellen hin, ersetze aber keine Rechtsberatung. Verbindlich klären das deine Handwerkskammer oder eine Anwältin bzw. ein Anwalt.',
       noteLink: { href: '/leistungen/rechtliches-sicherheit', label: 'Rechtliches und Sicherheit' }
+    },
+    {
+      type: 'gallery',
+      id: 'beispielaufbau',
+      soft: true,
+      chip: 'Beispielaufbau',
+      title: 'So kann die Website für deine Werkstatt aufgebaut sein',
+      intro: 'Drei Ansichten zeigen, wie Startseite, Terminanfrage und lokale Suche zusammenspielen. Es sind Skizzen, kein fertiges Design. Deine Website bekommt eigene Farben und echte Fotos von Werkstatt, Annahme und Team.',
+      items: [
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-startseite.webp', alt: 'Beispielaufbau der Startseite einer Kfz-Werkstatt mit Überschrift, Knopf zur Terminanfrage und drei Leistungskacheln', width: 720, height: 540, title: 'Startseite', caption: 'Beispielaufbau: Werkstatt, Kiez und der Knopf zur Terminanfrage stehen oben, darunter Inspektion, HU/AU und Ölwechsel.' },
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-anfrage.webp', alt: 'Beispielaufbau einer Terminanfrage für die Werkstatt auf dem Handy mit Fahrzeug, Anliegen und Wunschtag', width: 720, height: 540, title: 'Terminanfrage', caption: 'Beispielaufbau: Fahrzeug, Anliegen und Wunschtag in drei Feldern, dazu Ersatzwagen oder Rückruf zur Auswahl.' },
+        { src: '/images/branchen/autowerkstatt/autowerkstatt-suche.webp', alt: 'Beispielaufbau eines lokalen Suchergebnisses für eine Autowerkstatt mit Öffnungszeiten, Route und Karte', width: 720, height: 540, title: 'Lokale Suche', caption: 'Beispielaufbau: So kann deine Werkstatt bei „Autowerkstatt in der Nähe“ erscheinen, mit Öffnungszeiten, Route und Anruf.' }
+      ],
+      note: 'Farben, Schriften und Bilder richte ich nach deiner Werkstatt aus. Wie fertige Websites aussehen, zeigen die Referenzen.',
+      noteLink: { href: '/referenzen', label: 'Referenzen ansehen' }
     },
     {
       type: 'checklist',
