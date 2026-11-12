@@ -4,7 +4,7 @@
 - Stand der Recherche: 10.11.2026
 - Hauptbegriff: **Kita-Website erstellen lassen** (Varianten: „kita website erstellen“, „kita homepage erstellen“, „kita homepage gestalten“, „kita internetseite“, „kindergarten homepage“)
 - Zweiter Hauptbegriff: **Tagesmutter-Homepage** („tagesmutter website erstellen“, „tagesmutter homepage“, „kindertagespflege homepage erstellen“, „kindertagespflege website“)
-- Umsetzung: `data/kitaPage.js`, Gestaltung in `public/kita-page.css`, Vorlage `views/niche-page.ejs`
+- Umsetzung: `data/kitaPage.js`, Gestaltung in `public/branchen-page.css`, Vorlage `views/niche-page.ejs`
 
 ## 1. Ausgangslage
 
