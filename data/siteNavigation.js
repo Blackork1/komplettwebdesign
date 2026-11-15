@@ -20,12 +20,12 @@ export const headerNavigation = Object.freeze([
   {
     label: 'Leistungen',
     labelEn: 'Services',
-    href: '/leistungen/',
+    href: '/leistungen',
     children: [
       {
         label: 'Übersicht',
         labelEn: 'Overview',
-        href: '/leistungen/',
+        href: '/leistungen',
         group: 'Website erstellen',
         groupEn: 'Create a website'
       },
@@ -125,7 +125,7 @@ export const footerNavigation = Object.freeze([
     label: 'Angebot',
     labelEn: 'Offer',
     links: [
-      { label: 'Leistungsübersicht', labelEn: 'Service overview', href: '/leistungen/' },
+      { label: 'Leistungsübersicht', labelEn: 'Service overview', href: '/leistungen' },
       { label: 'Webdesign Berlin', labelEn: 'Webdesign Berlin', href: '/webdesign-berlin', hrefEn: '/en/webdesign-berlin' },
       { label: 'Pakete & Preise', labelEn: 'Packages & pricing', href: '/pakete', hrefEn: '/en/pakete' },
       { label: 'Website-Relaunch', labelEn: 'Website relaunch', href: '/leistungen/website-relaunch' },
@@ -171,10 +171,6 @@ export const footerNavigation = Object.freeze([
     links: [
       { label: 'Impressum', labelEn: 'Legal notice', href: '/impressum' },
       { label: 'Datenschutz', labelEn: 'Privacy policy', href: '/datenschutz' },
-      { label: 'Swipe & Cook Datenschutz', labelEn: 'Swipe & Cook privacy', href: '/swipeandcook-datenschutz' },
-      { label: 'Swipe & Cook Nutzungsbedingungen', labelEn: 'Swipe & Cook terms', href: '/swipeandcook-nutzungsbedingungen' },
-      { label: 'Swipe & Cook Support', labelEn: 'Swipe & Cook support', href: '/swipeandcook-support' },
-      { label: 'Swipe & Cook Konto löschen', labelEn: 'Delete Swipe & Cook account', href: '/swipeandcook-konto-loeschen' },
       { label: 'Hinweisseite', labelEn: 'Notes page', href: '/hinweise-rechtstexte-seo-datenschutz' }
     ]
   }

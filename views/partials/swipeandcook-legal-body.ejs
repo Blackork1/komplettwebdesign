@@ -1,8 +1,15 @@
 <main class="swipe-privacy-page swipe-legal-page" id="main-content">
-  <section class="swipe-privacy-hero" id="hero" aria-labelledby="swipe-legal-title">
+  <section class="swipe-privacy-hero" id="hero" aria-labelledby="cookavoli-brand-title swipe-legal-title">
     <div class="container swipe-privacy-hero__inner">
-      <p class="swipe-privacy-eyebrow"><span aria-hidden="true"></span>Swipe &amp; Cook</p>
-      <h1 id="swipe-legal-title"><%= legalPage.title %></h1>
+      <h1 class="cookavoli-wordmark" id="cookavoli-brand-title" aria-label="Cookavoli">
+        <span class="cookavoli-wordmark__name">
+          Cookav<span class="cookavoli-wordmark__leaf-anchor">o<svg class="cookavoli-wordmark__leaf" viewBox="0 0 96 112" aria-hidden="true" focusable="false"><path d="M13 103C-1 49 27 13 91 2c-1 64-29 99-78 101Z"/><path d="M15 99C35 60 55 35 82 12 61 42 43 71 28 105Z"/></svg></span>li
+        </span>
+        <span class="cookavoli-wordmark__tagline" aria-hidden="true">
+          <span>Swipe</span><b>•</b><span>Cook</span><b>•</b><span>Enjoy</span>
+        </span>
+      </h1>
+      <h2 class="swipe-privacy-title" id="swipe-legal-title"><%= legalPage.title %></h2>
       <p class="swipe-privacy-lead"><%= legalPage.lead %></p>
       <p class="swipe-privacy-date">Stand: <%= legalPage.stand %></p>
     </div>

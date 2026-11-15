@@ -1,0 +1,10 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+<main id="main-content" class="error-page">
+  <img src="/assets/cookavoli-icon-dark.svg" width="1024" height="1024" alt="">
+  <p class="eyebrow">404</p>
+  <h1><%= typeof heading === 'string' ? heading : 'Seite nicht gefunden' %></h1>
+  <p><%= description %></p>
+  <a class="button button--primary" href="/">Zur Cookavoli-Startseite</a>
+</main>
+<%- include('partials/footer') %>

@@ -1,5 +1,5 @@
 <%
-const districtUrl = `https://komplettwebdesign.de${districtPath}`;
+const districtUrl = `https://www.komplettwebdesign.de${districtPath}`;
 const districtStartPriceLabel = (typeof packagePriceLabel === 'function' && packagePriceLabel('start')) || '';
 const districtIndividuellPriceLabel = (typeof packagePriceLabel === 'function' && packagePriceLabel('individuell')) || '';
 const faqSchema = {
@@ -19,19 +19,18 @@ const structuredDataBlocks = [
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Startseite", item: "https://komplettwebdesign.de/" },
-      { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: `https://komplettwebdesign.de${hubPath}` },
+      { "@type": "ListItem", position: 1, name: "Startseite", item: "https://www.komplettwebdesign.de/" },
+      { "@type": "ListItem", position: 2, name: "Webdesign Berlin", item: `https://www.komplettwebdesign.de${hubPath}` },
       { "@type": "ListItem", position: 3, name: district.name, item: districtUrl }
     ]
   },
   {
     "@context": "https://schema.org",
-    "@type": "ProfessionalService",
+    "@type": "Service",
     "@id": `${districtUrl}#service`,
-    name: `Komplett Webdesign ${district.name}`,
+    name: `Webdesign in ${district.name}`,
     url: districtUrl,
-    telephone: "+49 1551 245048",
-    email: "kontakt@komplettwebdesign.de",
+    provider: { "@id": "https://www.komplettwebdesign.de/#organization" },
     image: districtPage.heroImage,
     priceRange: `${districtStartPriceLabel || 'nach Angebot'} bis ${districtIndividuellPriceLabel || 'nach Angebot'}`,
     areaServed: [

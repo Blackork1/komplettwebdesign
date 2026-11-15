@@ -1,0 +1,27 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+<main id="main-content" class="legal-page">
+  <section class="legal-hero" aria-labelledby="legal-title">
+    <%- include('partials/wordmark', { asHeading: false }) %>
+    <p class="eyebrow">Hilfe und rechtliche Informationen</p>
+    <h1 id="legal-title"><%= legalPage.title %></h1>
+    <p class="legal-hero__lead"><%= legalPage.lead %></p>
+    <p class="legal-hero__date">Stand: <%= legalPage.stand %></p>
+  </section>
+  <div class="legal-content">
+    <% if (legalPage.key === 'accountDeletion' && accountDeletionEnabled) { %>
+      <%- include('partials/account-deletion-forms') %>
+    <% } else if (legalPage.key === 'accountDeletion') { %>
+      <section class="deletion-panel" aria-labelledby="deletion-online-pending-title">
+        <p class="eyebrow">Sicherer Onlineweg</p>
+        <h2 id="deletion-online-pending-title">Online-Anforderung ist noch nicht freigeschaltet</h2>
+        <p>Bis die neue Domain-, API- und Mailstrecke vollständig geprüft ist, nutze bitte die Löschung direkt in der App oder den unten genannten Supportweg.</p>
+      </section>
+    <% } %>
+    <article class="legal-article"><%- legalPage.html %></article>
+  </div>
+</main>
+<% if (legalPage.key === 'accountDeletion' && accountDeletionEnabled) { %>
+<script src="/assets/account-deletion.js" defer></script>
+<% } %>
+<%- include('partials/footer') %>

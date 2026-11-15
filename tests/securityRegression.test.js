@@ -32,6 +32,7 @@ test('docker build context excludes local secrets and runtime artifacts', () => 
   const dockerignore = read('.dockerignore');
   assert.match(dockerignore, /^\.env(?:\r?\n|$)/m);
   assert.match(dockerignore, /^\.git(?:\r?\n|$)/m);
+  assert.match(dockerignore, /^\.worktrees(?:\r?\n|$)/m);
   assert.match(dockerignore, /^node_modules(?:\r?\n|$)/m);
   assert.match(dockerignore, /^uploads(?:\r?\n|$)/m);
 });

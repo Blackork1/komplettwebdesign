@@ -1,0 +1,42 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+<main id="main-content">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__glow" aria-hidden="true"></div>
+    <div class="hero__content">
+      <div id="hero-title"><%- include('partials/wordmark', { asHeading: true }) %></div>
+      <p class="hero__lead">Deine Vorlieben, deine Woche, dein nächstes Lieblingsgericht – in einem ruhigen Flow vom Entdecken bis zum gemeinsamen Einkauf.</p>
+      <div class="hero__actions">
+        <a class="button button--primary" href="/support">Cookavoli kennenlernen</a>
+        <a class="text-link" href="/datenschutz">So schützen wir deine Daten <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div class="hero__orbit" aria-hidden="true">
+      <div class="orbit-card orbit-card--discover"><span>01</span><strong>Entdecken</strong><small>Gerichte, die zu dir passen</small></div>
+      <div class="orbit-icon"><img src="/assets/cookavoli-icon-dark.svg" width="1024" height="1024" alt=""></div>
+      <div class="orbit-card orbit-card--plan"><span>02</span><strong>Planen</strong><small>Vom Einzelgericht zur Woche</small></div>
+    </div>
+  </section>
+
+  <section class="feature-section" aria-labelledby="feature-title">
+    <div class="section-heading">
+      <p class="eyebrow">Von der Idee bis zum Teller</p>
+      <h2 id="feature-title">Kochen darf leicht beginnen.</h2>
+      <p>Cookavoli verbindet persönliche Auswahl, alltagstaugliche Planung und die Einkaufsliste, ohne dass du zwischen fünf Werkzeugen springen musst.</p>
+    </div>
+    <div class="feature-grid">
+      <article><span>Swipe</span><h3>Finde, was heute passt.</h3><p>Entdecke Gerichte spielerisch und entscheide in deinem Tempo.</p></article>
+      <article><span>Plan</span><h3>Mach aus Ideen einen Plan.</h3><p>Ordne Gerichte einzelnen Tagen oder einer ganzen Woche zu.</p></article>
+      <article><span>Share</span><h3>Teile, was euch verbindet.</h3><p>Plane gemeinsam und behalte Zutaten sowie Einkauf im Blick.</p></article>
+    </div>
+  </section>
+
+  <section class="promise" aria-labelledby="promise-title">
+    <div>
+      <p class="eyebrow">Dein Geschmack bleibt persönlich</p>
+      <h2 id="promise-title">Weniger Suchen. Mehr Vorfreude.</h2>
+    </div>
+    <p>Vorlieben, Ausschlüsse und Safety-Angaben helfen Cookavoli bei der Auswahl. Sie ersetzen keine medizinische Beratung – aber sie geben deinem Küchenalltag eine klare Richtung.</p>
+  </section>
+</main>
+<%- include('partials/footer') %>

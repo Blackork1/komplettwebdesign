@@ -1027,7 +1027,7 @@ async function buildContactViewModel(req, res, overrides = {}) {
     const lng = resolveContactLocale(req);
     const isEn = lng === "en";
     const contactPath = isEn ? "/en/kontakt" : "/kontakt";
-    const baseUrl = (res.locals.canonicalBaseUrl || "https://komplettwebdesign.de").replace(/\/$/, "");
+    const baseUrl = (res.locals.canonicalBaseUrl || "https://www.komplettwebdesign.de").replace(/\/$/, "");
     const canonical = `${baseUrl}${contactPath}`;
     const packageOptions = overrides.packageOptions || await buildContactPackageOptions(lng);
     const lowestLabel = isEn

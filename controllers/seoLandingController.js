@@ -64,7 +64,7 @@ const HERO_PANELS = Object.freeze({
 });
 
 function baseUrlFrom(res) {
-  return (res.locals.canonicalBaseUrl || process.env.CANONICAL_BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  return (res.locals.canonicalBaseUrl || process.env.CANONICAL_BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
 }
 
 function buildHeroPanel(page) {
@@ -123,11 +123,7 @@ function buildStructuredData(page, baseUrl, canonicalUrl) {
         name: page.parentBreadcrumb?.label || 'Komplett Webdesign',
         url: parentUrl
       },
-      publisher: {
-        '@type': 'Organization',
-        name: 'Komplett Webdesign',
-        url: baseUrl
-      }
+      publisher: { '@id': `${baseUrl}/#organization` }
     },
     page.service ? {
       '@context': 'https://schema.org',
@@ -135,12 +131,7 @@ function buildStructuredData(page, baseUrl, canonicalUrl) {
       '@id': `${canonicalUrl}#service`,
       name: page.service.name || page.h1,
       serviceType: page.service.serviceType || page.primaryKeyword,
-      provider: {
-        '@type': 'Organization',
-        '@id': `${baseUrl}/#organization`,
-        name: 'Komplett Webdesign',
-        url: baseUrl
-      },
+      provider: { '@id': `${baseUrl}/#organization` },
       areaServed: (page.service.areaServed || ['Berlin']).map((name) => ({
         '@type': 'AdministrativeArea',
         name

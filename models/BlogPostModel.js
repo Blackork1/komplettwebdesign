@@ -4,7 +4,7 @@ import pool from '../util/db.js';              // dein pg-Pool (ES-Export)
 import slugify from 'slugify';
 import { enqueueAdminReviewNotificationJob } from '../repositories/contentJobRepository.js';
 import { createAdminReviewDelivery } from '../repositories/contentNotificationRepository.js';
-import { REDIRECTED_BLOG_SLUGS } from '../data/blogRedirects.js';
+import { REDIRECTED_BLOG_SLUGS, storedBlogSlug, withCanonicalBlogSlug } from '../data/blogRedirects.js';
 
 export default class BlogPostModel {
   /* ---------- CREATE ---------- */
@@ -206,7 +206,7 @@ export default class BlogPostModel {
        ORDER BY created_at DESC`,
       [REDIRECTED_BLOG_SLUGS]
     );
-    return rows;
+    return rows.map(withCanonicalBlogSlug);
   }
 
   static async findAllAdmin(db = pool) {
@@ -226,7 +226,7 @@ export default class BlogPostModel {
        OFFSET $3`,
       [REDIRECTED_BLOG_SLUGS, limit, offset]
     );
-    return rows;
+    return rows.map(withCanonicalBlogSlug);
   }
 
   static async countPublished(db = pool) {
@@ -250,7 +250,7 @@ export default class BlogPostModel {
        LIMIT $2`,
       [REDIRECTED_BLOG_SLUGS, limit]
     );
-    return rows;
+    return rows.map(withCanonicalBlogSlug);
   }
 
   static async findBySlug(slug, db = pool) {
@@ -260,9 +260,9 @@ export default class BlogPostModel {
          AND published = true
          AND slug <> ALL($2::text[])
        LIMIT 1`,
-      [slug, REDIRECTED_BLOG_SLUGS]
+      [storedBlogSlug(slug), REDIRECTED_BLOG_SLUGS]
     );
-    return rows[0] ?? null;
+    return withCanonicalBlogSlug(rows[0]) ?? null;
   }
 
   static async findTitle(title) {

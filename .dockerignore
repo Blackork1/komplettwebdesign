@@ -1,6 +1,7 @@
 .env
 .env.*
 .git
+.worktrees
 .gitignore
 node_modules
 npm-debug.log

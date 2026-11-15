@@ -1,7 +1,7 @@
 import { getReferenceProjectBySlug, referenceProjects } from '../data/referenceProjects.js';
 
 function baseUrlFrom(res) {
-  return (res.locals.canonicalBaseUrl || process.env.CANONICAL_BASE_URL || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  return (res.locals.canonicalBaseUrl || process.env.CANONICAL_BASE_URL || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
 }
 
 function absoluteUrl(baseUrl, pathOrUrl) {
@@ -40,11 +40,7 @@ function detailStructuredData(project, baseUrl, canonicalUrl) {
       url: canonicalUrl,
       image: absoluteUrl(baseUrl, project.image),
       about: project.industry,
-      creator: {
-        '@type': 'Organization',
-        name: 'Komplett Webdesign',
-        url: baseUrl
-      },
+      creator: { '@id': `${baseUrl}/#organization` },
       ...(project.liveUrl ? { sameAs: project.liveUrl } : {})
     },
     {

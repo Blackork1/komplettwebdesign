@@ -114,7 +114,7 @@ test('sitemap cms pages query only references columns present in the pages table
   const pagesQuery = source.match(/const pages = await querySafe\(\s*`([\s\S]*?)`\s*,\s*\[\]\s*,\s*"pages"\s*\)/);
 
   assert.ok(pagesQuery, 'pages sitemap query not found');
-  assert.match(pagesQuery[1], /COALESCE\(created_at, now\(\)\) AS updated_at/);
+  assert.match(pagesQuery[1], /created_at AS updated_at/);
   assert.doesNotMatch(pagesQuery[1], /COALESCE\(updated_at/);
 });
 

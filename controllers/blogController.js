@@ -50,8 +50,8 @@ export async function listPosts(req, res) {
   ]);
 
   const pricing = res.locals.packagePricing || {};
-  const posts = normalizeLegacyPublicCopy(renderPricingTokens(rawPosts, pricing));
-  const featuredPosts = normalizeLegacyPublicCopy(renderPricingTokens(rawFeaturedPosts, pricing));
+  const posts = normalizeLegacyPublicCopy(renderPricingTokens(rawPosts, pricing), res.locals.packagePricing || {});
+  const featuredPosts = normalizeLegacyPublicCopy(renderPricingTokens(rawFeaturedPosts, pricing), res.locals.packagePricing || {});
   const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const pagePath = page === 1 ? '/blog' : `/blog?page=${page}`;
   const pageUrl = (value) => value === 1 ? '/blog' : `/blog?page=${value}`;
@@ -85,7 +85,7 @@ export async function listPostsPage(req, res) {
       BlogPostModel.findPage({ limit, offset }),
       BlogPostModel.countPublished()
     ]);
-    const posts = normalizeLegacyPublicCopy(renderPricingTokens(rawPosts, res.locals.packagePricing || {}));
+    const posts = normalizeLegacyPublicCopy(renderPricingTokens(rawPosts, res.locals.packagePricing || {}), res.locals.packagePricing || {});
     const html = (await Promise.all(
       posts.map((post, idx) => renderPostCard(res, post, offset + idx))
     )).join('');

@@ -1,5 +1,5 @@
 import pool from '../util/db.js';
-import { buildHandwerkerPageSchemas } from '../helpers/pageSchema.js';
+import { buildHandwerkerPageSchemas, HANDWERKER_FAQ } from '../helpers/pageSchema.js';
 import { normalizeLegacyPublicCopy } from '../util/legacyPublicCopy.js';
 import { renderPricingTokens } from '../util/pricingTokenRenderer.js';
 
@@ -14,14 +14,30 @@ export async function getPageBySlug(req, res, next) {
     );
     if (!pages.length) return next(); // keine Seite -> weiter zu 404
 
-    const page = normalizeLegacyPublicCopy(renderPricingTokens(pages[0], res.locals.packagePricing || {}));
+    const page = normalizeLegacyPublicCopy(renderPricingTokens(pages[0], res.locals.packagePricing || {}), res.locals.packagePricing || {});
+
+    if (page.slug === 'handwerker') {
+      const reviewedPage = {
+        ...page,
+        title: 'Handwerker-Website Berlin: Leistungen und Referenzen',
+        description: 'Webdesign für Handwerksbetriebe in Berlin: klare Leistungsseiten, Einsatzgebiet, Projektbilder und einfache Kontaktanfragen.',
+        updated_at: '2026-10-23'
+      };
+      return res.render('handwerker', {
+        title: reviewedPage.title,
+        description: reviewedPage.description,
+        packages: res.locals.visiblePackages || [],
+        handwerkerFaq: HANDWERKER_FAQ,
+        structuredDataBlocks: [buildHandwerkerPageSchemas({ page: reviewedPage, url: res.locals.canonicalUrl, baseUrl: res.locals.canonicalBaseUrl })]
+      });
+    }
 
     // Lade alle Komponenten der Seite
     const { rows: rawComps } = await db.query(
       'SELECT * FROM components WHERE page_id = $1 ORDER BY order_index',
       [page.id]
     );
-    const comps = normalizeLegacyPublicCopy(renderPricingTokens(rawComps, res.locals.packagePricing || {}));
+    const comps = normalizeLegacyPublicCopy(renderPricingTokens(rawComps, res.locals.packagePricing || {}), res.locals.packagePricing || {});
 
     // Baumstruktur für Komponenten
     const map = {};

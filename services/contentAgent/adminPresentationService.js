@@ -478,7 +478,7 @@ export function presentContentLearningDashboard(raw = {}) {
 
 function searchPageLabel(value) {
   try {
-    const url = new URL(String(value || ''), 'https://komplettwebdesign.de');
+    const url = new URL(String(value || ''), 'https://www.komplettwebdesign.de');
     if (!['http:', 'https:'].includes(url.protocol)) return 'Unbekannte Seite';
     if (!['komplettwebdesign.de', 'www.komplettwebdesign.de'].includes(url.hostname)) {
       return 'Unbekannte Seite';

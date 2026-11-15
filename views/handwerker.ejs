@@ -1,0 +1,40 @@
+<%- include('partials/head', { extraCssAssets: ['handwerker.css', 'package-list.css'] }) %>
+<body>
+  <%- include('partials/header') %>
+  <main class="packages-page">
+    <section class="packages-hero unified-hero" id="hero">
+      <div class="container hero-grid unified-hero__grid">
+        <div class="hero-copy unified-hero__copy">
+          <nav class="unified-hero__breadcrumbs" aria-label="Breadcrumb"><ol><li><a href="/">Startseite</a></li><li><a href="/branchen">Branchen</a></li><li aria-current="page">Handwerker</li></ol></nav>
+          <h1>Webdesign für Handwerksbetriebe in Berlin</h1>
+          <p class="unified-hero__lead">Zeige, welche Arbeiten du übernimmst, wo du tätig bist und wie Kunden dich erreichen. Ich entwickle deine Website mit klaren Leistungsseiten, echten Projektbildern und einfachen Anfragewegen.</p>
+          <p>Der Projektpreis richtet sich nach dem vereinbarten Paketumfang. Hosting, Domain, E-Mail und Wartung werden separat vereinbart.</p>
+          <div class="hero-actions unified-hero__actions"><a class="btn btn-primary" href="/kontakt">Handwerker-Website anfragen</a><a class="btn btn-secondary" href="#paket-angebote">Pakete vergleichen</a></div>
+        </div>
+        <img src="/images/handwerker-min.webp" alt="Webdesign für Handwerksbetriebe" width="653" height="436" fetchpriority="high">
+      </div>
+    </section>
+    <section class="packages-section"><div class="container">
+      <h2>Was deine Kunden auf der Website brauchen</h2>
+      <ul><li>Konkrete Leistungen und ein klar beschriebenes Einsatzgebiet.</li><li>Eigene Projektbilder und nachvollziehbare Referenzen.</li><li>Gut erreichbare Kontaktdaten und ein passendes Anfrageformular.</li><li>Eine übersichtliche Darstellung auf Smartphone, Tablet und Desktop.</li></ul>
+      <h2>So arbeiten wir zusammen</h2>
+      <p>Ich bin Sören Blocksdorf, dein Webdesigner und Webentwickler in Berlin. Gemeinsam klären wir Leistungen, Inhalte und Umfang. Anschließend folgen Entwurf, Umsetzung, Tests und Launch.</p>
+      <p>Für einen kompakten Onepager sind meist 2 bis 4 Wochen realistisch; eine mehrseitige Website braucht häufig 4 bis 6 Wochen. Den konkreten Zeitplan vereinbaren wir anhand deiner Inhalte, Rückmeldungen und Anforderungen.</p>
+      <p><a href="/ablauf">Projektablauf ansehen</a> · <a href="/ratgeber/website-fuer-handwerker-berlin">Ratgeber für Handwerker-Websites</a> · <a href="/leistungen/local-seo">Local SEO in Berlin</a></p>
+    </div></section>
+    <%- include('partials/package-collection', { packages, isEn: false }) %>
+    <section class="packages-section"><div class="container">
+      <h2>Häufige Fragen zu Handwerker-Websites</h2>
+      <% handwerkerFaq.forEach(faq => { %>
+      <details><summary><%= faq.q %></summary><p><%= faq.a %></p></details>
+      <% }); %>
+    </div></section>
+    <section class="packages-section"><div class="container">
+      <h2>Zusatzfunktionen und laufende Betreuung</h2>
+      <p>Buchungssysteme, zusätzliche Leistungsseiten, Texte und besondere Schnittstellen prüfen und kalkulieren wir nach Bedarf. Laufende Betreuung kannst du passend zu deinem Betrieb vereinbaren.</p>
+      <p><a href="/leistungen/zusatzleistungen-webdesign">Zusatzleistungen</a> · <a href="/leistungen/laufende-kosten-website">Laufende Kosten</a> · <a href="/kontakt">Projekt besprechen</a></p>
+    </div></section>
+  </main>
+  <%- include('partials/footer') %>
+</body>
+</html>

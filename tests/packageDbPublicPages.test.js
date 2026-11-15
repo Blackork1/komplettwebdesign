@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const controllerSource = readFileSync(new URL('../controllers/packagesController.js', import.meta.url), 'utf8');
-const packagesListTemplate = readFileSync(new URL('../views/packages_list.ejs', import.meta.url), 'utf8');
+const packagesListTemplate = readFileSync(new URL('../views/packages_list.ejs', import.meta.url), 'utf8') + readFileSync(new URL('../views/partials/package-collection.ejs', import.meta.url), 'utf8');
 const packageListCss = readFileSync(new URL('../public/package-list.css', import.meta.url), 'utf8');
 const packageDetailTemplate = readFileSync(new URL('../views/package_detail.ejs', import.meta.url), 'utf8');
 const packageDetailCss = readFileSync(new URL('../public/package-detail.css', import.meta.url), 'utf8');

@@ -583,7 +583,7 @@ function jsonLd(scriptObject) {
  * Consolidates what used to be five near-identical helpers (website / broken-links
  * / geo / seo / meta). Per-tester differences are encoded via the `options` arg:
  *
- * @param {string} base       - canonical origin, e.g. "https://komplettwebdesign.de"
+ * @param {string} base       - canonical origin, e.g. "https://www.komplettwebdesign.de"
  * @param {string} canonical  - full canonical URL for this page
  * @param {object} copy       - i18n copy bundle (must include breadcrumb[], faq[],
  *                              altPath, localeCode, inLanguage, pageName,
@@ -779,7 +779,7 @@ function compactResultForArchive(result) {
 export async function testPage(req, res) {
   const locale = localeFromRequest(req);
   const copy = PAGE_I18N[locale];
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const canonical = `${base}${copy.pagePath}`;
 
   res.render('test', {
@@ -798,7 +798,7 @@ export async function testPage(req, res) {
 export async function brokenLinksTestPage(req, res) {
   const locale = localeFromRequest(req);
   const copy = BROKEN_LINK_PAGE_I18N[locale];
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const canonical = `${base}${copy.pagePath}`;
 
   res.render('broken_links_tester', {
@@ -815,7 +815,7 @@ export async function brokenLinksTestPage(req, res) {
 export async function geoTestPage(req, res) {
   const locale = localeFromRequest(req);
   const copy = GEO_PAGE_I18N[locale];
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const canonical = `${base}${copy.pagePath}`;
 
   res.render('geo_tester', {
@@ -832,7 +832,7 @@ export async function geoTestPage(req, res) {
 export async function seoTestPage(req, res) {
   const locale = localeFromRequest(req);
   const copy = SEO_PAGE_I18N[locale];
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const canonical = `${base}${copy.pagePath}`;
 
   res.render('seo_tester', {
@@ -850,7 +850,7 @@ export async function seoTestPage(req, res) {
 export async function metaTestPage(req, res) {
   const locale = localeFromRequest(req);
   const copy = META_PAGE_I18N[locale];
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const canonical = `${base}${copy.pagePath}`;
 
   res.render('meta_tester', {
@@ -1544,7 +1544,7 @@ export async function confirmWebsiteAuditLead(req, res) {
   });
 
   const isEn = viewModel.locale === 'en';
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const pagePath = isEn ? '/en/website-tester/report-confirm' : '/website-tester/report-confirm';
   const canonical = `${base}${pagePath}`;
 
@@ -1576,7 +1576,7 @@ export async function confirmGeoAuditLead(req, res) {
   });
 
   const isEn = viewModel.locale === 'en';
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const pagePath = isEn ? '/en/website-tester/geo/report-confirm' : '/website-tester/geo/report-confirm';
   const canonical = `${base}${pagePath}`;
 
@@ -1608,7 +1608,7 @@ export async function confirmSeoAuditLead(req, res) {
   });
 
   const isEn = viewModel.locale === 'en';
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const pagePath = isEn ? '/en/website-tester/seo/report-confirm' : '/website-tester/seo/report-confirm';
   const canonical = `${base}${pagePath}`;
 
@@ -1635,7 +1635,7 @@ export async function confirmMetaAuditLead(req, res) {
   const token = String(req.query?.token || '').trim();
   const viewModel = await confirmMetaTesterLeadToken({ token, locale: requestedLocale });
   const isEn = viewModel.locale === 'en';
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const pagePath = isEn ? '/en/website-tester/meta/report-confirm' : '/website-tester/meta/report-confirm';
   const canonical = `${base}${pagePath}`;
 
@@ -1662,7 +1662,7 @@ export async function confirmBrokenLinkAuditLead(req, res) {
   const token = String(req.query?.token || '').trim();
   const viewModel = await confirmBrokenLinkTesterLeadToken({ token, locale: requestedLocale });
   const isEn = viewModel.locale === 'en';
-  const base = (res.locals.canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const base = (res.locals.canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const pagePath = isEn
     ? '/en/website-tester/broken-links/report-confirm'
     : '/website-tester/broken-links/report-confirm';

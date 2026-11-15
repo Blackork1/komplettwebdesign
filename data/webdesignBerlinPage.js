@@ -35,9 +35,9 @@ const referenceProofProjects = referenceProjects
   }));
 
 export const webdesignBerlinPage = Object.freeze({
-  title: 'Website erstellen lassen Berlin | Webdesign & Preise',
+  title: 'Webdesign Berlin | Website erstellen lassen',
   description: 'Website erstellen lassen in Berlin: individuelles Webdesign für kleine Unternehmen mit klarer Struktur, transparenten Paketen und persönlicher Umsetzung.',
-  h1: 'Website erstellen lassen in Berlin',
+  h1: 'Webdesign Berlin: Websites für dein Unternehmen',
   canonicalPath: '/webdesign-berlin',
   priceNote: PACKAGE_GLOBAL_NOTES.vatNote,
   consultation: {

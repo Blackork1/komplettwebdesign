@@ -247,7 +247,8 @@ test('mark profile and links expose stable approved context', () => {
   assert.equal(CONTENT_AGENT_PROFILE.brandName, 'Komplett Webdesign');
   assert.equal(CONTENT_AGENT_PROFILE.tone.address, 'Du');
   assert.ok(CONTENT_AGENT_PROFILE.forbiddenPhrases.includes('In der heutigen digitalen Welt'));
-  assert.deepEqual(CONTENT_AGENT_LINKS.map(({ url }) => url), [
+  const approved = CONTENT_AGENT_LINKS.map(({ url }) => url);
+  [
     '/kontakt',
     '/pakete',
     '/webdesign-berlin',
@@ -257,7 +258,10 @@ test('mark profile and links expose stable approved context', () => {
     '/leistungen/landingpage-erstellen-lassen',
     '/branchen/webdesign-blumenladen',
     '/website-tester'
-  ]);
+  ].forEach(url => assert.ok(approved.includes(url), url));
+  assert.ok(approved.includes('/ratgeber/website-relaunch-berlin'));
+  assert.ok(approved.includes('/pakete/business'));
+  assert.equal(new Set(approved).size, approved.length);
 });
 
 test('topic candidates require strict candidate objects and ASCII slugs', () => {

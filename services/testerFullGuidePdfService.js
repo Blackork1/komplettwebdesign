@@ -233,7 +233,7 @@ function buildPdfPageStream(lines = [], options = {}) {
 
   const footerWebsiteLabel = localeFrom(locale) === 'en' ? 'Website:' : 'Website:';
   const pageLabel = localeFrom(locale) === 'en' ? 'Page' : 'Seite';
-  const footerLeft = `${footerWebsiteLabel} ${reportWebsite || 'https://komplettwebdesign.de'}`;
+  const footerLeft = `${footerWebsiteLabel} ${reportWebsite || 'https://www.komplettwebdesign.de'}`;
   const footerRight = `${pageLabel} ${pageNumber}/${pageCount}`;
 
   commands.push('BT');

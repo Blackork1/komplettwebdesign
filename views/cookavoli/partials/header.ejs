@@ -1,0 +1,26 @@
+<%
+  const navigation = [
+    { label: 'Start', href: '/' },
+    { label: 'Support', href: '/support' },
+    { label: 'Datenschutz', href: '/datenschutz' },
+    { label: 'Bedingungen', href: '/nutzungsbedingungen' },
+    { label: 'Konto löschen', href: '/konto-loeschen' }
+  ];
+%>
+<header class="site-header">
+  <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
+  <div class="site-header__inner">
+    <a class="site-brand" href="/" aria-label="Cookavoli Startseite">
+      <img src="/assets/cookavoli-icon-dark.svg" width="1024" height="1024" alt="">
+      <span>Cookavoli</span>
+    </a>
+    <nav class="site-nav" aria-label="Hauptnavigation">
+      <% navigation.forEach((item) => { %>
+        <a
+          href="<%= item.href %>"
+          <%- currentPathname === item.href ? ' aria-current="page"' : '' %>
+        ><%= item.label %></a>
+      <% }) %>
+    </nav>
+  </div>
+</header>

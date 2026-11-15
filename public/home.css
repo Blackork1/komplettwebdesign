@@ -2147,7 +2147,7 @@
     border-radius: 8px;
     background:
       linear-gradient(135deg, rgba(11, 42, 70, 0.92), rgba(11, 42, 70, 0.74)),
-      url("/images/heroBg.webp") center / cover no-repeat;
+      url("/images/heroBg.webp?v=20261023") center / cover no-repeat;
     color: #fff;
     box-shadow: 0 24px 60px rgba(11, 42, 70, 0.18);
   }

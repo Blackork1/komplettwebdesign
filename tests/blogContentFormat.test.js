@@ -243,7 +243,7 @@ test('echter EJS-Gesamtrender schützt Metaattribute und JSON-LD vor gespeichert
   const structuredData = jsonLdScripts.map((element) => JSON.parse($(element).text()));
   const article = structuredData.find((block) => block['@type'] === 'BlogPosting');
   const faq = structuredData.find((block) => block['@type'] === 'FAQPage');
-  const organization = structuredData.find((block) => block['@type'] === 'Organization');
+  const organization = structuredData.find((block) => [block['@type']].flat().includes('Organization'));
   assert.equal(article.headline, metaTitle);
   assert.equal(article.description, metaDescription);
   assert.deepEqual(faq.mainEntity, [{ question: faqQuestion, answer: faqAnswer }]);

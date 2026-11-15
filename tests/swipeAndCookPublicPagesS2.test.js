@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -290,21 +289,17 @@ test('ersetzt die allgemeine Kopfzeile vollständig durch eine eigene Swipe-&-Co
   }
 });
 
-test('verwendet in der Kopfzeile exakt das offizielle dunkle Swipe-&-Cook-App-Icon', () => {
+test('verwendet in der Kopfzeile das dunkle Cookavoli-Vektoricon', () => {
   const header = read('views/partials/swipeandcook-header.ejs');
-  const icon = readFileSync(
-    new URL('../public/images/swipeandcook-icon-dark.png', import.meta.url)
-  );
+  const icon = read('public/cookavoli/cookavoli-icon-dark.svg');
 
   assert.match(
     header,
-    /<img[^>]+class="swipe-site-brand__icon"[^>]+src="\/images\/swipeandcook-icon-dark\.png"/
+    /<img[^>]+class="swipe-site-brand__icon"[^>]+src="\/cookavoli\/cookavoli-icon-dark\.svg"/
   );
   assert.doesNotMatch(header, /swipe-site-brand__mark|S<span>&amp;<\/span>C/);
-  assert.equal(
-    createHash('sha256').update(icon).digest('hex'),
-    '5e845b9fa9b60ed3fb0ccfea114f74a78e46abd69e96b3d39e58d3be8a735154'
-  );
+  assert.match(icon, /<svg\b/);
+  assert.doesNotMatch(icon, /<image\b|data:image|base64/i);
 });
 
 test('der begrenzte Rechtstext-Renderer escaped aktive Inhalte und erlaubt nur sichere Links', () => {
@@ -324,16 +319,16 @@ test('der begrenzte Rechtstext-Renderer escaped aktive Inhalte und erlaubt nur s
   assert.doesNotMatch(html, /href="javascript:/);
 });
 
-test('verlinkt alle vier Seiten im rechtlichen Footer und in der statischen Sitemap', () => {
+test('hält App-Seiten aus dem Marketing-Footer und der indexierbaren Sitemap heraus', () => {
   const legal = footerNavigation.find((column) => column.label === 'Rechtliches');
   assert.ok(legal);
 
   for (const contract of pageContracts) {
-    assert.ok(legal.links.some((link) => (
+    assert.ok(!legal.links.some((link) => (
       link.label === contract.footerLabel
       && link.href === contract.path
     )), contract.path);
-    assert.ok(INDEXABLE_STATIC_ROUTES.some((route) => (
+    assert.ok(!INDEXABLE_STATIC_ROUTES.some((route) => (
       route.path === contract.path
       && route.changefreq === 'yearly'
       && route.priority === 0.2

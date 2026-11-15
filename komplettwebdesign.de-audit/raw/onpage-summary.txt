@@ -1,0 +1,146 @@
+## Indexierung
+noindex: 5 ['/en/pakete', '/en/pakete/start', '/en/pakete/business', '/en/pakete/wachstum', '/en/pakete/individuell']
+Canonical zeigt woanders hin: 48
+   ('/kontakt?projektart=unsure', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?paket=start', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?paket=business', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?paket=individuell', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?paket=wachstum', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?projektart=website-audit', 'https://www.komplettwebdesign.de/kontakt')
+   ('/faq?cat=1', 'https://www.komplettwebdesign.de/faq')
+   ('/faq?cat=2', 'https://www.komplettwebdesign.de/faq')
+   ('/faq?cat=3', 'https://www.komplettwebdesign.de/faq')
+   ('/faq?cat=4', 'https://www.komplettwebdesign.de/faq')
+   ('/faq?cat=5', 'https://www.komplettwebdesign.de/faq')
+   ('/kontakt?projektart=webdesign', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?projektart=website-relaunch', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?projektart=landingpage', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?projektart=website-wartung', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?projektart=zusatzleistung', 'https://www.komplettwebdesign.de/kontakt')
+   ('/kontakt?projektart=local-seo', 'https://www.komplettwebdesign.de/kontakt')
+   ('/blog/Scoll-Snapp-Galery-&-Zoom%E2%80%91on%E2%80%91View', 'https://www.komplettwebdesign.de/blog/Scoll-Snapp-Galery-&-Zoom‑on‑View')
+   ('/blog/website-checkliste-f%C3%BCr-selbstandige', 'https://www.komplettwebdesign.de/blog/website-checkliste-für-selbstandige')
+   ('/en/kontakt?projektart=unsure', 'https://www.komplettwebdesign.de/en/kontakt')
+   ('/en/kontakt?paket=start', 'https://www.komplettwebdesign.de/en/kontakt')
+   ('/en/kontakt?paket=business', 'https://www.komplettwebdesign.de/en/kontakt')
+   ('/en/kontakt?paket=wachstum', 'https://www.komplettwebdesign.de/en/kontakt')
+   ('/en/kontakt?paket=individuell', 'https://www.komplettwebdesign.de/en/kontakt')
+   ('/en/kontakt?projektart=website-audit', 'https://www.komplettwebdesign.de/en/kontakt')
+   ('/en?page=2', 'https://www.komplettwebdesign.de/en')
+   ('/en?cat=1', 'https://www.komplettwebdesign.de/en')
+   ('/en?cat=2', 'https://www.komplettwebdesign.de/en')
+   ('/en?cat=3', 'https://www.komplettwebdesign.de/en')
+   ('/en?cat=4', 'https://www.komplettwebdesign.de/en')
+Ohne Canonical: 1 ['/demo/cq-compare/']
+Indexierbar aber nicht in Sitemap: 18
+   /blog?page=2
+   /blog?page=3
+   /blog?page=4
+   /blog?page=5
+   /booking
+   /branchen/webdesign-arzt
+   /branchen/webdesign-autowerkstatt
+   /branchen/webdesign-beautysalon
+   /branchen/webdesign-fitnesscoach
+   /branchen/webdesign-fotograf
+   /branchen/webdesign-friseur
+   /branchen/webdesign-hebamme
+   /branchen/webdesign-physiotherapie
+   /branchen/webdesign-steuerberater
+   /branchen/webdesign-tattoo
+   /branchen/webdesign-wellness
+   /demo/cq-compare/
+   /leistungen/
+In Sitemap aber noindex/kanonisiert: []
+Sitemap-URLs nicht erreicht/verlinkt: []
+Ohne interne Links (Orphans): []
+
+## Titel
+Fehlend: []
+Doppelte Titel: 12
+   'Request your website project | Komplett Webdesign Berlin' ['/en/kontakt', '/en/kontakt?projektart=unsure', '/en/kontakt?paket=start', '/en/kontakt?paket=business', '/en/kontakt?paket=wachstum', '/en/kontakt?paket=individuell', '/en/kontakt?projektart=website-audit', '/en/kontakt?projektart=webdesign', '/en/kontakt?projektart=website-relaunch', '/en/kontakt?projektart=landingpage', '/en/kontakt?projektart=website-wartung', '/en/kontakt?projektart=local-seo']
+   'Website Development Berlin – Packages from 799 € | Komplett Webdesign' ['/en', '/en?page=2', '/en?cat=1', '/en?cat=2', '/en?cat=3', '/en?cat=4', '/en?cat=5', '/en?page=3', '/en?page=4', '/en?page=5']
+   'Kontakt aufnehmen | Webdesign-Projekt in Berlin anfragen' ['/kontakt', '/kontakt?projektart=unsure', '/kontakt?paket=start', '/kontakt?paket=business', '/kontakt?paket=individuell', '/kontakt?paket=wachstum', '/kontakt?projektart=website-audit', '/kontakt?projektart=webdesign', '/kontakt?projektart=website-relaunch', '/kontakt?projektart=landingpage', '/kontakt?projektart=website-wartung', '/kontakt?projektart=zusatzleistung', '/kontakt?projektart=local-seo']
+   'Komplett Webdesign Berlin | Websites für kleine Unternehmen' ['/', '/?page=2', '/?cat=1', '/?cat=2', '/?cat=4', '/?cat=3', '/?cat=5', '/?page=3', '/?page=4', '/?page=5']
+   'Häufige Fragen – Komplett Webdesign' ['/faq', '/faq?cat=1', '/faq?cat=2', '/faq?cat=3', '/faq?cat=4', '/faq?cat=5']
+   'Leistungen Webdesign Berlin | Überblick' ['/leistungen', '/leistungen/']
+   'Start-Paket Webdesign ab 799 € | Berlin' ['/pakete/start', '/en/pakete/start']
+   'Business-Paket Webdesign | Kleine Unternehmen Berlin' ['/pakete/business', '/en/pakete/business']
+   'Individuelles Webdesign-Projekt | Sonderfunktionen' ['/pakete/individuell', '/en/pakete/individuell']
+   'Wachstum-Paket Webdesign | Relaunch & SEO-Struktur' ['/pakete/wachstum', '/en/pakete/wachstum']
+   'Modernes Micro‑Motion‑Design: Scroll‑Snap Galerie & „Zoom‑on‑View“' ['/blog/Scoll-Snapp-Galery-&-Zoom‑on‑View', '/blog/Scoll-Snapp-Galery-&-Zoom%E2%80%91on%E2%80%91View']
+   'Website Checkliste Selbstständige: Schritt-für-Schritt Anleitung' ['/blog/website-checkliste-für-selbstandige', '/blog/website-checkliste-f%C3%BCr-selbstandige']
+Titel >65 Zeichen: 52 [('/en', 69), ('/en/website-tester', 70), ('/website-tester/broken-links', 68), ('/website-tester/geo', 69), ('/website-tester/meta', 68), ('/en/website-tester/meta', 67), ('/hinweise-rechtstexte-seo-datenschutz', 66), ('/referenzen/kurdisches-filmfestival', 78), ('/en/webdesign-berlin', 66), ('/blog/full-service-webdesign-in-berlin', 67), ('/blog/google-ai-overviews', 75), ('/blog/wordpress-68', 66), ('/blog/Landingpages-Webshop-Webdesign-Berlin', 69), ('/blog/Scoll-Snapp-Galery-&-Zoom‑on‑View', 66), ('/blog/webdesign-lichtenberg-berlin', 94), ('/blog/von-traffic-zu-terminen', 69), ('/blog/google-ads-vs-meta-ads', 68), ('/blog/local-seo-berlin-fuer-freelancer', 69), ('/blog/barrierefreiheit-2020-websites-leitfaden', 66), ('/blog/eigener-website-chatbot', 71), ('/blog/Google-AI-Mode-und-AI-Overviews', 66), ('/blog/Lokale-SEO-Hacks-fuer-Berlin', 66), ('/blog/woche-1-was-ist-webdesign', 93), ('/blog/woche-3-wichtigste-design-elemente', 77), ('/blog/webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist', 85)]
+Titel <30 Zeichen: [('/booking', 'Termin buchen')]
+
+## Meta Description
+Fehlend: ['/demo/cq-compare/']
+Doppelte: 12
+   'Request your website project in Berlin. Packages from 799 €, personal assessmen ['/en/kontakt', '/en/kontakt?projektart=unsure', '/en/kontakt?paket=start', '/en/kontakt?paket=business', '/en/kontakt?paket=wachstum', '/en/kontakt?paket=individuell', '/en/kontakt?projektart=website-audit', '/en/kontakt?projektart=webdesign', '/en/kontakt?projektart=website-relaunch', '/en/kontakt?projektart=landingpage', '/en/kontakt?projektart=website-wartung', '/en/kontakt?projektart=local-seo']
+   'Have your website built in Berlin: custom web design, responsive implementation ['/en', '/en?page=2', '/en?cat=1', '/en?cat=2', '/en?cat=3', '/en?cat=4', '/en?cat=5', '/en?page=3', '/en?page=4', '/en?page=5']
+   'Frage dein Website-Projekt in Berlin an. Pakete ab 799 €, persönliche Einschätz ['/kontakt', '/kontakt?projektart=unsure', '/kontakt?paket=start', '/kontakt?paket=business', '/kontakt?paket=individuell', '/kontakt?paket=wachstum', '/kontakt?projektart=website-audit', '/kontakt?projektart=webdesign', '/kontakt?projektart=website-relaunch', '/kontakt?projektart=landingpage', '/kontakt?projektart=website-wartung', '/kontakt?projektart=zusatzleistung', '/kontakt?projektart=local-seo']
+   'Komplett Webdesign entwickelt individuelle Websites für kleine Unternehmen in B ['/', '/?page=2', '/?cat=1', '/?cat=2', '/?cat=4', '/?cat=3', '/?cat=5', '/?page=3', '/?page=4', '/?page=5']
+   'Hier findest du Antworten auf häufig gestellte Fragen zu Leistungen, Preisen, A ['/faq', '/faq?cat=1', '/faq?cat=2', '/faq?cat=3', '/faq?cat=4', '/faq?cat=5']
+   'Überblick über Webdesign-Leistungen in Berlin: Relaunch, Local SEO, Landingpage ['/leistungen', '/leistungen/']
+   'Kompakte individuelle Website ab 799 € für Selbstständige und kleine Anbieter i ['/pakete/start', '/en/pakete/start']
+   'Business-Website für kleine Unternehmen in Berlin: mehrere Leistungsseiten, kla ['/pakete/business', '/en/pakete/business']
+   'Individuelles Webdesign für Sonderfunktionen, CMS, Buchung, Mehrsprachigkeit od ['/pakete/individuell', '/en/pakete/individuell']
+   'Umfangreichere Website ab 2.499 € für Relaunch, mehrere Leistungsseiten und bes ['/pakete/wachstum', '/en/pakete/wachstum']
+   'Entdecke, wie du Bilder mit modernen CSS-Selektoren und Intersection Observer a ['/blog/Scoll-Snapp-Galery-&-Zoom‑on‑View', '/blog/Scoll-Snapp-Galery-&-Zoom%E2%80%91on%E2%80%91View']
+   'Kostenlose Website-Checkliste für Selbstständige & Freelancer in Berlin/Branden ['/blog/website-checkliste-für-selbstandige', '/blog/website-checkliste-f%C3%BCr-selbstandige']
+>160 Zeichen: 33 [('/pakete', 169), ('/about', 170), ('/website-tester/geo', 171), ('/en/webdesign-berlin/friedrichshain', 174), ('/en/webdesign-berlin/kreuzberg', 169), ('/en/webdesign-berlin/prenzlauer-berg', 175), ('/en/webdesign-berlin/charlottenburg', 174), ('/en/webdesign-berlin/lichtenberg', 171), ('/en/webdesign-berlin/mitte', 165), ('/blog/full-service-webdesign-in-berlin', 183), ('/blog/chatgpt-agentenmodus', 169), ('/blog/ki-suche-webdesign-2026', 250), ('/blog/Landingpages-Webshop-Webdesign-Berlin', 207), ('/blog/Scoll-Snapp-Galery-&-Zoom‑on‑View', 202), ('/blog/von-traffic-zu-terminen', 205), ('/blog/local-seo-berlin-fuer-freelancer', 167), ('/blog/eigener-website-chatbot', 182), ('/blog/website-checkliste-für-selbstandige', 227), ('/blog/woche-1-was-ist-webdesign', 171), ('/blog/woche-4-responsive-webdesign', 181)]
+<70 Zeichen: [('/booking', 45)]
+
+## H1
+Ohne H1: []
+Mehrere H1: []
+Doppelte H1: [('Request your website project in Berlin', ['/en/kontakt', '/en/kontakt?projektart=unsure', '/en/kontakt?paket=start', '/en/kontakt?paket=business', '/en/kontakt?paket=wachstum', '/en/kontakt?paket=individuell', '/en/kontakt?projektart=website-audit', '/en/kontakt?projektart=webdesign', '/en/kontakt?projektart=website-relaunch', '/en/kontakt?projektart=landingpage', '/en/kontakt?projektart=website-wartung', '/en/kontakt?projektart=local-seo']), ('Get a custom website built in Berlin', ['/en', '/en?page=2', '/en?cat=1', '/en?cat=2', '/en?cat=3', '/en?cat=4', '/en?cat=5', '/en?page=3', '/en?page=4', '/en?page=5']), ('Website-Projekt in Berlin anfragen', ['/kontakt', '/kontakt?projektart=unsure', '/kontakt?paket=start', '/kontakt?paket=business', '/kontakt?paket=individuell', '/kontakt?paket=wachstum', '/kontakt?projektart=website-audit', '/kontakt?projektart=webdesign', '/kontakt?projektart=website-relaunch', '/kontakt?projektart=landingpage', '/kontakt?projektart=website-wartung', '/kontakt?projektart=zusatzleistung', '/kontakt?projektart=local-seo']), ('Website erstellen lassen in Berlin – persönlich, SEO-freundlich und au', ['/', '/?page=2', '/?cat=1', '/?cat=2', '/?cat=4', '/?cat=3', '/?cat=5', '/?page=3', '/?page=4', '/?page=5']), ('Aktuelle Einschätzungen zu Webdesign, SEO und Sichtbarkeit.', ['/blog', '/blog?page=2', '/blog?page=3', '/blog?page=4', '/blog?page=5']), ('Häufig gestellte Fragen', ['/faq', '/faq?cat=1', '/faq?cat=2', '/faq?cat=3', '/faq?cat=4', '/faq?cat=5']), ('Leistungen für deine Website', ['/leistungen', '/leistungen/']), ('Start-Paket für kompakte Websites ab 799 €', ['/pakete/start', '/en/pakete/start']), ('Business-Paket für kleine Unternehmen', ['/pakete/business', '/en/pakete/business']), ('Individuelles Webdesign-Projekt für Sonderfunktionen', ['/pakete/individuell', '/en/pakete/individuell']), ('Wachstum-Paket für umfangreichere Websites und Relaunches', ['/pakete/wachstum', '/en/pakete/wachstum']), ('Modernes Micro‑Motion‑Design: Scroll‑Snap Galerie & „Zoom‑on‑View“', ['/blog/Scoll-Snapp-Galery-&-Zoom‑on‑View', '/blog/Scoll-Snapp-Galery-&-Zoom%E2%80%91on%E2%80%91View']), ('Website Checkliste Selbstständige: Schritt-für-Schritt Anleitung', ['/blog/website-checkliste-für-selbstandige', '/blog/website-checkliste-f%C3%BCr-selbstandige'])]
+Übersprungene Überschriftenebenen: 97 ['/en/kontakt', '/en', '/kontakt', '/', '/pakete', '/website-tester', '/en/website-tester', '/website-tester/broken-links', '/en/website-tester/broken-links', '/website-tester/geo', '/en/website-tester/geo', '/website-tester/seo', '/en/website-tester/seo', '/website-tester/meta', '/en/website-tester/meta', '/faq', '/datenschutz', '/swipeandcook-datenschutz', '/swipeandcook-nutzungsbedingungen', '/swipeandcook-support']
+
+## Inhalt
+Dünn (<300 Wörter, indexierbar): 4 [(46, '/demo/cq-compare/'), (191, '/hinweise-rechtstexte-seo-datenschutz'), (293, '/faq'), (293, '/faq?cat=1')]
+Wörter Median: 1378 Min: 46 Max: 6765
+
+## Bilder
+Bilder gesamt: 6053 | ohne alt-Attribut: 2 | leeres alt: 4066 | ohne width/height: 5207 | lazy: 4901
+  ohne alt: /blog/chatgpt-agentenmodus ['https://res.cloudinary.com/dvd2cd2be/image/upload/v1755436755/admin_gallery/d9muw13nwjwl2eugggz0.webp', 'https://res.cloudinary.com/dvd2cd2be/image/upload/v1755436944/admin_gallery/ervesbwkoqginyp33opc.webp']
+
+## Schema
+{'BreadcrumbList': 157, 'ContactPage': 25, 'FAQPage': 160, 'Organization': 87, 'Person': 20, 'WebSite': 52, 'Service': 56, 'WebPage': 66, 'ItemList': 5, 'WebApplication': 10, 'CollectionPage': 3, 'CreativeWork': 3, 'ProfessionalService': 7, 'BlogPosting': 58, 'Article': 3}
+Ohne Schema: ['/about', '/blog', '/ratgeber', '/datenschutz', '/swipeandcook-datenschutz', '/swipeandcook-nutzungsbedingungen', '/swipeandcook-support', '/swipeandcook-konto-loeschen', '/impressum', '/blog?page=2', '/booking', '/demo/cq-compare/', '/blog?page=3', '/blog?page=4', '/blog?page=5']
+
+## Sprache/hreflang
+lang: {'en': 39, 'de': 157, None: 1}
+Ohne hreflang: 123 ['/about', '/blog', '/branchen', '/ratgeber', '/faq', '/datenschutz', '/swipeandcook-datenschutz', '/swipeandcook-nutzungsbedingungen', '/swipeandcook-support', '/swipeandcook-konto-loeschen', '/hinweise-rechtstexte-seo-datenschutz', '/impressum', '/webdesign-cafe/kosten', '/webdesign-blumenladen/kosten', '/leistungen', '/leistungen/website-relaunch', '/leistungen/website-audit', '/leistungen/landingpage-erstellen-lassen', '/webdesign-kleine-unternehmen-berlin', '/webdesign-berlin/kosten-preise-pakete', '/leistungen/laufende-kosten-website', '/leistungen/website-wartung', '/leistungen/zusatzleistungen-webdesign', '/leistungen/local-seo', '/referenzen', '/referenzen/zur-alten-backstube', '/referenzen/kurdisches-filmfestival', '/ablauf', '/referenzen/tm-sauber-mehr', '/handwerker']
+hreflang ohne Rückverweis/kaputt: 123
+   ('/kontakt?projektart=unsure', 'de-DE', '/kontakt')
+   ('/kontakt?projektart=unsure', 'en', '/en/kontakt')
+   ('/kontakt?projektart=unsure', 'x-default', '/kontakt')
+   ('/kontakt?paket=start', 'de-DE', '/kontakt')
+   ('/kontakt?paket=start', 'en', '/en/kontakt')
+   ('/kontakt?paket=start', 'x-default', '/kontakt')
+   ('/kontakt?paket=business', 'de-DE', '/kontakt')
+   ('/kontakt?paket=business', 'en', '/en/kontakt')
+   ('/kontakt?paket=business', 'x-default', '/kontakt')
+   ('/kontakt?paket=individuell', 'de-DE', '/kontakt')
+   ('/kontakt?paket=individuell', 'en', '/en/kontakt')
+   ('/kontakt?paket=individuell', 'x-default', '/kontakt')
+   ('/kontakt?paket=wachstum', 'de-DE', '/kontakt')
+   ('/kontakt?paket=wachstum', 'en', '/en/kontakt')
+   ('/kontakt?paket=wachstum', 'x-default', '/kontakt')
+   ('/kontakt?projektart=website-audit', 'de-DE', '/kontakt')
+   ('/kontakt?projektart=website-audit', 'en', '/en/kontakt')
+   ('/kontakt?projektart=website-audit', 'x-default', '/kontakt')
+   ('/kontakt?projektart=webdesign', 'de-DE', '/kontakt')
+   ('/kontakt?projektart=webdesign', 'en', '/en/kontakt')
+   ('/kontakt?projektart=webdesign', 'x-default', '/kontakt')
+   ('/kontakt?projektart=website-relaunch', 'de-DE', '/kontakt')
+   ('/kontakt?projektart=website-relaunch', 'en', '/en/kontakt')
+   ('/kontakt?projektart=website-relaunch', 'x-default', '/kontakt')
+   ('/kontakt?projektart=landingpage', 'de-DE', '/kontakt')
+
+## Performance (Server)
+Antwortzeit ms Median: 88 p90: 127 max: 319
+Langsamste: [(319, '/pakete'), (283, '/'), (276, '/kontakt'), (226, '/en'), (175, '/ratgeber/baukasten-vs-professionelle-website')]
+
+## Externe Domains: [('instagram.com', 196), ('www.facebook.com', 196), ('www.linkedin.com', 196), ('www.tiktok.com', 196), ('www.youtube.com', 196), ('www.google.com', 31), ('g.page', 20), ('developers.google.com', 10), ('www.zuraltenbackstube.de', 8), ('www.pexels.com', 7), ('share.google', 6), ('www.sauber-mehr.de', 6), ('www.komplettwebdesign.de', 6), ('support.google.com', 5), ('schema.org', 2), ('policies.google.com', 1), ('privacy.microsoft.com', 1), ('firebase.google.com', 1), ('www.apple.com', 1), ('apps.apple.com', 1)]

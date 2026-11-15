@@ -1,0 +1,138 @@
+{
+  "checked_at": "2026-11-15T20:42:59.004Z",
+  "word_count": 2508,
+  "meta_title_characters": 47,
+  "meta_description_characters": 154,
+  "tables": 4,
+  "faq": 8,
+  "calculation_checks": "passed",
+  "sanitizer_checks": "passed",
+  "presentation_service_checks": "passed",
+  "anchor_checks": "passed",
+  "images": [
+    {
+      "file": "/images/blog/webdesign-preise-2027/webdesign-preise-2027-website-budget.webp",
+      "bytes": 79286
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/webdesign-preise-2027-website-budget-600.webp",
+      "bytes": 26882
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/webdesign-leistungen-planung-2027.webp",
+      "bytes": 104022
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/webdesign-leistungen-planung-2027-600.webp",
+      "bytes": 35648
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/website-kosten-einmalig-laufend-2027.webp",
+      "bytes": 64312
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/website-kosten-einmalig-laufend-2027-600.webp",
+      "bytes": 23638
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/website-hosting-wartung-kosten-2027.webp",
+      "bytes": 77960
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/website-hosting-wartung-kosten-2027-600.webp",
+      "bytes": 21686
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/website-budget-drei-jahre-2027.webp",
+      "bytes": 55214
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/website-budget-drei-jahre-2027-600.webp",
+      "bytes": 19594
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/webdesign-angebote-vergleichen-2027.webp",
+      "bytes": 65664
+    },
+    {
+      "file": "/images/blog/webdesign-preise-2027/webdesign-angebote-vergleichen-2027-600.webp",
+      "bytes": 22334
+    }
+  ],
+  "internal_links": [
+    {
+      "href": "/",
+      "status": 200
+    },
+    {
+      "href": "/pakete/start",
+      "status": 200
+    },
+    {
+      "href": "/pakete/business",
+      "status": 200
+    },
+    {
+      "href": "/pakete/wachstum",
+      "status": 200
+    },
+    {
+      "href": "/pakete/individuell",
+      "status": 200
+    },
+    {
+      "href": "/pakete",
+      "status": 200
+    },
+    {
+      "href": "/leistungen/laufende-kosten-website",
+      "status": 200
+    },
+    {
+      "href": "/leistungen/website-wartung",
+      "status": 200
+    },
+    {
+      "href": "/leistungen/zusatzleistungen-webdesign",
+      "status": 200
+    },
+    {
+      "href": "/leistungen/website-relaunch",
+      "status": 200
+    },
+    {
+      "href": "/kontakt?projektart=website-2027",
+      "status": 200
+    },
+    {
+      "href": "/referenzen",
+      "status": 200
+    },
+    {
+      "href": "/blog/website-kosten-2025-einfach-erklaert",
+      "status": 200
+    }
+  ],
+  "browser_checks": {
+    "desktop_width": 1728,
+    "mobile_width": 390,
+    "mobile_page_width": 390,
+    "viewport_restored": true,
+    "one_h1": true,
+    "tables_scroll_within_containers": true,
+    "note": "Die frühere Browserprüfung bezog sich auf die Fassung mit drei Bildern. Alle drei zusätzlichen Illustrationen wurden im HTML, Inhaltspaket und in der Vorschau auf gültige Dateiverweise, Bildgrößen und Alt-Texte geprüft."
+  },
+  "existing_content_format_tests": "passed",
+  "inline_illustration_check": {
+    "passed": true,
+    "inline_illustrations": 3,
+    "inline_cost_graphics": 2,
+    "total_images_in_preview": 6,
+    "in_article": true,
+    "in_payload": true,
+    "in_preview": true,
+    "alt": true,
+    "responsive": true,
+    "lazy_loading": true
+  }
+}

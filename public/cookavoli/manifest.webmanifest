@@ -1,0 +1,18 @@
+{
+  "name": "Cookavoli",
+  "short_name": "Cookavoli",
+  "description": "Rezepte entdecken, planen und gemeinsam genießen.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#001c13",
+  "theme_color": "#002b20",
+  "icons": [
+    {
+      "src": "/assets/cookavoli-icon-dark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+<%
+  const canonicalUrl = canonicalPath
+    ? `${siteUrl}${canonicalPath === '/' ? '/' : canonicalPath}`
+    : null;
+  const socialUrl = canonicalUrl || `${siteUrl}/`;
+  const pageRobots = typeof robots === 'string' ? robots : 'index, follow';
+  const schemaJson = schema
+    ? JSON.stringify(schema).replace(/</g, '\\u003c')
+    : null;
+%>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <meta name="description" content="<%= description %>">
+  <meta name="robots" content="<%= pageRobots %>">
+  <meta name="theme-color" content="#002b20">
+  <% if (canonicalUrl) { %><link rel="canonical" href="<%= canonicalUrl %>"><% } %>
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="de_DE">
+  <meta property="og:site_name" content="Cookavoli">
+  <meta property="og:title" content="<%= title %>">
+  <meta property="og:description" content="<%= description %>">
+  <meta property="og:url" content="<%= socialUrl %>">
+  <meta property="og:image" content="<%= siteUrl %>/assets/cookavoli-social-card.png">
+  <meta property="og:image:width" content="1024">
+  <meta property="og:image:height" content="500">
+  <meta property="og:image:alt" content="Cookavoli App-Icon auf tiefgrünem Hintergrund">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= title %>">
+  <meta name="twitter:description" content="<%= description %>">
+  <meta name="twitter:image" content="<%= siteUrl %>/assets/cookavoli-social-card.png">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/cookavoli-icon-dark.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/assets/site.css">
+  <% if (schemaJson) { %>
+  <script type="application/ld+json" nonce="<%= cspNonce %>"><%- schemaJson %></script>
+  <% } %>
+</head>
+<body>

@@ -1,6 +1,7 @@
+import { buildOrganizationSchema } from './entitySchema.js';
 import { stripHtml } from './industrySchema.js';
 
-const HANDWERKER_FAQ = [
+export const HANDWERKER_FAQ = [
   {
     q: 'Was kostet eine Handwerker-Website?',
     a: 'Eine kompakte Handwerker-Website startet bei Komplett Webdesign üblicherweise im Start-Paket. Für Betriebe mit mehreren Leistungen, Referenzen, Einsatzgebieten und stärkerer Struktur ist häufig das Business-Paket sinnvoll.'
@@ -24,7 +25,7 @@ const HANDWERKER_FAQ = [
 ];
 
 function normalizeBaseUrl(baseUrl) {
-  return String(baseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  return String(baseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
 }
 
 function toAbsoluteUrl(url, baseUrl) {
@@ -58,13 +59,7 @@ export function buildHandwerkerPageSchemas({ page = {}, url, baseUrl }) {
   return {
     '@context': 'https://schema.org',
     '@graph': [
-      {
-        '@type': 'Organization',
-        '@id': orgId,
-        name: 'Komplett Webdesign',
-        url: base,
-        logo: `${base}/images/LogoTransparent.webp`
-      },
+      buildOrganizationSchema(base),
       {
         '@type': 'WebSite',
         '@id': websiteId,

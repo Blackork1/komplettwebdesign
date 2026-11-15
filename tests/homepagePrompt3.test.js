@@ -249,7 +249,7 @@ test('homepage hero uses the final recommended copy and a quieter CTA hierarchy'
   assert.match(controller, /seoTitle:\s*'Komplett Webdesign Berlin \| Websites für kleine Unternehmen'/);
   assert.match(controller, /Komplett Webdesign entwickelt individuelle Websites für kleine Unternehmen in Berlin: klare Leistungen, faire Pakete, persönliche Umsetzung und saubere Technik\./);
   assert.match(controller, /heroBadge:\s*'Komplett Webdesign aus Berlin'/);
-  assert.match(controller, /heroTitle:\s*'Website erstellen lassen in Berlin – persönlich, SEO-freundlich und aus einer Hand'/);
+  assert.match(controller, /heroTitle:\s*'Persönliche Websites für kleine Unternehmen in Berlin'/);
   assert.match(controller, /heroTitle2:\s*''/);
   assert.match(controller, /heroSubline:\s*'Komplett Webdesign plant, gestaltet und betreut Websites für kleine Unternehmen in Berlin\./);
   assert.match(controller, /heroBullet1:\s*'Maßgeschneidert statt Baukasten oder Template-Look'/);

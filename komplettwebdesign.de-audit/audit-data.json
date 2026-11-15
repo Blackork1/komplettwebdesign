@@ -1,0 +1,493 @@
+{
+  "summary": {
+    "health_score": 62,
+    "business_type": "Lokaler Dienstleister (Webdesign, Service-Area-Business Berlin)",
+    "top_findings": [
+      "Platzhaltertexte statt Preisen auf 31 Seiten, u. a. im Google-Titel der Café-Seite ('Webdesign nach aktueller Paketlogik') – util/legacyPublicCopy.js",
+      "Alle 6 deutschen Bezirksseiten zeigen '{{lowestPackagePriceLabel}}' und englische Satzteile ('bei from 1,499 €')",
+      "/handwerker zeigt alte Preise (499,00/899,00/1500,00 €), 'Standart Paket' und sichtbare HTML-Kommentare; Blogartikel mit falscher Telefonnummer +49 1525 4350378",
+      "Telefonnummer weicht von Verzeichnissen ab; Google-Maps-Pin liegt ca. 32 km von der Impressumsadresse entfernt",
+      "Kannibalisierung: 'Website erstellen lassen Berlin' auf 4 H1/6 Titeln, Kosten-Intention auf 9 URLs; 81 % der Blogartikel ohne Link aus dem Text"
+    ],
+    "quick_wins": [
+      "Ersetzungsregeln in util/legacyPublicCopy.js auf echte Preise umstellen + Test gegen Platzhalterphrasen (ca. 1 h)",
+      "Bezirksseiten: interpolatePricingTokens anwenden, deutsche Tokens nutzen (ca. 30 Min)",
+      "Blogartikel full-service-webdesign-in-berlin und local-seo-berlin-fuer-freelancer: Nummer, Preise, eingebetteten Schema-Block korrigieren (ca. 15 Min)",
+      "heroBg.webp verkleinern und 4 Ratgeber-PNGs in WebP umwandeln – spart ca. 0,8 MB auf / und bis zu 7,6 MB auf /ratgeber (ca. 1 h)",
+      "Chat-Button ausblenden, solange der Cookie-Banner offen ist; Banner verkleinern (ca. 1 h)"
+    ],
+    "score_method": {
+      "Technical SEO": {
+        "score": 70,
+        "weight": 0.22
+      },
+      "Content Quality": {
+        "score": 55,
+        "weight": 0.23
+      },
+      "On-Page SEO": {
+        "score": 55,
+        "weight": 0.2
+      },
+      "Schema / Structured Data": {
+        "score": 58,
+        "weight": 0.1
+      },
+      "Performance (CWV)": {
+        "score": 74,
+        "weight": 0.1
+      },
+      "AI Search Readiness": {
+        "score": 67,
+        "weight": 0.1
+      },
+      "Images": {
+        "score": 58,
+        "weight": 0.05
+      }
+    }
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 70,
+      "what_works": [
+        "Alle 197 gecrawlten Seiten liefern 200, serverseitig gerendert, keine Weiterleitungsketten, keine verwaisten Seiten",
+        "Sitemap valide (126 URLs), in robots.txt deklariert, keine noindex- oder kanonisierten URLs darin",
+        "Server-Antwortzeit Median 88 ms; Brotli und HTTP/2 aktiv; echte 404 mit noindex für unbekannte URLs",
+        "hreflang zwischen DE und EN gegenseitig und gültig (ohne Parameter-URLs)"
+      ],
+      "findings": [
+        {
+          "title": "URL-Varianten liefern 200 statt 301 (/leistungen/, /about/, /faq/, /ABOUT, //kontakt)",
+          "severity": "High",
+          "description": "Die Navigation verlinkt /leistungen/ 195-mal, /leistungen nur 32-mal; Self-Canonical teils auf die Variante (index.js:262-268, data/siteNavigation.js:23,28,128).",
+          "recommendation": "Navigation auf /leistungen umstellen und Middleware für 301-Normalisierung (Slash, Doppelslash, Kleinschreibung) einbauen."
+        },
+        {
+          "title": "Widersprüchliche Index-Signale bei Nebenseiten",
+          "severity": "High",
+          "description": "11 Branchenseiten, /booking, /de, /return_policy, /branchen-websites-erstellen-lassen und /demo/cq-compare/ sind indexierbar, aber bewusst nicht in der Sitemap (helpers/seoPagePolicy.js).",
+          "recommendation": "Pro Seite entscheiden: in Sitemap aufnehmen oder noindex/301. /demo/cq-compare/ und /booking auf noindex, /de per 301 auf /."
+        },
+        {
+          "title": "Sitemap-lastmod zeigt den Abrufzeitpunkt",
+          "severity": "Medium",
+          "description": "62 von 126 Einträgen tragen 'jetzt' als lastmod (controllers/sitemapController.js:66,138,144,199,229); 29 Blogposts teilen denselben Zeitstempel. Google ignoriert lastmod dann.",
+          "recommendation": "nowIso-Fallback entfernen, nur echte Änderungsdaten ausgeben; changefreq/priority streichen."
+        },
+        {
+          "title": "Sprachumschalter erzeugt 36 Parameter-Duplikate (?cat=, ?page=); /faq?cat=999 liefert HTTP 500",
+          "severity": "Medium",
+          "description": "views/partials/header.ejs:27-28 übernimmt die Query in den Sprachlink.",
+          "recommendation": "Sprachlink ohne Query bauen; ungültige cat-Werte mit 404 beantworten."
+        },
+        {
+          "title": "Blog-Slugs mit Sonderzeichen und Tippfehlern",
+          "severity": "Medium",
+          "description": "/blog/Scoll-Snapp-Galery-&-Zoom‑on‑View (U+2011, &), /blog/website-checkliste-für-selbstandige; Sitemap nicht prozentkodiert.",
+          "recommendation": "Saubere ASCII-Slugs vergeben, 301 von alten URLs, Sitemap-URLs kodieren."
+        },
+        {
+          "title": "/en/pakete* ist noindex, liefert deutsche Inhalte und wird stark intern verlinkt",
+          "severity": "Medium",
+          "description": "Fünf Seiten mit 15–39 internen Links; der Sprachumschalter führt von /pakete dorthin.",
+          "recommendation": "EN-Paketseiten übersetzen und indexieren oder Sprachumschalter auf /en zeigen lassen."
+        },
+        {
+          "title": "Sicherheits-Header minimal; HSTS fehlt auf dem Apex-Redirect",
+          "severity": "Medium",
+          "description": "CSP nur frame-ancestors/object-src/base-uri, keine Permissions-Policy; Redirect-Block steht vor der Header-Middleware (index.js:201-257).",
+          "recommendation": "Header-Middleware vor den Redirect ziehen, HSTS mit includeSubDomains, CSP schrittweise ausbauen."
+        },
+        {
+          "title": "Session-Cookie bei jedem Request, IndexNow fehlt",
+          "severity": "Low",
+          "description": "middleware/csrf.js:3-8 schreibt immer ein CSRF-Token in die Session (Postgres-Datensatz pro Besucher und Bot).",
+          "recommendation": "Session nur bei Formular-Seiten anlegen; IndexNow-Key und Ping beim Veröffentlichen ergänzen."
+        }
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 55,
+      "what_works": [
+        "Inhaltstiefe hoch: Median 1.378 Wörter pro Seite, nur 4 dünne indexierbare Seiten",
+        "Ratgeberseiten starten mit einer 'Kurzantwort' – gut zitierfähig",
+        "Konkrete Preise und Laufzeiten in den FAQ der Startseite"
+      ],
+      "findings": [
+        {
+          "title": "Platzhaltertexte statt Preisen auf 31 Seiten",
+          "severity": "Critical",
+          "description": "util/legacyPublicCopy.js ersetzt alte Preise durch 'nach aktueller Paketlogik', 'aktueller Paketpreis', 'aktueller Business-Paketrahmen' – live u. a. im Google-Titel der Café-Seite und 14-mal im Ratgeber Baukasten vs. professionelle Website.",
+          "recommendation": "Ersetzungsziele auf echte Preise (ab 799 € usw.) umstellen und einen Test ergänzen, der bei diesen Phrasen fehlschlägt."
+        },
+        {
+          "title": "Unaufgelöster Platzhalter und englische Satzteile auf allen 6 DE-Bezirksseiten",
+          "severity": "Critical",
+          "description": "Sichtbar 'Preise {{lowestPackagePriceLabel}}', in FAQ und FAQPage-JSON-LD 'Start from 799 € … bei from 1,499 €' (data/seoGuideCluster.js:19, controllers/districtController.js buildGermanDistrictFaq).",
+          "recommendation": "interpolatePricingTokens anwenden und die deutschen Tokens verwenden."
+        },
+        {
+          "title": "Alte Preise, Tippfehler und sichtbare HTML-Kommentare auf /handwerker",
+          "severity": "Critical",
+          "description": "'Standart Paket 499,00 €', 899,00 €, 1500,00 € statt 799/1.499/2.499 €; '<!-- Preis -->' als Text sichtbar; unbelegte Versprechen '+128 % mehr Aufträge'.",
+          "recommendation": "Paket-Komponente von /pakete einbinden, Kommentare und unbelegte Zahlen entfernen."
+        },
+        {
+          "title": "Falsche Telefonnummer und alte Preise in Blogartikeln",
+          "severity": "High",
+          "description": "/blog/full-service-webdesign-in-berlin zeigt +49 1525 4350378 (4x) und 499 €; auch /blog/local-seo-berlin-fuer-freelancer. Eingebetteter Schema-Block im Beitragsinhalt (Datenbank).",
+          "recommendation": "Nummer und Preise im Beitrag korrigieren, eingebetteten Schema-Block löschen."
+        },
+        {
+          "title": "Bezirksseiten fast identisch (Doorway-Risiko)",
+          "severity": "High",
+          "description": "DE: 77–81 % identische Sätze, nur ca. 10 % seitenspezifischer Text; EN: ca. 510 Wörter mit widersprüchlicher Preisangabe 1.500–4.500 €.",
+          "recommendation": "Pro Bezirk echte Inhalte (Kundenbeispiel, lokale Branchen, Anfahrt/Treffpunkt) oder Bezirke zu einer Berlin-Seite zusammenführen."
+        },
+        {
+          "title": "Schwaches E-E-A-T: keine Person, keine Autoren",
+          "severity": "High",
+          "description": "Sören Blocksdorf erscheint auf der Startseite nur im JSON-LD; Blog/Ratgeber ohne Byline, Autor im Schema ist die Organisation; uneinheitliche Ansprache (wir/Sie vs. ich/du).",
+          "recommendation": "Personen-Absatz unter der H1, Autorbox mit Person-Schema, einheitlich ich/du."
+        },
+        {
+          "title": "Abgeschnittene Titel und Descriptions bei 8 Content-Agent-Posts",
+          "severity": "Medium",
+          "description": "Kürzung mitten im Wort (z. B. '… für lokale S'); services/contentAgent/articleSchemas.js:230.",
+          "recommendation": "Kürzung auf Wort- bzw. Satzende umstellen und die 8 Posts korrigieren."
+        }
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 55,
+      "what_works": [
+        "Jede Seite hat genau eine H1, Titel und (bis auf eine) Description",
+        "Keine verwaisten Seiten, saubere Canonicals auf Parameter-URLs"
+      ],
+      "findings": [
+        {
+          "title": "Kannibalisierung beim Money-Keyword 'Website erstellen lassen Berlin'",
+          "severity": "Critical",
+          "description": "Vier H1 und sechs Titel zielen darauf (/, /webdesign-berlin, /pakete, Ratgeber Ablauf). Keine Seite beginnt mit 'Webdesign Berlin', obwohl 9 von 9 SERP-Treffern so starten.",
+          "recommendation": "Eine Hauptseite pro Intention festlegen; Titel und H1 der anderen Seiten auf ihre eigene Intention umschreiben."
+        },
+        {
+          "title": "Kosten-Intention auf 9 URLs verteilt",
+          "severity": "Critical",
+          "description": "Mehrere fast gleiche Kostenseiten mit unterschiedlichen Datumsständen; zwei interne Keyword-Dokumente nennen unterschiedliche Zielseiten.",
+          "recommendation": "Eine Kosten-Pillar-Seite, die übrigen zusammenführen (301) oder klar abgrenzen."
+        },
+        {
+          "title": "81 % der Blogartikel ohne Link aus dem Fließtext",
+          "severity": "High",
+          "description": "35 von 43 Artikeln nur über die Blog-Paginierung erreichbar; Blog → Ratgeber = 0 Links; der Content-Agent kennt nur 9 feste Linkziele (contentAgentLinks.js).",
+          "recommendation": "Hub-and-Spoke-Verlinkung nach Zielarchitektur (5 Cluster) umsetzen; Linkziele des Content-Agents erweitern."
+        },
+        {
+          "title": "Titel zu lang, Descriptions zu lang",
+          "severity": "Medium",
+          "description": "52 Titel über 65 Zeichen, 33 Descriptions über 160 Zeichen.",
+          "recommendation": "Titel auf ca. 60 Zeichen kürzen, Keyword nach vorn."
+        },
+        {
+          "title": "Swipe-and-Cook-Rechtstexte seitenweit im Footer verlinkt",
+          "severity": "Medium",
+          "description": "Vier App-Seiten mit je 195 Inlinks verwässern das Themenprofil.",
+          "recommendation": "noindex, aus Footer und Sitemap nehmen bzw. auf die App-Domain umziehen."
+        }
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 58,
+      "what_works": [
+        "0 ungültige JSON-LD-Blöcke, Markup serverseitig im HTML",
+        "BlogPosting erfüllt Googles Pflichtfelder bis auf die Autor-URL",
+        "Keine erfundenen Bewertungen"
+      ],
+      "findings": [
+        {
+          "title": "Entity-Graph zerfasert",
+          "severity": "High",
+          "description": "Organization in 6 Varianten, 37 Knoten ohne @id, eine @id ohne Slash (views/leistungen/show.ejs:33); Person nur auf / und /en.",
+          "recommendation": "Eine Organization/ProfessionalService- und eine Person-Entität mit fester @id, überall per Referenz einbinden."
+        },
+        {
+          "title": "Kein ProfessionalService mit Adresse; GBP fehlt in sameAs",
+          "severity": "High",
+          "description": "Startseite und Kontakt ohne LocalBusiness-Daten; Bezirksseiten erzeugen je eigenen ProfessionalService ohne Adresse und mit Apex-Domain (views/bereiche/webdesign-berlin-district.ejs).",
+          "recommendation": "Organization als ['Organization','ProfessionalService'] mit address, hasMap und GBP-URL; Bezirke nur als Service mit provider-Verweis."
+        },
+        {
+          "title": "/en beschreibt sich im Schema als deutsche Startseite",
+          "severity": "Medium",
+          "description": "WebPage-@id und inLanguage widersprechen sich.",
+          "recommendation": "Eigene WebPage-@id und inLanguage 'en' für /en."
+        },
+        {
+          "title": "Unglaubwürdige Datumssignale",
+          "severity": "Medium",
+          "description": "dateModified der Startseite = Abrufzeitpunkt (views/index.ejs:173); 29 BlogPostings mit identischem dateModified.",
+          "recommendation": "Nur echte Änderungsdaten verwenden."
+        },
+        {
+          "title": "FAQPage auf 160 Seiten ohne Suchnutzen",
+          "severity": "Info",
+          "description": "Google zeigt FAQ-Rich-Results seit 7. Mai 2026 nicht mehr an. Das Markup schadet nicht.",
+          "recommendation": "Beibehalten, aber nicht weiter ausbauen; Fokus auf Organization/Person/Service/Offer."
+        }
+      ]
+    },
+    {
+      "name": "Performance (CWV)",
+      "score": 74,
+      "what_works": [
+        "TTFB 88–137 ms, Brotli, HTTP/2, versionierte Assets 1 Jahr gecacht",
+        "Tracking (GA, Clarity), Stripe und reCAPTCHA laden erst nach Consent bzw. Interaktion",
+        "CLS im Labor 0–0,019"
+      ],
+      "findings": [
+        {
+          "title": "Ratgeber-Titelbilder 1,8–2,1 MB als PNG, gleichzeitig LCP-Element",
+          "severity": "High",
+          "description": "public/images/ratgeber/*.png mit fetchpriority=high, ohne Maße und srcset (views/ratgeber/show.ejs:41); /ratgeber lädt alle vier (~7,6 MB).",
+          "recommendation": "WebP/AVIF, max. 1.200–1.600 px, 60–150 KB, width/height und srcset."
+        },
+        {
+          "title": "heroBg.webp mit 883 KB lädt sofort auf / und /en",
+          "severity": "High",
+          "description": "CSS-Hintergrund weit unter dem Fold (public/home.css:2150), 60 % der Bytes vor dem Scrollen; Load-Event im Labor 8,5 s.",
+          "recommendation": "Auf unter 100 KB verkleinern, mobil eigene Variante, erst bei Sichtbarkeit laden."
+        },
+        {
+          "title": "Cookie-Banner ist für Erstbesucher das LCP-Element",
+          "severity": "High",
+          "description": "Banner erscheint per JS erst nach /api/consent bei ca. 3 s; LCP mit Banner 3,1 s, ohne 1,7 s (Labor).",
+          "recommendation": "Banner serverseitig rendern oder deutlich verkleinern."
+        },
+        {
+          "title": "Kein srcset auf der gesamten Website",
+          "severity": "Medium",
+          "description": "Smartphones laden Desktop-Bildgrößen; Cloudinary ohne Transformationen.",
+          "recommendation": "srcset/sizes für eigene Bilder, Cloudinary f_auto,q_auto,w_."
+        },
+        {
+          "title": "Font Awesome doppelt geladen, LogoWhite.svg 325 KB",
+          "severity": "Low",
+          "description": "fa-solid-900.woff2 einmal mit, einmal ohne ?v= (110 KB je Seite); Footer-Logo views/partials/footer.ejs:13.",
+          "recommendation": "Font-Referenz vereinheitlichen, SVG optimieren."
+        }
+      ]
+    },
+    {
+      "name": "AI Search Readiness",
+      "score": 67,
+      "what_works": [
+        "Alle relevanten KI-Crawler erlaubt; Live-Test mit 10 Bot-Kennungen: überall 200",
+        "Serverseitiges Rendering, max-snippet:-1, llms.txt vorhanden",
+        "Accessibility-Tree ohne unbenannte Bedienelemente, Kontaktformular sauber beschriftet"
+      ],
+      "findings": [
+        {
+          "title": "Person und Selbstbeschreibung für KI-Antworten unklar",
+          "severity": "High",
+          "description": "Name nur im JSON-LD; mal 'Agentur/wir/Sie', mal 'ich/du'; /about ohne JSON-LD und ohne <main>.",
+          "recommendation": "Einheitliche Selbstbeschreibung in einem Satz auf Startseite, /about und llms.txt."
+        },
+        {
+          "title": "llms.txt veraltet und nicht im erwarteten Format",
+          "severity": "Medium",
+          "description": "Stand April 2026, Links ohne www (301-Hop), keine Preise, keine Markdown-Links und keine Zusammenfassung.",
+          "recommendation": "Neu schreiben mit www-Links, Preisen, Inhaber und Kurzbeschreibung."
+        },
+        {
+          "title": "ARIA-Fehler im Accessibility-Tree",
+          "severity": "Medium",
+          "description": "Logo mit role=presentation und Alt-Text (views/partials/header.ejs:111), Bewertungssterne als div mit aria-label ohne Rolle (views/index.ejs:707).",
+          "recommendation": "Rolle am Logo entfernen, Sterne mit role='img'."
+        },
+        {
+          "title": "Mehrdeutige Linktexte bei Paketen",
+          "severity": "Low",
+          "description": "4x 'Details ansehen' bzw. 'Paket ansehen' ohne Paketnamen.",
+          "recommendation": "Paketnamen in den Linktext aufnehmen."
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 58,
+      "what_works": [
+        "Fast alle Bilder als WebP, Lazy Loading breit genutzt",
+        "Nur 2 von 6.053 Bildern ohne alt-Attribut; leere alts sind dekorative Icons"
+      ],
+      "findings": [
+        {
+          "title": "Übergroße Bilddateien",
+          "severity": "High",
+          "description": "Ratgeber-PNGs 1,8–2,1 MB, meinAvatar.webp 335 KB, ein Cloudinary-Blogbild 962 KB.",
+          "recommendation": "Komprimieren und auf Anzeigegröße skalieren."
+        },
+        {
+          "title": "Inhaltsbilder ohne width/height auf Branchen-, Referenz-, Blog- und About-Seiten",
+          "severity": "Medium",
+          "description": "z. B. /branchen/webdesign-friseur 23 von 23 Bildern ohne Maße.",
+          "recommendation": "width/height oder aspect-ratio setzen."
+        },
+        {
+          "title": "Platzhalterbilder von picsum.photos auf /demo/cq-compare/",
+          "severity": "Low",
+          "description": "Demo-Seite ist indexierbar.",
+          "recommendation": "Demo-Seite auf noindex setzen oder entfernen."
+        }
+      ]
+    },
+    {
+      "name": "Local SEO (Zusatz)",
+      "score": 45,
+      "what_works": [
+        "Bezirks- und Branchenseiten vorhanden, Google-Bewertungslink funktioniert"
+      ],
+      "findings": [
+        {
+          "title": "Telefonnummer weicht von Verzeichnissen ab",
+          "severity": "Critical",
+          "description": "Website: +49 1551 245048; ProvenExpert (geprüft) sowie laut Local-Prüfung Gelbe Seiten und agenturen.app: 0155 11 24 50 48 (eine Ziffer mehr). Nummer an über 15 Stellen hartcodiert.",
+          "recommendation": "Richtige Nummer festlegen, zentral in helpers/siteFacts.js pflegen, Verzeichnisse angleichen."
+        },
+        {
+          "title": "Google-Maps-Pin ca. 32 km von der Impressumsadresse entfernt",
+          "severity": "High",
+          "description": "Koordinaten im Maps-Link 52.459/13.016 (Raum Potsdam-Fahrland); Impressum: Möllendorffstr. 26, 10367 Berlin-Lichtenberg.",
+          "recommendation": "Im Google-Unternehmensprofil Adresse, Servicegebiet und Pin prüfen."
+        },
+        {
+          "title": "NAP fehlt in Footer und auf /kontakt; Bewertungszahl widersprüchlich (5 vs. 4)",
+          "severity": "Medium",
+          "description": "Adresse und Telefon nur im Impressum und auf Bezirksseiten.",
+          "recommendation": "NAP-Block mit tel:-Link und Google-Profil-Link in Footer und /kontakt."
+        }
+      ]
+    },
+    {
+      "name": "Search Experience (Zusatz)",
+      "score": 56,
+      "what_works": [
+        "Seitentyp passt bei den meisten Kern-Keywords (Service-Seiten)"
+      ],
+      "findings": [
+        {
+          "title": "Vertrauenssignale fehlen auf den Zielseiten",
+          "severity": "High",
+          "description": "Vertrauen ist bei allen Personas die schwächste Dimension (Ø 10,8 von 25); Café-Referenz 'Zur alten Backstube' nicht auf der Café-Seite verlinkt.",
+          "recommendation": "Passende Referenz und Google-Bewertung auf jeder Branchen-/Zielseite."
+        },
+        {
+          "title": "Englische Journey bricht ab",
+          "severity": "Medium",
+          "description": "/en/pakete* noindex und auf Deutsch; keine EN-Seite sagt, dass das Projekt auf Englisch läuft.",
+          "recommendation": "Zeile 'Project communication, quotes and invoices in English' und übersetzte Paketseiten."
+        }
+      ]
+    },
+    {
+      "name": "Visual / Mobile (Zusatz)",
+      "score": 72,
+      "what_works": [
+        "Kein horizontales Scrollen, CTAs 46–54 px hoch, gutes Mobile-Menü, Preisanker 'ab 799 €' im Hero"
+      ],
+      "findings": [
+        {
+          "title": "Cookie-Banner belegt mobil 36 % des ersten Screens",
+          "severity": "High",
+          "description": "296 von 812 px; auf Desktop 1440x900 liegen die Hero-CTAs unter dem Banner.",
+          "recommendation": "Banner auf einen Satz kürzen, Buttons nebeneinander (Ziel < 140 px)."
+        },
+        {
+          "title": "Chat-Button verdeckt 'Only necessary' und den Hero-CTA",
+          "severity": "High",
+          "description": "z-index 1050 (public/chat.css:7) über Banner 1000 (public/css/main.css:389). Die Ablehn-Option ist auf /en mobil abgeschnitten.",
+          "recommendation": "Chat-Button ausblenden, solange der Banner offen ist."
+        },
+        {
+          "title": "Alle Absätze fett, Orange mit zu wenig Kontrast",
+          "severity": "Medium",
+          "description": "p { font-weight: bolder } (public/css/main.css:86-89); #e94a1b auf Weiß 3,85:1.",
+          "recommendation": "Regel entfernen, Orange auf ca. #c93c0c abdunkeln."
+        }
+      ]
+    },
+    {
+      "name": "Backlinks (Zusatz, Schätzung)",
+      "score": 20,
+      "what_works": [
+        "Keine toxischen Muster in der Stichprobe; Footer-Credits bei zwei Referenzkunden"
+      ],
+      "findings": [
+        {
+          "title": "Kleines, rein selbst erzeugtes Linkprofil",
+          "severity": "High",
+          "description": "5 bestätigte verlinkende Domains (2 Referenzkunden, sauber-mehr.de nur aus dem Datenschutz, ProvenExpert, firmenpresse.de nofollow); Gesamtprofil ohne Moz/GSC nicht messbar. Score ist eine Schätzung mit niedriger Konfidenz.",
+          "recommendation": "Search Console und Bing Webmaster Tools anbinden; Credit-Klausel für Kundenprojekte; lokale Verzeichnisse und Netzwerke (IHK, Gewerbevereine Lichtenberg)."
+        }
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {
+        "name": "Phase 1: Kritische Fehler",
+        "timeframe": "Woche 1",
+        "items": [
+          "Platzhaltertexte (legacyPublicCopy.js) durch echte Preise ersetzen, Test ergänzen, betroffene Seiten in der Search Console neu einreichen",
+          "Bezirksseiten: {{lowestPackagePriceLabel}} und englische Tokens beheben",
+          "/handwerker auf aktuelle Pakete umstellen, sichtbare Kommentare und unbelegte Prozentzahlen entfernen",
+          "Falsche Telefonnummer und alte Preise in den Blogartikeln korrigieren",
+          "Richtige Telefonnummer festlegen; Google-Unternehmensprofil (Adresse, Pin, Servicegebiet) prüfen",
+          "Stripe: prüfen, ob die Live-Website bewusst den Testschlüssel (pk_test_) nutzt"
+        ]
+      },
+      {
+        "name": "Phase 2: Wirkungsstarke Verbesserungen",
+        "timeframe": "Woche 2–3",
+        "items": [
+          "301-Normalisierung für URL-Varianten, Navigation auf /leistungen",
+          "Indexierungsentscheidungen für Nebenseiten (Branchen, /booking, /de, Demo)",
+          "Bilder: heroBg.webp, Ratgeber-PNGs, Avatar komprimieren; srcset einführen",
+          "Cookie-Banner verkleinern/serverseitig rendern; Chat-Button-Überlagerung beheben",
+          "Entity-Graph vereinheitlichen: Organization+ProfessionalService mit Adresse, Person, Autor = Person",
+          "Sitemap-lastmod und dateModified nur mit echten Daten"
+        ]
+      },
+      {
+        "name": "Phase 3: Inhalte und Autorität",
+        "timeframe": "Monat 2",
+        "items": [
+          "Kannibalisierung auflösen: eine Hauptseite für 'Website erstellen lassen Berlin', eine Kosten-Pillar-Seite",
+          "Hub-and-Spoke-Verlinkung (5 Cluster) umsetzen, Blogartikel aus dem Text verlinken",
+          "Bezirksseiten mit echten lokalen Inhalten ausbauen oder zusammenführen",
+          "Personen-Absatz, Autorbox, einheitliche Ansprache (ich/du); llms.txt neu",
+          "Referenzkunden-Credits, Verzeichnisse mit einheitlichem NAP, lokale Netzwerke",
+          "EN-Paketseiten übersetzen und indexieren"
+        ]
+      },
+      {
+        "name": "Phase 4: Monitoring",
+        "timeframe": "laufend",
+        "items": [
+          "Google Search Console und PageSpeed-API-Key in claude-seo hinterlegen für Felddaten",
+          "Drift-Baseline anlegen (/seo drift baseline) und nach Deployments vergleichen",
+          "Quartalsweise Backlink-Verifikation der Referenzkunden"
+        ]
+      }
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}

@@ -1,18 +1,15 @@
-<% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
-
-<!-- IMMER im DOM; initial versteckt. Kein EJS-if mehr -->
-<div id="cookie-banner" class="cookie-banner is-hidden">
+<%
+const isEn = typeof lng !== 'undefined' && lng === 'en';
+const hasSavedConsent = typeof session !== 'undefined' && !!session.cookieConsent;
+%>
+<div id="cookie-banner" class="cookie-banner<%= hasSavedConsent ? ' is-hidden' : '' %>" role="region" aria-label="<%= isEn ? 'Cookie preferences' : 'Cookie-Einstellungen' %>">
   <p>
-    <%= isEn ? 'We use necessary functions and, with your consent, optional analytics or marketing services. Depending on the service, technical data may be processed.' : 'Wir nutzen notwendige Funktionen und - mit deiner Einwilligung - optionale Analyse- oder Marketingdienste. Je nach Dienst können technische Daten verarbeitet werden.' %>
-    <%= isEn ? 'To use the chatbot, your messages may need to be processed and stored.' : 'Für die Nutzung des Chatbots können deine Nachrichten verarbeitet und gespeichert werden.' %>
-    <a class="cookie-banner__link" href="/datenschutz"><%= isEn ? 'Privacy policy' : 'Datenschutzerklärung' %></a>
+    <%= isEn ? 'We use necessary cookies; analytics and marketing require your consent.' : 'Wir nutzen notwendige Cookies; Analyse und Marketing nur mit deiner Zustimmung.' %>
+    <a class="cookie-banner__link" href="/datenschutz"><%= isEn ? 'Privacy policy' : 'Datenschutz' %></a>
   </p>
-  <button id="accept-all" class="cookie-banner__button cookie-banner__button--accept">
-    <%= isEn ? 'Accept all' : 'Alles akzeptieren' %>
-  </button>
-  <button id="accept-necessary" class="cookie-banner__button cookie-banner__button--necessary">
-    <%= isEn ? 'Only necessary' : 'Nur Notwendiges' %>
-  </button>
+  <div class="cookie-banner__actions">
+    <button type="button" id="accept-all" class="cookie-banner__button cookie-banner__button--accept"><%= isEn ? 'Accept all' : 'Alles akzeptieren' %></button>
+    <button type="button" id="accept-necessary" class="cookie-banner__button cookie-banner__button--necessary"><%= isEn ? 'Only necessary' : 'Nur Notwendiges' %></button>
+  </div>
 </div>
-
 <script src="<%= (typeof jsAsset === 'function' ? jsAsset('js/cookie-consent.js') : '/js/cookie-consent.js?v=' + encodeURIComponent(assetVersion || '1')) %>" defer></script>

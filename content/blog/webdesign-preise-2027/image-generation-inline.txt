@@ -1,0 +1,20 @@
+Zusätzliches Bild direkt im Artikeltext
+
+Erstellt mit dem integrierten Imagegen-Werkzeug am 15. November 2026.
+Motiv: Planung und Gestaltung einer Website mit Skizzen, Farbmustern,
+Tablet und Smartphone. Redaktionelle Illustration, kein Kundenprojekt.
+
+Bilddateien:
+public/images/blog/webdesign-preise-2027/webdesign-leistungen-planung-2027.webp
+public/images/blog/webdesign-preise-2027/webdesign-leistungen-planung-2027-600.webp
+
+Original:
+/Users/blocksdorf/.codex/generated_images/01a1e0df-8490-7ca1-aaf2-b3ab143ec215/exec-1c302c15-e7c2-4658-b134-f56667bdc8c9.png
+
+Finaler Prompt:
+Use case: illustration-story
+Asset type: Inline editorial image within a German blog article about Webdesign-Preise 2027 for Komplett Webdesign, a Berlin web designer for small businesses.
+Primary request: Show what professional website creation includes: a carefully arranged web design planning workbench with paper wireframe cards, typography samples as abstract lines, a few color swatches, a tablet displaying a polished small-business website, and a small smartphone showing the matching mobile layout. A hand-crafted visual metaphor for concept, design, content, and technical implementation. No people.
+Style/medium: Premium tactile editorial 3D illustration with paper-cut elements and subtle natural textures, warm ivory surface, navy blue interfaces, muted burnt-orange accents, soft daylight and realistic gentle shadows. Wide landscape 16:9, restrained composition, clear silhouettes and generous breathing space. The devices must have coherent, plausible screen frames and content.
+Composition: Oblique overhead view of the planning materials; the website layout has an abstract small local service business image, simple navigation marks and a clear orange contact button. Complementary to an article hero with laptop, calculator and coins, but this new inline image focuses on the design work itself.
+Constraints: No money, no calculator, no skyline, no logos, no watermark, no readable text, no letters, no numbers. This is an editorial illustration, not a photograph or a claim to depict an actual customer project.

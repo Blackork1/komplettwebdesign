@@ -1,104 +1,37 @@
 # Komplett Webdesign
 
-Last updated: 2026-04-21
-Canonical site: https://komplettwebdesign.de/
-Primary language: de-DE
-Business type: Full-Service-Dienstleister für Webdesign, Website-Entwicklung, SEO, Hosting, Wartung, Buchungssysteme und Shops.
-Primary market: Berlin und Umgebung.
+> Persönliches Webdesign und Webentwicklung für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin und Brandenburg.
 
-## Kurzbeschreibung
+Inhaber und Ansprechpartner: Sören Blocksdorf.
+Komplett Webdesign plant und entwickelt individuelle Websites mit klaren Inhalten, responsiver Darstellung und technischer SEO-Grundlage.
 
-Komplett Webdesign erstellt professionelle Websites für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin. Der Fokus liegt auf persönlicher Beratung, modernem Design, responsiver Umsetzung, SEO-Optimierung, klaren Kontaktwegen und Betreuung aus einer Hand.
+## Pakete und Preise
 
-## Positionierung
+- Start: ab 799 €. https://www.komplettwebdesign.de/pakete/start
+- Business: ab 1.499 €. https://www.komplettwebdesign.de/pakete/business
+- Wachstum: ab 2.499 €. https://www.komplettwebdesign.de/pakete/wachstum
+- Individuell: ab 3.500 € oder nach Aufwand. https://www.komplettwebdesign.de/pakete/individuell
 
-Website erstellen lassen - persönlich, SEO-freundlich und aus einer Hand.
+Einmalige Projektpreise richten sich nach dem vereinbarten Umfang. Laufende Kosten für Hosting, Domain, E-Mail, Wartung, Monitoring oder externe Dienste werden separat vereinbart.
+Buchungssysteme, CMS, Shops, Mehrsprachigkeit und besondere Schnittstellen werden nach Bedarf separat geprüft und kalkuliert.
+Verbindliche aktuelle Preise und Leistungsgrenzen stehen auf den verlinkten Paketseiten.
 
-Komplett Webdesign eignet sich besonders für Unternehmen, die eine neue Website, einen Relaunch, bessere lokale Google-Sichtbarkeit, ein Kontaktformular, ein Buchungssystem, einen kleinen Shop oder laufende Betreuung für Hosting und Wartung benötigen.
+## Leistungen und Wissen
 
-## Leistungen
-
-- Webdesign und Website-Entwicklung
-- Mobile responsive Umsetzung
-- Website-Texte und Inhaltsstruktur
-- SEO-Grundoptimierung und On-Page-SEO
-- Lokale SEO-Ausrichtung für Berlin
-- Hosting, Domain, E-Mail und Wartung als laufende Zusatzleistungen
-- Kontaktformulare, Buchungssysteme und Shops
-- SEO-, GEO-, Meta- und Broken-Link-Tester als Einstieg in Optimierungen
-
-## Pakete
-
-### Start
-
-Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/start
-Umfang: 1 bis 3 Inhaltsseiten oder klar strukturierter Onepager
-Enthalten: individuelles Design, responsive Umsetzung, technische SEO-Grundlagen, Strukturierung gelieferter Inhalte
-Lieferzeit: 2-4 Wochen
-Ideal für: Gründer, Selbstständige und lokale Anbieter mit klar begrenztem Umfang.
-Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
-
-### Business
-
-Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/business
-Umfang: ca. 4 bis 7 Inhaltsseiten
-Enthalten: individuelles Design, responsive Umsetzung, technische SEO-Grundlagen, Kontakt- oder Anfrageweg, Leistungsseiten, Team- oder Über-uns-Seite
-Lieferzeit: 4-6 Wochen
-Ideal für: Kleine Unternehmen, die Leistungen klar strukturieren und sichtbarer werden wollen.
-Optionen: Blog gegen Mehrkosten.
-Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
-
-### Wachstum
-
-Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/wachstum
-Umfang: ca. 8 bis 12 Inhaltsseiten im vereinbarten Projektumfang
-Enthalten: individuelles Design, responsive Umsetzung, technische SEO-Struktur, umfangreichere Seitenstruktur, Relaunch- oder Wachstumsplanung
-Lieferzeit: je nach Umfang meist ab 6 Wochen
-Ideal für: Unternehmen in Berlin mit mehreren Leistungen, Relaunch-Bedarf oder stärkerer Inhaltsstruktur.
-Optionen: Buchungssystem, CMS, Mehrsprachigkeit oder Shop nach Aufwand.
-Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
-
-### Individuell
-
-Preis: aktuelle Paketlogik und Preisangaben siehe https://komplettwebdesign.de/pakete/individuell
-Umfang: projektspezifisch
-Enthalten: Leistungsumfang nach Anforderungsanalyse
-Lieferzeit: abhängig von Funktionalität, Inhalten und Abstimmung
-Ideal für: Sonderfunktionen, komplexere Integrationen, Buchung, CMS, Mehrsprachigkeit oder Shop-Projekte.
-Zusatzkosten: Hosting, Domain, E-Mail und Wartung separat.
-
-## Laufende Leistungen
-
-- Domain und E-Mail: ab 10 EUR pro Monat
-- Hosting: 10 EUR pro Monat
-- Wartung, Backups und Monitoring: optional separat nach Umfang
-
-## Zielgruppen
-
-- Lokale Dienstleister
-- Gründer und Selbstständige
-- Restaurants, Cafés und Gastronomie
-- Handwerksbetriebe
-- Immobilienmakler
-- Beauty- und Wellnessanbieter
-- Praxen und Therapeuten
-- Kleine lokale Händler
-
-## Wichtige URLs
-
-- Startseite: https://komplettwebdesign.de/
-- Pakete: https://komplettwebdesign.de/pakete
-- Start-Paket: https://komplettwebdesign.de/pakete/start
-- Business-Paket: https://komplettwebdesign.de/pakete/business
-- Wachstum-Paket: https://komplettwebdesign.de/pakete/wachstum
-- Individuell: https://komplettwebdesign.de/pakete/individuell
-- Webdesign Berlin: https://komplettwebdesign.de/webdesign-berlin
-- Kontakt: https://komplettwebdesign.de/kontakt
-- SEO-Tester: https://komplettwebdesign.de/website-tester/seo
-- GEO-/AI-SEO-Tester: https://komplettwebdesign.de/website-tester/geo
+- [Webdesign Berlin](https://www.komplettwebdesign.de/webdesign-berlin): zentrale Leistungsseite für Website-Erstellung in Berlin.
+- [Pakete vergleichen](https://www.komplettwebdesign.de/pakete): Umfang, Preise und Zusatzleistungen.
+- [Website-Relaunch](https://www.komplettwebdesign.de/leistungen/website-relaunch): bestehende Websites erneuern.
+- [Local SEO](https://www.komplettwebdesign.de/leistungen/local-seo): technische und inhaltliche Grundlagen lokaler Sichtbarkeit.
+- [Website-Audit](https://www.komplettwebdesign.de/leistungen/website-audit): bestehende Websites prüfen.
+- [Ratgeber](https://www.komplettwebdesign.de/ratgeber): Kosten, Ablauf, Relaunch und Branchen.
+- [Referenzen](https://www.komplettwebdesign.de/referenzen): öffentlich dokumentierte Kundenprojekte.
+- [Über Sören Blocksdorf](https://www.komplettwebdesign.de/about): Person und Zusammenarbeit.
+- [Kontakt](https://www.komplettwebdesign.de/kontakt): Projektanfrage und Erstgespräch.
 
 ## Kontakt
 
+Sören Blocksdorf · Komplett Webdesign
+Möllendorffstr 26, 10367 Berlin
+Telefon: +49 155 11245048
 E-Mail: kontakt@komplettwebdesign.de
-Telefon: +49 1551 245048
-Adresse: Möllendorffstr 26, 10367 Berlin, Deutschland
+Google-Unternehmensprofil: https://www.google.com/maps?cid=8211853018206635760

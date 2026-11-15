@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Cookavoli App-Icon</title>
+  <desc id="description">Dunkelgrünes Cookavoli-Monogramm mit zwei leuchtend grünen Blättern auf weißem Hintergrund.</desc>
+  <defs>
+    <linearGradient id="background" x1="512" y1="24" x2="512" y2="998" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".58" stop-color="#fefefe"/>
+      <stop offset="1" stop-color="#f5f7f6"/>
+    </linearGradient>
+    <radialGradient id="letter-c-gradient" cx="0" cy="0" r="1" gradientTransform="translate(399 328) rotate(124) scale(546 504)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#07873a"/>
+      <stop offset=".48" stop-color="#00502c"/>
+      <stop offset="1" stop-color="#002d1d"/>
+    </radialGradient>
+    <linearGradient id="letter-a-gradient" x1="478" y1="430" x2="661" y2="864" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#087938"/>
+      <stop offset=".5" stop-color="#00602f"/>
+      <stop offset="1" stop-color="#003d27"/>
+    </linearGradient>
+    <linearGradient id="small-leaf" x1="397" y1="197" x2="505" y2="343" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#91ff18"/>
+      <stop offset=".42" stop-color="#42dc20"/>
+      <stop offset="1" stop-color="#00924a"/>
+    </linearGradient>
+    <linearGradient id="small-leaf-shade" x1="402" y1="205" x2="500" y2="337" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c9ff50" stop-opacity=".72"/>
+      <stop offset=".52" stop-color="#7df027" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#006d3c" stop-opacity=".88"/>
+    </linearGradient>
+    <linearGradient id="large-leaf" x1="616" y1="126" x2="708" y2="441" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c3fb58"/>
+      <stop offset=".38" stop-color="#6cdd1b"/>
+      <stop offset=".7" stop-color="#1db92b"/>
+      <stop offset="1" stop-color="#00742f"/>
+    </linearGradient>
+    <linearGradient id="large-leaf-light" x1="650" y1="132" x2="704" y2="350" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#efff83" stop-opacity=".92"/>
+      <stop offset=".48" stop-color="#b9ff41" stop-opacity=".62"/>
+      <stop offset="1" stop-color="#72e92a" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="large-leaf-shade" x1="620" y1="284" x2="734" y2="434" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#20c735" stop-opacity="0"/>
+      <stop offset="1" stop-color="#006b2f" stop-opacity=".95"/>
+    </linearGradient>
+    <filter id="panel-shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="9" stdDeviation="15" flood-color="#7c8b83" flood-opacity=".13"/>
+    </filter>
+    <filter id="mark-shadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="11" stdDeviation="12" flood-color="#00382b" flood-opacity=".16"/>
+    </filter>
+    <filter id="leaf-shadow" x="-25%" y="-25%" width="150%" height="160%">
+      <feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#00633b" flood-opacity=".22"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#panel-shadow)">
+    <rect x="29" y="25" width="966" height="974" rx="190" fill="url(#background)" stroke="#e7ebe9" stroke-width="6"/>
+    <rect x="39" y="35" width="946" height="954" rx="180" fill="none" stroke="#ffffff" stroke-opacity=".88" stroke-width="4"/>
+  </g>
+
+  <g filter="url(#mark-shadow)">
+    <path id="letter-c" fill="url(#letter-c-gradient)" d="M510 355 460 448c-30-15-63-24-96-24-85 0-134 65-134 165 0 102 56 170 142 170 49 0 94-15 135-43l53 87c-52 40-116 63-189 63-146 0-241-108-241-276 0-159 102-254 246-254 49 0 95 7 134 19Z"/>
+    <path id="letter-a" fill="url(#letter-a-gradient)" d="M521 413 790 870H676L517 605l-68 101H331Z"/>
+  </g>
+
+  <g filter="url(#leaf-shadow)">
+    <path id="small-leaf" fill="url(#small-leaf)" d="M386 188c78 13 125 67 123 157-78-7-125-66-123-157Z"/>
+    <path fill="url(#small-leaf-shade)" d="M397 201c49 29 83 70 104 128-26-44-59-78-104-128Z"/>
+
+    <path id="large-leaf" fill="url(#large-leaf)" d="M556 429c-65-104-27-233 77-290 58-32 130-48 202-52 8 151-44 261-129 319-43 29-87 45-127 50 4-80 47-162 129-231-66 48-117 117-152 204Z"/>
+    <path fill="url(#large-leaf-light)" d="M584 342c27-92 106-188 229-239-75 58-114 111-147 171-24 45-48 75-77 94-4-9-6-17-5-26Z"/>
+    <path fill="url(#large-leaf-shade)" d="M579 456c57-10 115-39 160-83 30-29 55-65 75-106-18 80-60 137-108 170-43 29-88 40-127 44Z" opacity=".94"/>
+    <path fill="#006b39" d="M554 431c37-94 86-158 165-215-67 70-110 141-142 236Z"/>
+    <path fill="#ffffff" d="M569 425c35-78 76-134 133-183-48 58-84 120-112 188-5 11-9 19-13 24Z"/>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+HTTP/2 200 
+cache-control: private, must-revalidate
+content-security-policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com
+content-type: text/html; charset=utf-8
+date: Fri, 23 Oct 2026 18:07:36 GMT
+etag: W/"1adc1-GGdVxpIYLRBg4H57QUClrJTiUiY"
+permissions-policy: camera=(), microphone=(), geolocation=()
+referrer-policy: strict-origin-when-cross-origin
+set-cookie: connect.sid=s%3AMJUlNd6wUcMGeMx5nERW52PtEzXVkCY1.qzEmvDiqSaWr%2FAoeAEzgPHNtPDSJHxD7V3SDqjL7Nt8; Path=/; Expires=Fri, 30 Oct 2026 18:07:36 GMT; HttpOnly; Secure; SameSite=Lax
+strict-transport-security: max-age=31536000
+vary: Accept-Encoding
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+

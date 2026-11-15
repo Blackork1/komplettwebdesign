@@ -2,7 +2,7 @@
   // Basis-Variablen für Schema.org
   const baseUrl = (typeof canonicalBaseUrl !== 'undefined'
     ? canonicalBaseUrl
-    : 'https://komplettwebdesign.de'
+    : 'https://www.komplettwebdesign.de'
   ).replace(/\/$/, '');
 
   const pageSlug = page.slug || '';
@@ -27,30 +27,20 @@
   const safeHtml = typeof sanitizeHtml === 'function' ? sanitizeHtml : escapeFallback;
 
   // Organization
-  const orgSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": baseUrl + "#organization",
-    "name": orgName,
-    "url": baseUrl,
-    "logo": {
-      "@type": "ImageObject",
-      "url": orgLogo
-    }
+  const orgSchema = typeof organizationSchema !== 'undefined' ? organizationSchema : {
+    '@context': 'https://schema.org', '@type': 'Organization',
+    '@id': baseUrl.replace(/\/$/, '') + '/#organization', name: orgName, url: baseUrl
   };
-  if (orgSameAs.length) {
-    orgSchema.sameAs = orgSameAs;
-  }
 
   // WebSite
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "@id": baseUrl + "#website",
+    "@id": baseUrl.replace(/\/$/, '') + "/#website",
     "url": baseUrl,
     "name": orgName,
     "publisher": {
-      "@id": baseUrl + "#organization"
+      "@id": baseUrl.replace(/\/$/, '') + "/#organization"
     }
   };
 
@@ -91,7 +81,7 @@
     "url": pageUrl,
     "description": pageDesc,
     "provider": {
-      "@id": baseUrl + "#organization"
+      "@id": baseUrl.replace(/\/$/, '') + "/#organization"
     }
   };
 
@@ -104,7 +94,7 @@
     "name": pageName,
     "description": pageDesc,
     "isPartOf": {
-      "@id": baseUrl + "#website"
+      "@id": baseUrl.replace(/\/$/, '') + "/#website"
     },
     "about": {
       "@id": pageUrl + "#service"

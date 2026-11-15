@@ -22,6 +22,7 @@ test('buildHandwerkerPageSchemas returns extractable WebPage, Service, breadcrum
   const types = graph.flatMap((node) => node['@type']);
   assert.deepEqual(types, [
     'Organization',
+    'ProfessionalService',
     'WebSite',
     'WebPage',
     'Service',

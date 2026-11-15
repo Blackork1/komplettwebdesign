@@ -355,3 +355,6 @@
     grid-template-columns: 1fr;
   }
 }
+
+.business-contact { font-style: normal; line-height: 1.6; margin: 1rem 0; }
+.business-contact a { color: inherit; text-decoration: underline; }

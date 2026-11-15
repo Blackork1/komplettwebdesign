@@ -1,0 +1,58 @@
+<section
+  class="deletion-panel"
+  aria-labelledby="deletion-online-title"
+  data-request-endpoint="/api/account-deletion-requests"
+  data-verification-endpoint="/api/account-deletion-verifications"
+  data-deletion-root
+>
+  <div class="deletion-panel__intro">
+    <p class="eyebrow">Sicherer Onlineweg</p>
+    <h2 id="deletion-online-title">Löschung ohne App anfordern</h2>
+    <p>Gib ausschließlich die E-Mail-Adresse deines Cookavoli-Kontos ein. Die neutrale Antwort verrät nicht, ob unter dieser Adresse ein Konto besteht.</p>
+  </div>
+
+  <form id="deletion-request-form" class="deletion-form" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="deletion-field">
+      <label for="deletion-email">E-Mail-Adresse des Cookavoli-Kontos</label>
+      <input id="deletion-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" required>
+    </div>
+    <div class="form-trap" aria-hidden="true">
+      <label for="deletion-website">Website</label>
+      <input id="deletion-website" name="website" type="text" autocomplete="off" tabindex="-1" maxlength="200">
+    </div>
+    <button class="button button--primary" type="submit">Verifizierungslink anfordern</button>
+  </form>
+
+  <form id="deletion-verification-form" class="deletion-form" hidden novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="externalRequestId">
+    <input type="hidden" name="token">
+    <div class="deletion-field">
+      <label for="deletion-verification-email">E-Mail-Adresse erneut eingeben</label>
+      <input id="deletion-verification-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" required>
+    </div>
+    <fieldset class="deletion-options">
+      <legend>Wann soll dein Konto gelöscht werden?</legend>
+      <label>
+        <input type="radio" name="mode" value="immediate" checked>
+        <span><strong>Sofort löschen</strong><small>Der Kontozugang und persönliche Inhalte gehen unmittelbar verloren.</small></span>
+      </label>
+      <label>
+        <input type="radio" name="mode" value="scheduled">
+        <span><strong>Zum Ende der bezahlten Laufzeit</strong><small>Nur möglich, wenn ein aktives Storeabo technisch bestätigt ist.</small></span>
+      </label>
+    </fieldset>
+    <label class="deletion-confirm">
+      <input type="checkbox" name="confirmPaidAccessLoss" required>
+      <span>Ich verstehe, dass die sofortige Löschung meinen Kontozugang und eine noch bezahlte Premium-Restlaufzeit beendet. Das Storeabo wird dadurch nicht automatisch gekündigt.</span>
+    </label>
+    <button class="button button--danger" type="submit">Konto trotzdem löschen</button>
+  </form>
+
+  <p class="deletion-status" role="status" aria-live="polite" data-deletion-status></p>
+  <div class="store-links" aria-label="Storeabo verwalten">
+    <a class="button button--secondary" href="https://apps.apple.com/account/subscriptions">Abo bei Apple verwalten</a>
+    <a class="button button--secondary" href="https://play.google.com/store/account/subscriptions">Abo bei Google verwalten</a>
+  </div>
+</section>

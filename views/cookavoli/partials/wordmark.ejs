@@ -1,0 +1,16 @@
+<% if (typeof asHeading !== 'undefined' && asHeading) { %>
+<h1 class="wordmark" aria-label="Cookavoli">
+<% } else { %>
+<div class="wordmark" aria-label="Cookavoli" role="img">
+<% } %>
+  <span class="wordmark__name">
+    Cookav<span class="wordmark__leaf-anchor">o<svg class="wordmark__leaf" viewBox="0 0 96 112" aria-hidden="true"><path d="M13 103C-1 49 27 13 91 2c-1 64-29 99-78 101Z"/><path d="M15 99C35 60 55 35 82 12 61 42 43 71 28 105Z"/></svg></span>li
+  </span>
+  <span class="wordmark__tagline" aria-hidden="true">
+    <span>Swipe</span><b>•</b><span>Cook</span><b>•</b><span>Enjoy</span>
+  </span>
+<% if (typeof asHeading !== 'undefined' && asHeading) { %>
+</h1>
+<% } else { %>
+</div>
+<% } %>

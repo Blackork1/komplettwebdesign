@@ -39,7 +39,7 @@ function wtPrettyDate(value, locale = "de") {
 }
 
 function testerBaseUrl() {
-    return (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://komplettwebdesign.de").replace(/\/$/, "");
+    return (process.env.BASE_URL || process.env.CANONICAL_BASE_URL || "https://www.komplettwebdesign.de").replace(/\/$/, "");
 }
 
 function safeHtml(value = "") {
@@ -176,7 +176,7 @@ function canonicalPublicOrigin() {
     for (const candidate of [
         process.env.CANONICAL_BASE_URL,
         process.env.BASE_URL,
-        "https://komplettwebdesign.de"
+        "https://www.komplettwebdesign.de"
     ]) {
         try {
             const url = new URL(String(candidate || ""));
@@ -185,7 +185,7 @@ function canonicalPublicOrigin() {
             // Die nächste kanonische Quelle wird geprüft.
         }
     }
-    return "https://komplettwebdesign.de";
+    return "https://www.komplettwebdesign.de";
 }
 
 function plainMailText(value = "") {

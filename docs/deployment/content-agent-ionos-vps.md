@@ -1,5 +1,7 @@
 # Content-Agent auf dem IONOS-VPS bereitstellen
 
+**Node.js und Webhook:** Die aktuelle Versionsvorgabe und die getrennte Pflege des Webhook-Images stehen in [Node.js-Version und Webhook-Deployment](node-version-und-webhook.md). Historische Skriptblöcke dieser Anleitung dürfen die dort beschriebenen Versionsprüfungen nicht ohne Abgleich ersetzen.
+
 Diese Anleitung ergänzt das bestehende Compose-Projekt `komplettwebdesign` um genau einen internen `content-worker`. Sie ist **keine vollständige Ersatzdatei** für die vorhandene `docker-compose.yml`.
 
 Die vorhandenen Dienste `app`, `webhook`, `pgadmin` und `postgres` bleiben erhalten. Das gilt auch für alle App-Volumes für Uploads und Downloads, `expose: 3000`, die Netzwerke `default` und `proxy`, sämtliche Traefik-Labels sowie das persistente PostgreSQL-Volume `./data/postgres` und den vorhandenen WireGuard-Port. Die öffentliche Website läuft weiterhin ausschließlich über `app` und dessen Traefik-Anbindung. Der `content-worker` bleibt intern: An ihm werden keine `ports`, kein `expose`, keine Traefik-Labels und kein Proxy-Netzwerk ergänzt. Er hängt nur im Compose-Netzwerk `default` und nutzt ausgehend OpenAI, Cloudinary und den rein lesenden Search-Console-Zugang.

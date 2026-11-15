@@ -38,7 +38,8 @@
       </div>
 
       <figure class="rg-detail-media unified-hero__media-frame">
-        <img src="<%= post.image_url || '/images/default-blog.webp' %>" alt="<%= post.title %>" loading="eager" fetchpriority="high">
+        <% const postPicture = typeof contentImage === 'function' ? contentImage(post.image_url || '/images/default-blog.webp') : { src: post.image_url || '/images/default-blog.webp' }; %>
+              <img src="<%= postPicture.src %>"<% if (postPicture.srcset) { %> srcset="<%= postPicture.srcset %>" sizes="<%= postPicture.sizes %>"<% } %><% if (postPicture.width) { %> width="<%= postPicture.width %>" height="<%= postPicture.height %>"<% } %> alt="<%= post.title %>" loading="eager" fetchpriority="high">
       </figure>
     </div>
   </section>
@@ -77,6 +78,7 @@
         </div>
       </section>
       <% } %>
+      <%- include('../partials/author-box') %>
     </article>
 
     <aside class="rg-detail-side" aria-label="Weitere Inhalte und Newsletter">

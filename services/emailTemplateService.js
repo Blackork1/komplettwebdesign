@@ -32,13 +32,13 @@ export function renderBrandEmail({
       <p style="margin:0 0 4px 0;font-size:14px;color:#4b5563;">Webdesign & SEO for Berlin SMEs</p>
       <p style="margin:0 0 12px 0;font-size:14px;color:#4b5563;">
         <a href="mailto:kontakt@komplettwebdesign.de" style="color:#0b2a46;text-decoration:none;">kontakt@komplettwebdesign.de</a> ·
-        <a href="https://komplettwebdesign.de/" style="color:#0b2a46;text-decoration:none;">komplettwebdesign.de</a>
+        <a href="https://www.komplettwebdesign.de/" style="color:#0b2a46;text-decoration:none;">komplettwebdesign.de</a>
       </p>
       <p style="margin:0;color:#5b5b5b;font-size:12px;line-height:1.5;">
-        <a href="https://komplettwebdesign.de/" style="color:#0b2a46;text-decoration:none;">Mehr Infos</a> ·
-        <a href="https://komplettwebdesign.de/kontakt" style="color:#0b2a46;text-decoration:none;">Beratung buchen</a> ·
-        <a href="https://komplettwebdesign.de/impressum" style="color:#0b2a46;text-decoration:none;">Impressum</a> ·
-        <a href="https://komplettwebdesign.de/datenschutz" style="color:#0b2a46;text-decoration:none;">Datenschutz</a>
+        <a href="https://www.komplettwebdesign.de/" style="color:#0b2a46;text-decoration:none;">Mehr Infos</a> ·
+        <a href="https://www.komplettwebdesign.de/kontakt" style="color:#0b2a46;text-decoration:none;">Beratung buchen</a> ·
+        <a href="https://www.komplettwebdesign.de/impressum" style="color:#0b2a46;text-decoration:none;">Impressum</a> ·
+        <a href="https://www.komplettwebdesign.de/datenschutz" style="color:#0b2a46;text-decoration:none;">Datenschutz</a>
       </p>
     `
     : `
@@ -47,13 +47,13 @@ export function renderBrandEmail({
       <p style="margin:0 0 4px 0;font-size:14px;color:#4b5563;">Webdesign & SEO für Berliner KMU</p>
       <p style="margin:0 0 12px 0;font-size:14px;color:#4b5563;">
         <a href="mailto:kontakt@komplettwebdesign.de" style="color:#0b2a46;text-decoration:none;">kontakt@komplettwebdesign.de</a> ·
-        <a href="https://komplettwebdesign.de/" style="color:#0b2a46;text-decoration:none;">komplettwebdesign.de</a>
+        <a href="https://www.komplettwebdesign.de/" style="color:#0b2a46;text-decoration:none;">komplettwebdesign.de</a>
       </p>
       <p style="margin:0;color:#5b5b5b;font-size:12px;line-height:1.5;">
-        <a href="https://komplettwebdesign.de/" style="color:#0b2a46;text-decoration:none;">Mehr Infos</a> ·
-        <a href="https://komplettwebdesign.de/kontakt" style="color:#0b2a46;text-decoration:none;">Beratung buchen</a> ·
-        <a href="https://komplettwebdesign.de/impressum" style="color:#0b2a46;text-decoration:none;">Impressum</a> ·
-        <a href="https://komplettwebdesign.de/datenschutz" style="color:#0b2a46;text-decoration:none;">Datenschutz</a>
+        <a href="https://www.komplettwebdesign.de/" style="color:#0b2a46;text-decoration:none;">Mehr Infos</a> ·
+        <a href="https://www.komplettwebdesign.de/kontakt" style="color:#0b2a46;text-decoration:none;">Beratung buchen</a> ·
+        <a href="https://www.komplettwebdesign.de/impressum" style="color:#0b2a46;text-decoration:none;">Impressum</a> ·
+        <a href="https://www.komplettwebdesign.de/datenschutz" style="color:#0b2a46;text-decoration:none;">Datenschutz</a>
       </p>
     `;
 

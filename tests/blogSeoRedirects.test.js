@@ -98,5 +98,5 @@ test('Sitemapquery schließt Redirectquellen über die zentrale Registry aus', (
 
   assert.ok(postsQuery, 'parametrisierte Posts-Sitemapquery nicht gefunden');
   assert.match(postsQuery[1], /WHERE published = true\s+AND slug <> ALL\(\$1::text\[\]\)/);
-  assert.match(source, /import \{ REDIRECTED_BLOG_SLUGS \} from ["']\.\.\/data\/blogRedirects\.js["']/);
+  assert.match(source, /import \{ REDIRECTED_BLOG_SLUGS(?:, canonicalBlogSlug)? \} from ["']\.\.\/data\/blogRedirects\.js["']/);
 });

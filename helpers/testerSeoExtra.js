@@ -1,3 +1,4 @@
+import { buildOrganizationSchema } from './entitySchema.js';
 // helpers/testerSeoExtra.js
 //
 // Ersetzt die 5 quasi-identischen build*SeoExtra-Funktionen im testController.js.
@@ -13,7 +14,7 @@ function jsonLd(obj) {
  * Erzeugt den SEO-Extra-HTML-Block für eine Tester-Seite.
  *
  * @param {Object}  args
- * @param {string}  args.base         Basis-URL, z.B. https://komplettwebdesign.de
+ * @param {string}  args.base         Basis-URL, z.B. https://www.komplettwebdesign.de
  * @param {string}  args.canonical    Canonical der aktuellen Seite
  * @param {Object}  args.copy         i18n-Objekt mit pageName, ogTitle, ogDescription,
  *                                    schemaDescription, localeCode, inLanguage, altPath,
@@ -109,16 +110,7 @@ export function buildTesterSeoExtra({ base, canonical, copy, locale, appName }) 
     }))
   };
 
-  const orgSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'Komplett Webdesign',
-    url: base,
-    logo: `${base}/images/logo.png`,
-    sameAs: [
-      'https://www.google.com/search?q=komplett+webdesign'
-    ]
-  };
+  const orgSchema = buildOrganizationSchema(base);
 
   return `
     <link rel="alternate" hreflang="${copy.localeCode}" href="${canonical}">

@@ -15,7 +15,7 @@
   const hasTwitterCard = /name=["']twitter:card["']/i.test(seoExtraText);
   const hasRobots = /name=["']robots["']/i.test(seoExtraText);
   const trackingDisabled = typeof disableTracking !== 'undefined' && disableTracking === true;
-  const siteBase = (canonicalBaseUrl || 'https://komplettwebdesign.de').replace(/\/$/, '');
+  const siteBase = (canonicalBaseUrl || 'https://www.komplettwebdesign.de').replace(/\/$/, '');
   const pageCanonical = canonicalUrl || `${siteBase}/`;
   const defaultOgImage = (typeof ogImage !== 'undefined' && typeof ogImage === 'string' && ogImage.trim())
     ? ogImage.trim()
@@ -180,6 +180,17 @@
   <% if (seoExtraText) { %>
   <%- seoExtraText %>
   <% } %>
+
+  <% const identityBlocks = [
+    typeof organizationSchema !== 'undefined' ? organizationSchema : null,
+    typeof personSchema !== 'undefined' ? personSchema : null
+  ].filter(Boolean);
+  identityBlocks.forEach(function(identity) {
+    const supplied = typeof structuredDataBlocks !== 'undefined' && Array.isArray(structuredDataBlocks)
+      && structuredDataBlocks.some(block => block && (block['@id'] === identity['@id'] || block['@graph']?.some(node => node['@id'] === identity['@id'])));
+    if (!supplied) { %>
+  <script type="application/ld+json"><%- JSON.stringify(identity).replace(/</g, '\\u003C') %></script>
+  <% } }); %>
 
   <% if (typeof structuredDataRaw === 'string' && structuredDataRaw.trim()) { %>
   <%- structuredDataRaw %>

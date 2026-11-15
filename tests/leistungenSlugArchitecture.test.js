@@ -35,11 +35,11 @@ test('service pages use the /leistungen URL hierarchy while the Berlin price pag
 
 test('Leistungen navigation points to the Leistungen overview and no longer to root-level service URLs', () => {
   const servicesNav = headerNavigation.find((item) => item.label === 'Leistungen');
-  assert.equal(servicesNav?.href, '/leistungen/');
+  assert.equal(servicesNav?.href, '/leistungen');
   assert.deepEqual(
     servicesNav.children.map((item) => item.href),
     [
-      '/leistungen/',
+      '/leistungen',
       '/leistungen/landingpage-erstellen-lassen',
       '/leistungen/website-relaunch',
       '/leistungen/website-audit',

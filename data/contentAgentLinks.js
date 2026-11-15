@@ -7,5 +7,18 @@ export const CONTENT_AGENT_LINKS = Object.freeze([
   { url: '/leistungen/website-audit', type: 'service', label: 'Website-Audit' },
   { url: '/leistungen/landingpage-erstellen-lassen', type: 'service', label: 'Landingpage erstellen lassen' },
   { url: '/branchen/webdesign-blumenladen', type: 'industry', label: 'Webdesign für Blumenläden' },
+  { url: '/webdesign-berlin/kosten-preise-pakete', type: 'pricing', label: 'Website-Kosten und Budgetplanung' },
+  { url: '/pakete/start', type: 'pricing', label: 'Start-Paket für kompakte Websites' },
+  { url: '/pakete/business', type: 'pricing', label: 'Business-Paket für kleine Unternehmen' },
+  { url: '/pakete/wachstum', type: 'pricing', label: 'Wachstum-Paket für größere Websites' },
+  { url: '/leistungen/laufende-kosten-website', type: 'service', label: 'Laufende Website-Kosten' },
+  { url: '/leistungen/website-wartung', type: 'service', label: 'Website-Wartung und Support' },
+  { url: '/ratgeber/website-kosten-berlin', type: 'guide', label: 'Website-Kosten in Berlin verstehen' },
+  { url: '/ratgeber/website-relaunch-berlin', type: 'guide', label: 'Wann sich ein Website-Relaunch lohnt' },
+  { url: '/ratgeber/baukasten-vs-professionelle-website', type: 'guide', label: 'Baukasten und professionelle Website vergleichen' },
+  { url: '/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten', type: 'guide', label: 'Ablauf eines Website-Projekts' },
+  { url: '/ratgeber/website-fuer-handwerker-berlin', type: 'guide', label: 'Website-Wissen für Handwerksbetriebe' },
+  { url: '/webdesign-berlin/lichtenberg', type: 'service', label: 'Webdesign für Betriebe in Lichtenberg' },
+  { url: '/referenzen', type: 'reference', label: 'Umgesetzte Website-Projekte' },
   { url: '/website-tester', type: 'tool', label: 'Website kostenlos prüfen' }
 ].map((link) => Object.freeze(link)));

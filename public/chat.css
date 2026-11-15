@@ -1,3 +1,9 @@
+/* Keep chat controls out of the consent choice, including before JavaScript loads. */
+body:has(#cookie-banner:not(.is-hidden):not(.hidden)) :is(.chat-button, .chat-container),
+.cookie-banner-open :is(.chat-button, .chat-container) {
+  display: none !important;
+}
+
 /* Floating Chat-Button */
 .chat-button {
   position: fixed;
