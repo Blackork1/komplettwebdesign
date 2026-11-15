@@ -833,6 +833,113 @@
   border-bottom: 0;
 }
 
+/* Blogtabellen: ein Datensatz, auf dem Handy als vollständig lesbare Karte. */
+.rg-article-body .rg-responsive-table {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.rg-article-body .rg-responsive-table th,
+.rg-article-body .rg-responsive-table td {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.rg-article-body .rg-table-label {
+  display: none;
+}
+
+.rg-article-body .rg-responsive-table caption {
+  caption-side: top;
+  padding: 0 0 0.75rem;
+  color: var(--rg-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+@media screen and (max-width: 767.98px) {
+  .rg-article-body .rg-table-scroll {
+    overflow: visible;
+  }
+
+  .rg-article-body .rg-responsive-table {
+    display: block;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    font-size: 1rem;
+  }
+
+  .rg-article-body .rg-responsive-table caption {
+    display: block;
+  }
+
+  /* Die echten Spaltenüberschriften bleiben für Screenreader erhalten. */
+  .rg-article-body .rg-responsive-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .rg-article-body .rg-responsive-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .rg-article-body .rg-responsive-table tbody > tr {
+    display: block;
+    width: 100%;
+    margin-bottom: 1rem;
+    border: 1px solid var(--rg-border);
+    border-radius: 0.85rem;
+    background: var(--rg-surface);
+  }
+
+  .rg-article-body .rg-responsive-table tbody > tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .rg-article-body .rg-responsive-table tbody > tr > th,
+  .rg-article-body .rg-responsive-table tbody > tr > td {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    padding: 0.85rem 1rem;
+    border: 0;
+    line-height: 1.6;
+  }
+
+  .rg-article-body .rg-responsive-table .rg-table-row-title {
+    padding: 1rem;
+    border-radius: 0.8rem 0.8rem 0 0;
+    background: rgba(14, 95, 83, 0.08);
+    color: var(--rg-text);
+    font-weight: 600;
+  }
+
+  .rg-article-body .rg-responsive-table tbody > tr > :nth-child(n + 3) {
+    border-top: 1px solid var(--rg-border);
+  }
+
+  .rg-article-body .rg-table-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--rg-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+}
+
 .rg-article-body .row > [class*="col-md-"] {
   min-width: min(100%, 16rem);
 }

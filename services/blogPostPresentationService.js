@@ -12,6 +12,7 @@ import { resolveHeadline, resolveSeoDescription, resolveSeoTitle } from '../data
 import { rewriteLegacyInternalLinks } from '../util/legacyInternalLinks.js';
 import { isNoindexBlogSlug } from '../data/blogRedirects.js';
 import { normalizeFaqEntities } from '../util/seoSchemas.js';
+import { prepareArticleTables } from '../helpers/articleTables.js';
 
 const GENERAL_ANCHOR = 'pruefung-gesamter-artikel';
 const RESERVED_PREVIEW_IDS = Object.freeze([
@@ -228,6 +229,8 @@ export function buildBlogPostPageModel({
   } else {
     throw presentationError('CONTENT_POST_NOT_FOUND', 'Blogartikel mit unbekanntem Inhaltsformat wird nicht gerendert.');
   }
+
+  renderedContent = prepareArticleTables(renderedContent);
 
   const rawFocusedReview = riskReview || metadata?.quality_report_json?.focusedReview || null;
   let focusedRiskReview = null;
