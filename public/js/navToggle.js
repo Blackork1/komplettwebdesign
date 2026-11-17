@@ -187,3 +187,79 @@ document.addEventListener("DOMContentLoaded", function () {
 
   applyMobilePanelPosition(false, { immediate: true });
 });
+
+/* Kopfleiste beim Herunterscrollen ausblenden, beim Hochscrollen wieder einblenden.
+   Liest nur scrollY (passiv, einmal pro Frame) und schaltet eine Klasse; die Animation
+   selbst ist ein transform in main.css (.site-header--hidden). */
+(function () {
+  function initHeaderScroll() {
+    const header = document.querySelector(".site-header");
+    if (!header) {
+      return;
+    }
+
+    const minDelta = 8;
+    let headerHeight = 0;
+    let lastY = Math.max(window.scrollY, 0);
+    let isHidden = false;
+    let frameRequested = false;
+
+    const setHidden = (hidden) => {
+      if (hidden === isHidden) {
+        return;
+      }
+      isHidden = hidden;
+      header.classList.toggle("site-header--hidden", hidden);
+    };
+
+    const update = () => {
+      frameRequested = false;
+      const y = Math.max(window.scrollY, 0);
+      if (!headerHeight) {
+        headerHeight = header.offsetHeight;
+      }
+
+      // Ganz oben und bei geöffnetem Handymenü immer sichtbar.
+      if (y <= headerHeight || document.body.classList.contains("mobile-nav-open")) {
+        setHidden(false);
+        lastY = y;
+        return;
+      }
+
+      const delta = y - lastY;
+      if (Math.abs(delta) < minDelta) {
+        return;
+      }
+      setHidden(delta > 0);
+      lastY = y;
+    };
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!frameRequested) {
+          frameRequested = true;
+          window.requestAnimationFrame(update);
+        }
+      },
+      { passive: true }
+    );
+
+    window.addEventListener(
+      "resize",
+      () => {
+        headerHeight = 0;
+      },
+      { passive: true }
+    );
+
+    // Wer per Tastatur in die Leiste springt, soll sie auch sehen.
+    header.addEventListener("focusin", () => setHidden(false));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initHeaderScroll);
+  } else {
+    initHeaderScroll();
+  }
+})();

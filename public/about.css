@@ -74,7 +74,7 @@ body.about-page {
 .about-page .about-scope p a { text-decoration: underline; text-underline-offset: 3px; }
 .about-page .about-scope > a { justify-self: end; }
 
-.about-page .about-proof { padding-block: 72px 80px; scroll-margin-top: 100px; }
+.about-page .about-proof { padding-block: 72px 80px; scroll-margin-top: 12px; }
 .about-page .about-proof__grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
 .about-page .about-project-image { display: block; }
 .about-page .about-project-image picture { display: block; }
@@ -91,7 +91,7 @@ body.about-page {
 .about-page .about-related a { display: inline; font-weight: 400; }
 .about-page .about-related svg { vertical-align: middle; margin-left: 5px; }
 
-.about-page .about-showcase { margin-top: 70px; padding-top: 54px; border-top: 1px solid var(--about-rule); scroll-margin-top: 100px; }
+.about-page .about-showcase { margin-top: 70px; padding-top: 54px; border-top: 1px solid var(--about-rule); scroll-margin-top: 12px; }
 .about-page .about-showcase__intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: start; }
 .about-page .about-showcase h3 { font-size: clamp(1.55rem, 2.3vw, 2rem); line-height: 1.25; }
 .about-page .about-showcase h4 { font-size: 1.1rem; line-height: 1.5; margin: 0; letter-spacing: -.025em; }
@@ -227,7 +227,7 @@ body.about-page {
 .about-page .about-button svg { transition: transform .2s ease; }
 .about-page .about-button:hover svg { transform: translateX(3px); }
 /* Werdegang und Fakten auf einen Blick. */
-.about-page .about-facts { padding-block: 64px 24px; border-top: 1px solid var(--about-rule); scroll-margin-top: 100px; }
+.about-page .about-facts { padding-block: 64px 24px; border-top: 1px solid var(--about-rule); scroll-margin-top: 12px; }
 .about-page .about-main .about-facts__heading { margin-bottom: 36px; }
 .about-page .about-facts__heading span { color: var(--about-orange); }
 .about-page .about-facts__grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 56px; align-items: start; }

@@ -1,4 +1,6 @@
-<header>
+<%# site-header: Leiste bleibt oben angeheftet und gleitet beim Herunterscrollen weg (main.css, js/navToggle.js). Adminbereich bleibt unverändert. %>
+<% const isAdminHeaderPath = typeof currentPathname === 'string' && /^\/admin(\/|$)/.test(currentPathname); %>
+<header<% if (!isAdminHeaderPath) { %> class="site-header"<% } %>>
   <% const isEn = typeof lng !== 'undefined' && lng === 'en'; %>
   <% const homeHref = isEn ? '/en' : '/'; %>
   <% const currentPath = (typeof currentPathname !== 'undefined' && currentPathname)

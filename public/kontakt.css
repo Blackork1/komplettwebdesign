@@ -1049,7 +1049,7 @@ body.contact-page { background: #fff; font-family: var(--font-body); }
 .contact-clean-header h1 { color: var(--contact-navy); font: 700 clamp(2rem, 3.8vw, 3rem)/1.2 var(--font-heading); letter-spacing: -.04em; margin: 0 0 16px; }
 .contact-clean-header h1 span { color: var(--contact-orange); }
 .contact-clean-header p { color: var(--contact-muted); font-size: 1rem; line-height: 1.7; margin: 0; }
-.contact-page-section .contact-request { padding-block: 12px 0; scroll-margin-top: 90px; }
+.contact-page-section .contact-request { padding-block: 12px 0; scroll-margin-top: 2px; }
 .contact-page-section .contact-choice { max-width: none; padding: 0; text-align: left; border: 0; border-radius: 0; box-shadow: none; margin: 0; }
 .contact-page-section .contact-choice__actions { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px 30px; margin: 0; }
 .contact-page-section .contact-choice__button { display: grid; grid-template-columns: minmax(0,1fr) 18px; align-items: center; gap: 14px; min-height: 108px; padding: 20px 8px; background: #fff; border: 0; border-bottom: 1px solid #d5dfe7; border-radius: 0; color: var(--contact-navy); transition: background .18s, border-color .18s; }
@@ -1062,7 +1062,7 @@ body.contact-page { background: #fff; font-family: var(--font-body); }
 .contact-page-section .contact-choice__button.is-active small { color: var(--contact-muted); }
 .contact-choice__more { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 0; margin-top: 14px; color: var(--contact-muted); background: none; border: 0; font: 400 .84rem/1.5 var(--font-body); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 .contact-choice__more:hover,.contact-choice__more.is-active { color: var(--contact-orange); }
-.contact-page-section .contact-panel { scroll-margin-top: 100px; }
+.contact-page-section .contact-panel { scroll-margin-top: 12px; }
 .contact-page-section .contact-form-shell { display: block; max-width: 760px; border: 1px solid #d5dfe7; border-radius: 5px; box-shadow: none; margin-top: 24px; }
 .contact-page-section .contact-form-intro { padding: 24px 28px; background: #fff; border-bottom: 1px solid #d5dfe7; }
 .contact-page-section .contact-form-intro h2 { color: var(--contact-navy); font: 700 1.35rem/1.4 var(--font-heading); letter-spacing: -.025em; margin: 0; }

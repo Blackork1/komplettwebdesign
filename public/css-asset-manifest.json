@@ -4,9 +4,9 @@
     "about.css": {
       "source": "about.css",
       "output": "about.min.css",
-      "href": "/about.min.css?v=e58a665f6c34",
-      "hash": "e58a665f6c34",
-      "bytes": 19953
+      "href": "/about.min.css?v=7b4b9c92e4a3",
+      "hash": "7b4b9c92e4a3",
+      "bytes": 19950
     },
     "admin-appointments.css": {
       "source": "admin-appointments.css",
@@ -242,9 +242,9 @@
     "css/main.css": {
       "source": "css/main.css",
       "output": "css/main.min.css",
-      "href": "/css/main.min.css?v=84a80ab4f89c",
-      "hash": "84a80ab4f89c",
-      "bytes": 30366
+      "href": "/css/main.min.css?v=d9ad32ae92cb",
+      "hash": "d9ad32ae92cb",
+      "bytes": 30709
     },
     "demo/cq-compare/styles.css": {
       "source": "demo/cq-compare/styles.css",
@@ -270,9 +270,9 @@
     "faq.css": {
       "source": "faq.css",
       "output": "faq.min.css",
-      "href": "/faq.min.css?v=8329061d34b8",
-      "hash": "8329061d34b8",
-      "bytes": 5046
+      "href": "/faq.min.css?v=03a53996b506",
+      "hash": "03a53996b506",
+      "bytes": 5045
     },
     "footer.css": {
       "source": "footer.css",
@@ -319,9 +319,9 @@
     "kontakt.css": {
       "source": "kontakt.css",
       "output": "kontakt.min.css",
-      "href": "/kontakt.min.css?v=d4e32590ad52",
-      "hash": "d4e32590ad52",
-      "bytes": 22899
+      "href": "/kontakt.min.css?v=8ab7ab315bf4",
+      "hash": "8ab7ab315bf4",
+      "bytes": 22897
     },
     "legal-notices.css": {
       "source": "legal-notices.css",

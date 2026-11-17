@@ -15,7 +15,7 @@ body.faq-page { background: #fff; color: #0b2a46; font-family: var(--font-body, 
 .faq-topics { display: flex; flex-wrap: wrap; gap: 4px 34px; margin-top: 36px; border-bottom: 1px solid var(--faq-rule); }
 .faq-topics a { display: inline-flex; align-items: center; min-height: 52px; padding: 12px 0; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--faq-navy); font-size: .95rem; font-weight: 600; line-height: 1.5; text-decoration: none; transition: color .16s ease, border-color .16s ease; }
 .faq-topics a:hover { color: var(--faq-orange); border-bottom-color: var(--faq-orange); }
-.faq-content { padding-top: 40px; scroll-margin-top: 96px; }
+.faq-content { padding-top: 40px; scroll-margin-top: 8px; }
 .faq-content > h2 { color: var(--faq-navy); font: 700 1.6rem/1.3 var(--font-heading, 'Poppins', "Poppins Fallback", sans-serif); letter-spacing: -.03em; margin: 0 0 6px; }
 .faq-category-lead { color: var(--faq-muted); font-size: .95rem; line-height: 1.6; margin: 0 0 8px; }
 .faq-item { border-bottom: 1px solid var(--faq-rule); }

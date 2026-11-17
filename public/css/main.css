@@ -597,6 +597,31 @@ p {
   z-index: 10;
   border-bottom: 1px solid var(--secondary-button-color);
 }
+/* Kopfleiste: bleibt oben angeheftet, gleitet beim Herunterscrollen weg und beim Hochscrollen
+   wieder herein (Klasse setzt js/navToggle.js). Nur transform animieren, sonst springt das Layout.
+   Sichtbar ist bewusst transform: none, weil das mobile Menü darin position: fixed nutzt. */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: transform 0.25s ease;
+}
+.site-header.site-header--hidden {
+  /* -100 % plus der 20 px hohe weiße Verlauf (.topWhiteGradients) unter der Leiste */
+  transform: translate3d(0, calc(-100% - 24px), 0);
+}
+body.mobile-nav-open .site-header.site-header--hidden {
+  transform: none;
+}
+/* Sprungmarken (#preise …) landen unterhalb der eingeblendeten Leiste. */
+html:has(.site-header) {
+  scroll-padding-top: 88px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-header {
+    transition: none;
+  }
+}
 .logo img {
   height: 70px;
   width: auto;
