@@ -15,7 +15,7 @@ const CORE_CONTENT_AGENT_LINKS = [
   { url: '/pakete/wachstum', type: 'pricing', label: 'Wachstum-Paket für größere Websites' },
   { url: '/leistungen/laufende-kosten-website', type: 'service', label: 'Laufende Website-Kosten' },
   { url: '/leistungen/website-wartung', type: 'service', label: 'Website-Wartung und Support' },
-  { url: '/blog/website-kosten-2025-einfach-erklaert', type: 'guide', label: 'Was kostet eine Website? Ratgeber' },
+  { url: '/blog/webdesign-preise-2027', type: 'guide', label: 'Was kostet eine Website? Ratgeber' },
   { url: '/blog/website-relaunch-berlin-checkliste', type: 'guide', label: 'Website-Relaunch planen: Checkliste' },
   { url: '/ratgeber/baukasten-vs-professionelle-website', type: 'guide', label: 'Baukasten und professionelle Website vergleichen' },
   { url: '/ablauf', type: 'guide', label: 'Ablauf eines Website-Projekts' },

@@ -1,6 +1,8 @@
 import { MARKETING_IMAGES } from './marketingImages.js';
 
 export const leistungenOverviewPage = Object.freeze({
+  // Stand der Inhalte, sichtbar am Seitenende („Stand: …“). Bei inhaltlichen Änderungen anpassen.
+  updatedIso: '2026-10-25',
   canonicalPath: '/leistungen',
   title: 'Webdesign-Leistungen im Überblick | Komplett Webdesign',
   description:
@@ -126,7 +128,7 @@ export const leistungenOverviewPage = Object.freeze({
   relatedContent: Object.freeze([
     Object.freeze({
       label: 'Website-Kosten im Blog erklärt',
-      href: '/blog/website-kosten-2025-einfach-erklaert',
+      href: '/blog/webdesign-preise-2027',
       text: 'Einmalige Projektkosten und typische Preisfaktoren im bestehenden Blogartikel nachvollziehen.'
     })
   ]),

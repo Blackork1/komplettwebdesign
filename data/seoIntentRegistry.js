@@ -196,7 +196,7 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     priority: 'B',
     primaryQuery: 'kosten einfache website',
     requiredLinks: [],
-    redirectTo: '/blog/website-kosten-2025-einfach-erklaert'
+    redirectTo: '/blog/webdesign-preise-2027'
   }),
   freezeTarget({
     path: '/ratgeber/website-kosten-zeitplan',
@@ -205,7 +205,7 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     priority: 'B',
     primaryQuery: 'website kosten zeitplan',
     requiredLinks: [],
-    redirectTo: '/blog/website-kosten-2025-einfach-erklaert'
+    redirectTo: '/blog/webdesign-preise-2027'
   }),
   freezeTarget({
     path: '/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten',
@@ -304,7 +304,7 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     redirectTo: '/'
   }),
   freezeTarget({
-    path: '/blog/website-kosten-2025-einfach-erklaert',
+    path: '/blog/webdesign-preise-2027',
     intentId: 'website-kosten-informational',
     state: 'active',
     priority: 'A',
@@ -315,13 +315,22 @@ export const SEO_RECOVERY_TARGETS = Object.freeze([
     supportingAction: { label: 'Laufende Kosten einordnen', href: '/leistungen/laufende-kosten-website' }
   }),
   freezeTarget({
+    path: '/blog/website-kosten-2025-einfach-erklaert',
+    intentId: 'website-kosten-informational',
+    state: 'redirect',
+    priority: 'A',
+    primaryQuery: 'website kosten',
+    requiredLinks: [],
+    redirectTo: '/blog/webdesign-preise-2027'
+  }),
+  freezeTarget({
     path: '/blog/website-kosten-2026-berlin-vergleich-2025',
     intentId: 'website-kosten-informational',
     state: 'redirect',
     priority: 'A',
     primaryQuery: 'website kosten',
     requiredLinks: [],
-    redirectTo: '/blog/website-kosten-2025-einfach-erklaert'
+    redirectTo: '/blog/webdesign-preise-2027'
   }),
   freezeTarget({
     path: '/website-tester',

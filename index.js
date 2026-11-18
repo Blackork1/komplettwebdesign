@@ -1,4 +1,5 @@
-import { buildLlmsText, buildPricingMarkdown } from './helpers/llmsText.js';
+import { buildLlmsText, buildLlmsFullText, buildPricingMarkdown } from './helpers/llmsText.js';
+import { loadLlmsListings } from './services/llmsListingsService.js';
 import pricingService from './services/pricingService.js';
 import { contentImage } from './helpers/contentImage.js';
 import { buildOrganizationSchema, buildPersonSchema } from './helpers/entitySchema.js';
@@ -326,10 +327,16 @@ app.get('/demo/cq-compare', async (_req, res, next) => {
     next(error);
   }
 });
-app.get(['/llms.txt', '/pricing.md'], async (req, res, next) => {
+app.get(['/llms.txt', '/llms-full.txt', '/pricing.md'], async (req, res, next) => {
   try {
     const packages = await pricingService.getVisiblePackages();
-    res.type('text/plain').set('Cache-Control', 'public, max-age=300').send(req.path === '/pricing.md' ? buildPricingMarkdown(packages) : buildLlmsText(packages));
+    let body;
+    if (req.path === '/pricing.md') body = buildPricingMarkdown(packages);
+    else {
+      const listings = await loadLlmsListings();
+      body = req.path === '/llms-full.txt' ? buildLlmsFullText(packages, listings) : buildLlmsText(packages, listings);
+    }
+    res.type('text/plain').set('Cache-Control', 'public, max-age=300').send(body);
   } catch (error) { next(error); }
 });
 app.use(express.static(publicDir, staticOpts));

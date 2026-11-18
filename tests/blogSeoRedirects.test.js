@@ -25,7 +25,7 @@ function queryDb(rows = []) {
 test('Kostenartikel besitzt eine einzige kanonische öffentliche URL', () => {
   assert.equal(
     BLOG_REDIRECTS['website-kosten-2026-berlin-vergleich-2025'],
-    '/blog/website-kosten-2025-einfach-erklaert'
+    '/blog/webdesign-preise-2027'
   );
   assert.ok(REDIRECTED_BLOG_SLUGS.includes(REDIRECT_SOURCE_SLUG));
   assert.equal(Object.isFrozen(BLOG_REDIRECTS), true);

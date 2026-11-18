@@ -1,0 +1,10 @@
+<%
+  // Autor und Stand-Datum am Seitenende, wie auf den Branchenseiten. stand: ISO-Datum oder Date, darf fehlen.
+  const standDate = (typeof stand !== 'undefined' && stand) ? new Date(stand) : null;
+  const standValid = Boolean(standDate) && !Number.isNaN(standDate.getTime());
+  const standIso = standValid ? standDate.toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' }) : '';
+  const standLabel = standValid ? standDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Berlin' }) : '';
+%>
+<aside class="page-byline" aria-label="Autor und Stand">
+  <p>Von <a href="/about">Sören Blocksdorf</a>, Webdesigner in Berlin<% if (standLabel) { %> · Stand: <time datetime="<%= standIso %>"><%= standLabel %></time><% } %></p>
+</aside>

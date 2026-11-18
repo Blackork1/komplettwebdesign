@@ -8,8 +8,8 @@ import { showGuide } from '../controllers/ratgeberController.js';
 // Kostenthema gebündelt (25.10.2026): Blogartikel für allgemeine Kosten, Kostenseite für Berlin.
 const GUIDE_REDIRECTS = {
   '/ratgeber/website-kosten-berlin': '/webdesign-berlin/kosten-preise-pakete',
-  '/ratgeber/kosten-einfache-website': '/blog/website-kosten-2025-einfach-erklaert',
-  '/ratgeber/website-kosten-zeitplan': '/blog/website-kosten-2025-einfach-erklaert',
+  '/ratgeber/kosten-einfache-website': '/blog/webdesign-preise-2027',
+  '/ratgeber/website-kosten-zeitplan': '/blog/webdesign-preise-2027',
   '/ratgeber/website-erstellen-berlin-ablauf-dauer-kosten': '/ablauf',
   '/ratgeber/website-fuer-restaurants-cafes-berlin': '/branchen/webdesign-restaurant',
   // 26.10.2026: letzte Doppelungen
@@ -67,7 +67,7 @@ test('fest eingebaute Links zeigen direkt auf die neuen Ziele', () => {
 
 test('Startseite und Kostenseite verlinken den Kosten-Ratgeber', () => {
   const home = readFileSync(new URL('../views/index.ejs', import.meta.url), 'utf8');
-  assert.match(home, /href="\/blog\/website-kosten-2025-einfach-erklaert"/);
+  assert.match(home, /href="\/blog\/webdesign-preise-2027"/);
   const leistungen = readFileSync(new URL('../controllers/leistungenController.js', import.meta.url), 'utf8');
-  assert.match(leistungen, /label: 'Ratgeber: Was kostet eine Website\?', href: '\/blog\/website-kosten-2025-einfach-erklaert'/);
+  assert.match(leistungen, /label: 'Ratgeber: Was kostet eine Website\?', href: '\/blog\/webdesign-preise-2027'/);
 });

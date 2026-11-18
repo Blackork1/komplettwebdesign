@@ -20,7 +20,9 @@ export const withCanonicalBlogSlug = post => post ? { ...post, slug: canonicalBl
 
 // Zusammengeführte Artikel (Blog-Bereinigung 25.10.2026): alte Adresse → neues Ziel, dauerhaft (301).
 export const BLOG_REDIRECTS = Object.freeze({
-  'website-kosten-2026-berlin-vergleich-2025': '/blog/website-kosten-2025-einfach-erklaert',
+  'website-kosten-2026-berlin-vergleich-2025': '/blog/webdesign-preise-2027',
+  // 18.11.2026: Zwei Artikel beantworteten „Was kostet eine Website?“. Der ältere geht im neueren auf.
+  'website-kosten-2025-einfach-erklaert': '/blog/webdesign-preise-2027',
   // Gleiches Thema wie eine Haupt- oder Leistungsseite
   'webdesign-berlin-warum-eine-website-fuer-unternehmen-unverzichtbar-ist': '/',
   'full-service-webdesign-in-berlin': '/',

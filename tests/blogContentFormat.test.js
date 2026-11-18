@@ -265,8 +265,9 @@ test('priorisierte Bestandsartikel erhalten passende kontextuelle Folgelinks', a
   const seoArticle = await renderControllerPost(postFixture({
     slug: 'seo-fuer-blumenladen'
   }));
+  // Seit 18.11.2026 ist der Artikel „Webdesign-Preise 2027“ der zentrale Kostenartikel.
   const costArticle = await renderControllerPost(postFixture({
-    slug: 'website-kosten-2025-einfach-erklaert'
+    slug: 'webdesign-preise-2027'
   }));
 
   assert.deepEqual(

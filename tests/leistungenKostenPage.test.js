@@ -155,7 +155,7 @@ function buildRenderLocals() {
 }
 
 test('kosten page controller contains current package prices and recurring cost separation', () => {
-  assert.match(controller, /Website-Kosten in Berlin: Beispielrechnungen und Kostenfaktoren/);
+  assert.match(controller, /Website-Kosten in Berlin: Beispiele und Kostenfaktoren/);
   assert.doesNotMatch(controller, /metaTitle: 'Webdesign Preise Berlin/);
 
   const examples = [
@@ -204,4 +204,32 @@ test('leistung page renders cost content and example calculations before faq con
   assert.ok(examplesIndex !== -1, 'examples section missing');
   assert.ok(faqIndex !== -1, 'faq section missing');
   assert.ok(examplesIndex < faqIndex, 'examples should render before FAQ');
+});
+
+// 18.11.2026: Leistungsseiten nennen am Ende Autor und Stand, wie die Branchenseiten.
+test('Leistungsseiten zeigen Autor und Stand, ohne Datum nur den Autor', async () => {
+  const locals = buildRenderLocals();
+  locals.page.updatedAt = new Date('2026-11-18T09:00:00Z');
+  const html = await ejs.renderFile(viewPath, locals);
+  assert.match(html, /<aside class="page-byline" aria-label="Autor und Stand">\s*<p>Von <a href="\/about">Sören Blocksdorf<\/a>, Webdesigner in Berlin · Stand: <time datetime="2026-11-18">18\.11\.2026<\/time><\/p>/);
+  assert.ok(html.indexOf('page-byline') > html.indexOf('<section class="service-faq"'), 'Autorzeile steht am Seitenende');
+  const undated = await ejs.renderFile(viewPath, buildRenderLocals());
+  assert.match(undated, /Webdesigner in Berlin<\/p>/);
+  assert.doesNotMatch(undated, /Stand: <time/);
+});
+
+test('Die Kostenseite nennt ihren Stand, die Beispielrechnungen haben einen Sprunglink', () => {
+  assert.match(controller, /'kosten-preise-pakete': \{\n\s+\/\/[^\n]*\n\s+updatedIso: '2026-11-18'/);
+  assert.match(controller, /updatedAt: latestDate\(row\.updated_at \|\| row\.created_at, override\.updatedIso\)/);
+  assert.match(controller, /\{ label: 'Beispielrechnungen ansehen', href: '#beispielrechnungen' \}/);
+  assert.match(readFileSync(viewPath, 'utf8'), /<section id="beispielrechnungen" class="leistungen-examples"/);
+});
+
+test('Das Stand-Datum übersteht die Preis-Ersetzung (Datenbank liefert Date-Objekte)', async () => {
+  const { interpolatePricingTokens } = await import('../util/pricingViewModel.js');
+  const latest = new Function(`${controller.match(/function latestDate\([\s\S]*?\n\}/)[0]}; return latestDate;`)();
+  const value = latest(new Date('2026-10-25T10:00:00Z'), '2026-11-18');
+  assert.equal(value, '2026-11-18T00:00:00.000Z');
+  assert.equal(interpolatePricingTokens({ updatedAt: value }, {}).updatedAt, value);
+  assert.equal(latest(null, undefined), null);
 });

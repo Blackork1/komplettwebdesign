@@ -5038,3 +5038,34 @@
     margin: 0;
     padding: 0 24px 22px;
   }
+
+/* Autor und Stand am Seitenende (partials/autor-stand.ejs), wie auf den Branchenseiten */
+.page-byline {
+  color: var(--wd-muted, #5a6779);
+  font-size: 0.9rem;
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 1.5rem 16px 2.5rem;
+  text-align: center;
+}
+
+.page-byline p {
+  margin: 0;
+}
+
+.page-byline a {
+  color: #bd3615;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.page-byline a:hover {
+  text-decoration: underline;
+}
+
+/* Schmale Handys: lange Wörter wie „Beispielrechnungen“ oder „Zusatzleistungen“ passen ohne Umbruch im Wort */
+@media (max-width: 374px) {
+  .leistungen-page :is(.cost-page-section, .leistungen-examples) h2 {
+    font-size: 1.4rem;
+  }
+}

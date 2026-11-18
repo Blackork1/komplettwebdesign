@@ -486,7 +486,7 @@
     <% } %>
 
     <% if (page.exampleCalculations && page.exampleCalculations.length) { %>
-    <section class="leistungen-examples" aria-labelledby="leistungen-examples-title">
+    <section id="beispielrechnungen" class="leistungen-examples" aria-labelledby="leistungen-examples-title">
       <h2 id="leistungen-examples-title">Beispielrechnungen für typische Website-Projekte</h2>
       <p>Diese Beispiele zeigen, wie sich einmalige Erstellungskosten und laufende Kosten 2026 realistisch einordnen lassen.</p>
       <div class="leistungen-example-grid">
@@ -671,6 +671,7 @@
       <% } %>
     </section>
     <% } %>
+    <%- include('../partials/autor-stand', { stand: page.updatedAt }) %>
   </div>
 </main>
 

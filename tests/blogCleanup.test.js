@@ -20,7 +20,7 @@ import { buildBlogPostPageModel } from '../services/blogPostPresentationService.
 // Blog-Bereinigung vom 25.10.2026 (komplettwebdesign.de-audit-2026-10-25/BLOG-BEREINIGUNG.md),
 // ergänzt am 05.11.2026: ChatGPT-Agentenmodus auf noindex.
 const KEPT = [
-  'website-kosten-2025-einfach-erklaert',
+  'webdesign-preise-2027',
   'seo-fuer-blumenladen',
   'immobilienmakler-homepage-check',
   'website-relaunch-berlin-checkliste',
@@ -44,9 +44,9 @@ async function request(path) {
   }
 }
 
-test('19 Artikel werden zusammengeführt, 15 aus Google genommen, 9 bleiben', () => {
+test('20 Artikel werden zusammengeführt, 15 aus Google genommen, 9 bleiben', () => {
   const sources = Object.keys(BLOG_REDIRECTS);
-  assert.equal(sources.length, 20, 'der Kostenartikel von 2026 leitete schon vorher weiter');
+  assert.equal(sources.length, 21, 'der Kostenartikel von 2026 leitete schon vorher weiter, der von 2025 seit 18.11.2026');
   assert.equal(NOINDEX_BLOG_SLUGS.length, 15);
   const all = [...sources, ...NOINDEX_BLOG_SLUGS, ...KEPT];
   assert.equal(new Set(all).size, all.length, 'jeder Artikel steht in genau einer Gruppe');
@@ -98,7 +98,8 @@ test('die Blogroute antwortet mit 301 aufs Ziel und behält Abfrageparameter', a
     ['/blog/webdesign-lichtenberg-berlin?utm_source=x', '/webdesign-berlin/lichtenberg?utm_source=x'],
     ['/blog/Landingpages-Webshop-Webdesign-Berlin', '/leistungen/landingpage-erstellen-lassen'],
     ['/blog/google-unternehmensprofil-website-widerspruch-berlin-brandenburg', '/blog/lokale-seo-hacks-fuer-berlin'],
-    ['/blog/website-kosten-2026-berlin-vergleich-2025', '/blog/website-kosten-2025-einfach-erklaert'],
+    ['/blog/website-kosten-2026-berlin-vergleich-2025', '/blog/webdesign-preise-2027'],
+    ['/blog/website-kosten-2025-einfach-erklaert', '/blog/webdesign-preise-2027'],
     ['/blog/GA4-Tracking-Framework', '/blog/ga4-tracking-framework'],
     ['/blog/Lokale-SEO-Hacks-fuer-Berlin', '/blog/lokale-seo-hacks-fuer-berlin'],
     ['/blog/barrierefreiheit-2020-websites-leitfaden', '/blog/barrierefreie-website-bfsg']
@@ -114,7 +115,7 @@ test('noindex-Artikel bleiben erreichbar, Google bekommt noindex per Header und 
   assert.equal(shouldNoindexPublicPath('/blog/ga4-tracking-framework'), true);
   assert.equal(shouldNoindexPublicPath('/blog/Scoll-Snapp-Galery-%26-Zoom%E2%80%91on%E2%80%91View'), true);
   assert.equal(shouldNoindexPublicPath('/blog/%E0%A4%A'), false, 'kaputte Kodierung wirft keinen Fehler');
-  assert.equal(shouldNoindexPublicPath('/blog/website-kosten-2025-einfach-erklaert'), false);
+  assert.equal(shouldNoindexPublicPath('/blog/webdesign-preise-2027'), false);
   assert.equal(shouldNoindexPublicPath('/blog'), false);
 
   const base = {

@@ -350,6 +350,8 @@ const detailSections = [
 ];
 
 export const addOnsPage = Object.freeze({
+  // Stand der Inhalte, sichtbar am Seitenende („Stand: …“). Bei inhaltlichen Änderungen anpassen.
+  updatedIso: '2026-10-25',
   slug: 'zusatzleistungen-webdesign',
   canonicalPath: '/leistungen/zusatzleistungen-webdesign',
   title: 'Zusatzleistungen Webdesign | Erweiterungen & Preise',

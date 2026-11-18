@@ -165,6 +165,13 @@ const COST_PAGE_CONTENT = Object.freeze({
   ])
 });
 
+// Jüngeres von Datenbank-Datum und Code-Stand: Texte aus SERVICE_PAGE_OVERRIDES ändern das Datenbank-Datum nicht.
+// Als ISO-Text, weil interpolatePricingTokens Objekte durchläuft und ein Date dabei zu {} würde.
+function latestDate(...values) {
+  const dates = values.filter(Boolean).map((value) => new Date(value)).filter((date) => !Number.isNaN(date.getTime()));
+  return dates.length ? new Date(Math.max(...dates.map((date) => date.getTime()))).toISOString() : null;
+}
+
 const SERVICE_PAGE_OVERRIDES = {
   'design-ux-ui': {
     keywordPrimary: 'website relaunch berlin',
@@ -264,7 +271,7 @@ const SERVICE_PAGE_OVERRIDES = {
       { label: 'Inhalte & Texte (Content)', href: '/leistungen/inhalte-texte-content' },
       { label: 'Website-Kosten und Beispielrechnungen', href: '/webdesign-berlin/kosten-preise-pakete' },
       { label: 'Business-Paket', href: '/pakete/business' },
-      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/website-kosten-2025-einfach-erklaert' },
+      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/webdesign-preise-2027' },
       { label: 'Webdesign Berlin Friedrichshain', href: '/webdesign-berlin/friedrichshain' }
     ]
   },
@@ -468,24 +475,29 @@ const SERVICE_PAGE_OVERRIDES = {
       { label: 'Laufende Website-Kosten', href: '/leistungen/laufende-kosten-website' },
       { label: 'Local SEO', href: '/leistungen/local-seo' },
       { label: 'Wachstum-Paket', href: '/pakete/wachstum' },
-      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/website-kosten-2025-einfach-erklaert' },
+      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/webdesign-preise-2027' },
       { label: 'Webdesign Berlin Charlottenburg', href: '/webdesign-berlin/charlottenburg' }
     ]
   },
   'kosten-preise-pakete': {
+    // Stand der Texte in diesem Override (Seitenende „Stand: …“, Schema dateModified).
+    updatedIso: '2026-11-18',
     keywordPrimary: 'website kosten berlin',
     keywordSecondary: ['website erstellen lassen berlin kosten', 'was kostet eine website berlin'],
     // „Webdesign Preise Berlin“ gehört zu /pakete. Diese Seite erklärt Kosten mit Beispielrechnungen.
     metaTitle: 'Website-Kosten Berlin: Beispielrechnungen & Kostenfaktoren',
     metaDescription: 'Was eine Website in Berlin kostet: vier Beispielrechnungen vom Onepager bis zum Projekt mit Sonderfunktionen, Preisfaktoren und laufende Kosten.',
-    h1: 'Website-Kosten in Berlin: Beispielrechnungen und Kostenfaktoren',
-    heroSubtitle: 'Klare Website-Pakete für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin.',
+    // Kurze Wörter in der H1: „Beispielrechnungen“ brach im großen Hero mitten im Wort um (live bei 1366 und 1440 px).
+    h1: 'Website-Kosten in Berlin: Beispiele und Kostenfaktoren',
+    heroSubtitle: 'Vier Beispielrechnungen mit den aktuellen Paketpreisen, für kleine Unternehmen, Selbstständige und lokale Dienstleister in Berlin.',
+    // Rollenteilung seit 18.11.2026: Diese Seite rechnet Berliner Projekte mit den echten Paketpreisen durch.
+    // Allgemeine Marktpreise und Budgetplanung stehen im Blogartikel /blog/webdesign-preise-2027.
     answerBlock:
-      'Website-Kosten hängen vor allem von Seitenumfang, Inhalten, Funktionen und laufendem Betrieb ab. Die Paketpreise starten bei {{lowestPackagePriceLabel}} und zeigen dir früh, welcher Rahmen realistisch ist. Zusatzleistungen, Drittanbieter-Kosten und laufende Kosten werden separat eingeordnet, damit du Projektbudget und Betrieb sauber unterscheiden kannst.',
+      'Was eine Website in Berlin kostet, hängt vor allem von Seitenumfang, Inhalten, Funktionen und laufendem Betrieb ab. Meine Pakete starten bei {{lowestPackagePriceLabel}}. Weiter unten rechne ich vier typische Berliner Projekte durch, vom Onepager bis zum Projekt mit Sonderfunktionen. Zusatzleistungen, Drittanbieter und laufende Kosten ordne ich getrennt ein, damit du Projektbudget und Betrieb sauber unterscheiden kannst. Welche Preise am Markt üblich sind und wie du dein Budget allgemein planst, erklärt der Ratgeber zu den Webdesign-Preisen 2027.',
     ctaVariants: [
       { label: 'Kosten einschätzen lassen', href: '/kontakt' },
-      { label: 'Pakete vergleichen', href: '/pakete' },
-      { label: 'Website-Tester starten', href: '/website-tester' }
+      { label: 'Beispielrechnungen ansehen', href: '#beispielrechnungen' },
+      { label: 'Pakete vergleichen', href: '/pakete' }
     ],
     proofBlock: {
       title: 'Preislogik auf einen Blick',
@@ -512,28 +524,28 @@ const SERVICE_PAGE_OVERRIDES = {
         setup: 'Start-Paket',
         oneTime: '{{price.start}} einmalig',
         recurring: 'Domain, E-Mail, Hosting, Wartung und externe Dienste separat nach Setup',
-        note: 'Geeignet, wenn du einen klaren Erstauftritt mit Kontaktweg und schlankem Umfang brauchst.'
+        note: 'Geeignet, wenn du einen klaren Erstauftritt mit Kontaktweg und schlankem Umfang brauchst, zum Beispiel als Friseursalon in Friedrichshain oder Handwerksbetrieb in Lichtenberg.'
       },
       {
         title: 'Beispiel 2: Unternehmenswebsite',
         setup: 'Business-Paket',
         oneTime: '{{price.business}} einmalig',
         recurring: 'Domain, E-Mail, Hosting, Wartung und externe Dienste separat nach Setup',
-        note: 'Geeignet, wenn mehrere Leistungen, Referenzen und Anfragewege professionell strukturiert werden sollen.'
+        note: 'Geeignet, wenn mehrere Leistungen, Referenzen und Anfragewege professionell strukturiert werden sollen, etwa für eine Reinigungsfirma mit Gewerbe- und Privatkunden in mehreren Bezirken.'
       },
       {
         title: 'Beispiel 3: Relaunch mit mehr Struktur',
         setup: 'Wachstum-Paket',
         oneTime: '{{price.wachstum}} einmalig',
         recurring: 'Domain, E-Mail, Hosting, Wartung und externe Dienste separat nach Setup',
-        note: 'Geeignet für mehrere Leistungsseiten, Relaunch-Struktur und stärkere technische SEO-Grundlagen.'
+        note: 'Geeignet für mehrere Leistungsseiten, Relaunch-Struktur und stärkere technische SEO-Grundlagen, zum Beispiel wenn eine Praxis oder Kanzlei ihre alte Website neu aufstellt.'
       },
       {
         title: 'Beispiel 4: Sonderfunktionen',
         setup: 'Individuelles Projekt',
         oneTime: '{{price.individuell}}',
         recurring: 'abhängig von Betrieb, Tools, Wartung und Drittanbieter-Leistungen',
-        note: 'Geeignet für Buchungssysteme, CMS, Mehrsprachigkeit, Shop-Funktionen oder andere Anforderungen außerhalb der Standardpakete.'
+        note: 'Geeignet für Buchungssysteme, CMS, Mehrsprachigkeit, Shop-Funktionen oder andere Anforderungen außerhalb der Standardpakete, etwa ein Café mit Tortenbestellung oder ein Studio mit Online-Terminbuchung.'
       }
     ],
     faqItems: [
@@ -569,7 +581,7 @@ const SERVICE_PAGE_OVERRIDES = {
       { label: 'Business-Paket', href: '/pakete/business' },
       { label: 'Laufende Website-Kosten', href: '/leistungen/laufende-kosten-website' },
       { label: 'Zusatzleistungen Webdesign', href: '/leistungen/zusatzleistungen-webdesign' },
-      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/website-kosten-2025-einfach-erklaert' },
+      { label: 'Ratgeber: Was kostet eine Website?', href: '/blog/webdesign-preise-2027' },
       { label: 'Projekt anfragen', href: '/kontakt' }
     ],
     cta: {
@@ -715,7 +727,7 @@ export async function showLeistungPage(req, res, next) {
         secondary: override.keywordSecondary || []
       },
       answerBlock: override.answerBlock || '',
-      updatedAt: row.updated_at || row.created_at || null,
+      updatedAt: latestDate(row.updated_at || row.created_at, override.updatedIso),
       ctaVariants: override.ctaVariants || DEFAULT_CTA_VARIANTS,
       proofBlock: override.proofBlock || null,
       trustBlock: override.trustBlock || null,

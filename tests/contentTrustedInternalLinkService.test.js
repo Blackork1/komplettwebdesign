@@ -115,7 +115,7 @@ test('Blumenladen-Seite erhält den passenden vorhandenen Blogartikel als Kontex
 });
 
 test('Leistungsübersicht und laufende Kosten verlinken stabil auf den kanonischen Kostenartikel', () => {
-  const canonicalTarget = '/blog/website-kosten-2025-einfach-erklaert';
+  const canonicalTarget = '/blog/webdesign-preise-2027';
 
   assert.deepEqual(
     (leistungenOverviewPage.relatedContent || []).find((link) => link.href === canonicalTarget),

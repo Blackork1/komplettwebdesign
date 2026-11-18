@@ -16,7 +16,7 @@ test('die doppelten Haupt- und Kostenseiten besitzen ein eindeutiges Ziel', () =
   assert.equal(SEO_RECOVERY_REDIRECTS['/webdesign-berlin'], '/');
   assert.equal(
     SEO_RECOVERY_REDIRECTS['/blog/website-kosten-2026-berlin-vergleich-2025'],
-    '/blog/website-kosten-2025-einfach-erklaert'
+    '/blog/webdesign-preise-2027'
   );
 });
 
